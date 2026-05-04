@@ -7,6 +7,17 @@ USE chiangrai_photographer_booking;
 SET FOREIGN_KEY_CHECKS = 0;
 
 DROP TABLE IF EXISTS review_images;
+DROP TABLE IF EXISTS blog_tags;
+DROP TABLE IF EXISTS article_tags;
+DROP TABLE IF EXISTS portfolio_tags;
+DROP TABLE IF EXISTS tags;
+DROP TABLE IF EXISTS recently_viewed_photographers;
+DROP TABLE IF EXISTS search_logs;
+DROP TABLE IF EXISTS reports;
+DROP TABLE IF EXISTS contact_messages;
+DROP TABLE IF EXISTS blogs;
+DROP TABLE IF EXISTS faqs;
+DROP TABLE IF EXISTS favorite_photographers;
 DROP TABLE IF EXISTS reviews;
 DROP TABLE IF EXISTS booking_status_logs;
 DROP TABLE IF EXISTS bookings;
@@ -18,6 +29,7 @@ DROP TABLE IF EXISTS photographer_articles;
 DROP TABLE IF EXISTS banners;
 DROP TABLE IF EXISTS notifications;
 DROP TABLE IF EXISTS activity_logs;
+DROP TABLE IF EXISTS login_attempts;
 DROP TABLE IF EXISTS password_resets;
 DROP TABLE IF EXISTS photographer_profiles;
 DROP TABLE IF EXISTS service_categories;
@@ -65,6 +77,17 @@ CREATE TABLE password_resets (
   created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
   KEY idx_password_resets_email (email),
   UNIQUE KEY uk_password_resets_token (token)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE login_attempts (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  email VARCHAR(190) NOT NULL,
+  ip_address VARCHAR(64) NOT NULL,
+  success TINYINT(1) NOT NULL DEFAULT 0,
+  user_agent VARCHAR(255) NULL,
+  attempted_at DATETIME NOT NULL,
+  KEY idx_login_attempts_email_ip_time (email, ip_address, attempted_at),
+  KEY idx_login_attempts_attempted_at (attempted_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE districts (
@@ -116,6 +139,12 @@ CREATE TABLE photographer_profiles (
   profile_views INT UNSIGNED NOT NULL DEFAULT 0,
   average_rating DECIMAL(3,2) NOT NULL DEFAULT 0.00,
   total_reviews INT UNSIGNED NOT NULL DEFAULT 0,
+  response_rate DECIMAL(5,2) NOT NULL DEFAULT 0.00,
+  average_response_hours DECIMAL(8,2) NOT NULL DEFAULT 0.00,
+  is_verified TINYINT(1) NOT NULL DEFAULT 0,
+  verified_at DATETIME NULL,
+  is_featured TINYINT(1) NOT NULL DEFAULT 0,
+  featured_until DATETIME NULL,
   created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   deleted_at DATETIME NULL,
@@ -125,6 +154,8 @@ CREATE TABLE photographer_profiles (
   KEY idx_photographer_price (starting_price),
   KEY idx_photographer_rating (average_rating, total_reviews),
   KEY idx_photographer_district (main_district_id),
+  KEY idx_photographer_featured (is_featured, featured_until),
+  KEY idx_photographer_verified (is_verified),
   CONSTRAINT fk_photographer_user FOREIGN KEY (user_id) REFERENCES users(id),
   CONSTRAINT fk_photographer_main_district FOREIGN KEY (main_district_id) REFERENCES districts(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -335,6 +366,139 @@ CREATE TABLE settings (
   UNIQUE KEY uk_settings_key (setting_key)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE favorite_photographers (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  customer_id INT UNSIGNED NOT NULL,
+  photographer_id INT UNSIGNED NOT NULL,
+  created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_favorite_customer_photographer (customer_id, photographer_id),
+  KEY idx_favorite_photographer (photographer_id),
+  CONSTRAINT fk_favorite_customer FOREIGN KEY (customer_id) REFERENCES users(id),
+  CONSTRAINT fk_favorite_photographer FOREIGN KEY (photographer_id) REFERENCES photographer_profiles(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE faqs (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  category VARCHAR(100) NOT NULL,
+  question VARCHAR(255) NOT NULL,
+  answer TEXT NOT NULL,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  sort_order INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  KEY idx_faq_active (is_active, category, sort_order)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE blogs (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  admin_id INT UNSIGNED NOT NULL,
+  title VARCHAR(220) NOT NULL,
+  slug VARCHAR(240) NOT NULL,
+  cover_image VARCHAR(255) NULL,
+  excerpt TEXT NULL,
+  content MEDIUMTEXT NOT NULL,
+  status ENUM('draft','published','hidden') NOT NULL DEFAULT 'draft',
+  published_at DATETIME NULL,
+  created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  deleted_at DATETIME NULL,
+  UNIQUE KEY uk_blogs_slug (slug),
+  KEY idx_blogs_admin (admin_id),
+  KEY idx_blogs_status (status, published_at),
+  CONSTRAINT fk_blogs_admin FOREIGN KEY (admin_id) REFERENCES users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE contact_messages (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(160) NOT NULL,
+  email VARCHAR(190) NOT NULL,
+  phone VARCHAR(50) NULL,
+  subject VARCHAR(220) NOT NULL,
+  message TEXT NOT NULL,
+  status ENUM('unread','read','replied') NOT NULL DEFAULT 'unread',
+  created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  KEY idx_contact_status (status, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE reports (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  reporter_id INT UNSIGNED NULL,
+  target_type ENUM('photographer','review','booking','article') NOT NULL,
+  target_id INT UNSIGNED NOT NULL,
+  reason VARCHAR(180) NOT NULL,
+  detail TEXT NULL,
+  status ENUM('pending','reviewed','resolved','rejected') NOT NULL DEFAULT 'pending',
+  admin_note TEXT NULL,
+  created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  KEY idx_reports_target (target_type, target_id),
+  KEY idx_reports_status (status, created_at),
+  KEY idx_reports_reporter (reporter_id),
+  CONSTRAINT fk_reports_reporter FOREIGN KEY (reporter_id) REFERENCES users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE search_logs (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id INT UNSIGNED NULL,
+  keyword VARCHAR(190) NULL,
+  district_id INT UNSIGNED NULL,
+  category_id INT UNSIGNED NULL,
+  search_date DATE NOT NULL,
+  ip_address VARCHAR(64) NULL,
+  created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_search_user (user_id),
+  KEY idx_search_district (district_id),
+  KEY idx_search_category (category_id),
+  KEY idx_search_keyword (keyword),
+  CONSTRAINT fk_search_user FOREIGN KEY (user_id) REFERENCES users(id),
+  CONSTRAINT fk_search_district FOREIGN KEY (district_id) REFERENCES districts(id),
+  CONSTRAINT fk_search_category FOREIGN KEY (category_id) REFERENCES service_categories(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE recently_viewed_photographers (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id INT UNSIGNED NOT NULL,
+  photographer_id INT UNSIGNED NOT NULL,
+  viewed_at DATETIME NOT NULL,
+  UNIQUE KEY uk_recent_user_photographer (user_id, photographer_id),
+  KEY idx_recent_user (user_id, viewed_at),
+  CONSTRAINT fk_recent_user FOREIGN KEY (user_id) REFERENCES users(id),
+  CONSTRAINT fk_recent_photographer FOREIGN KEY (photographer_id) REFERENCES photographer_profiles(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE tags (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(100) NOT NULL,
+  slug VARCHAR(120) NOT NULL,
+  created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_tags_slug (slug)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE portfolio_tags (
+  portfolio_id INT UNSIGNED NOT NULL,
+  tag_id INT UNSIGNED NOT NULL,
+  PRIMARY KEY (portfolio_id, tag_id),
+  CONSTRAINT fk_portfolio_tags_portfolio FOREIGN KEY (portfolio_id) REFERENCES photographer_portfolios(id),
+  CONSTRAINT fk_portfolio_tags_tag FOREIGN KEY (tag_id) REFERENCES tags(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE article_tags (
+  article_id INT UNSIGNED NOT NULL,
+  tag_id INT UNSIGNED NOT NULL,
+  PRIMARY KEY (article_id, tag_id),
+  CONSTRAINT fk_article_tags_article FOREIGN KEY (article_id) REFERENCES photographer_articles(id),
+  CONSTRAINT fk_article_tags_tag FOREIGN KEY (tag_id) REFERENCES tags(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE blog_tags (
+  blog_id INT UNSIGNED NOT NULL,
+  tag_id INT UNSIGNED NOT NULL,
+  PRIMARY KEY (blog_id, tag_id),
+  CONSTRAINT fk_blog_tags_blog FOREIGN KEY (blog_id) REFERENCES blogs(id),
+  CONSTRAINT fk_blog_tags_tag FOREIGN KEY (tag_id) REFERENCES tags(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 INSERT INTO roles (id, name, display_name) VALUES
 (1, 'customer', 'ลูกค้า'),
 (2, 'photographer', 'ช่างภาพ'),
@@ -434,8 +598,256 @@ INSERT INTO settings (setting_key, setting_value) VALUES
 ('admin_email', 'admin@example.com'),
 ('admin_phone', '0890000000'),
 ('allow_photographer_registration', '1'),
-('nearby_radius_km', '30');
+('nearby_radius_km', '30'),
+('enforce_https', '0'),
+('login_attempt_limit', '5');
 
 INSERT INTO activity_logs (user_id, action, table_name, record_id, ip_address, user_agent, description) VALUES
 (1, 'seed_database', 'settings', 1, '127.0.0.1', 'Seeder', 'Initial database seed');
 
+INSERT INTO users (id, role_id, name, email, phone, password, avatar, status, email_verified_at) VALUES
+(6, 1, 'ภัทรา ใจดี', 'pattra@example.com', '0811111106', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi.', 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300&q=80', 'active', NOW()),
+(7, 1, 'ณัฐพล เชียงราย', 'nattapon@example.com', '0811111107', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi.', 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=300&q=80', 'active', NOW()),
+(8, 1, 'ชลธิชา เมืองเหนือ', 'chonthicha@example.com', '0811111108', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi.', 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80', 'active', NOW()),
+(9, 1, 'กิตติพงษ์ แม่สาย', 'kittipong@example.com', '0811111109', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi.', 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=300&q=80', 'active', NOW()),
+(10, 1, 'อรทัย พาน', 'ornthai@example.com', '0811111110', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi.', 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&q=80', 'active', NOW()),
+(11, 1, 'ธนวัฒน์ เทิง', 'thanawat@example.com', '0811111112', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi.', 'https://images.unsplash.com/photo-1519345182560-3f2917c472ef?auto=format&fit=crop&w=300&q=80', 'active', NOW()),
+(12, 1, 'มินตรา แม่จัน', 'mintra@example.com', '0811111113', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi.', 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=300&q=80', 'active', NOW()),
+(13, 2, 'ล้านนา เลนส์', 'lannalens@example.com', '0822222213', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi.', NULL, 'active', NOW()),
+(14, 2, 'ภูชี้ฟ้า โมเมนต์', 'phuchifamoment@example.com', '0822222214', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi.', NULL, 'active', NOW()),
+(15, 2, 'แม่สาย วิชวล', 'maesaivisual@example.com', '0822222215', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi.', NULL, 'active', NOW()),
+(16, 2, 'พาน โปรไฟล์', 'phanprofile@example.com', '0822222216', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi.', NULL, 'active', NOW()),
+(17, 2, 'แม่สรวย ครีเอทีฟ', 'maesuai@example.com', '0822222217', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi.', NULL, 'active', NOW()),
+(18, 2, 'เชียงแสน สตูดิโอ', 'chiangsaen@example.com', '0822222218', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi.', NULL, 'active', NOW()),
+(19, 2, 'เทิง อีเวนต์ โฟโต้', 'thoengevent@example.com', '0822222219', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi.', NULL, 'active', NOW()),
+(20, 2, 'แม่ฟ้าหลวง เวดดิ้ง', 'maefahluangwedding@example.com', '0822222220', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi.', NULL, 'active', NOW()),
+(21, 2, 'เวียงแก่น แกลเลอรี', 'wiangkaengallery@example.com', '0822222221', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi.', NULL, 'active', NOW()),
+(22, 2, 'แม่ลาว พิคเจอร์', 'maelaopicture@example.com', '0822222222', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi.', NULL, 'active', NOW());
+
+INSERT INTO photographer_profiles
+(id, user_id, display_name, slug, bio, experience_years, starting_price, profile_image, cover_image, phone_public, line_id, facebook_url, instagram_url, website_url, main_district_id, approval_status, is_available, profile_views, average_rating, total_reviews)
+VALUES
+(4, 13, 'ล้านนา เลนส์', 'lanna-lens', 'ช่างภาพพอร์ตเทรตและไลฟ์สไตล์ในเมืองเชียงราย เน้นภาพสะอาด โทนพรีเมียม และจัดท่าทางเป็นธรรมชาติ', 7, 2200, 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=500&q=80', 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=1600&q=85', '0822222213', 'lannalens', 'https://facebook.com/lannalens', 'https://instagram.com/lannalens', '', 1, 'approved', 1, 342, 0, 0),
+(5, 14, 'ภูชี้ฟ้า โมเมนต์', 'phu-chi-fa-moment', 'ถ่ายคู่รัก พรีเวดดิ้ง และภาพท่องเที่ยวบนภูเขา แสงเช้า หมอก และวิวธรรมชาติ', 9, 4200, 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=500&q=80', 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1600&q=85', '0822222214', 'phuchifamoment', 'https://facebook.com/phuchifamoment', 'https://instagram.com/phuchifamoment', '', 4, 'approved', 1, 287, 0, 0),
+(6, 15, 'แม่สาย วิชวล', 'mae-sai-visual', 'ทีมถ่ายภาพอีเวนต์ ร้านค้า และคอนเทนต์ธุรกิจในแม่สาย เชียงแสน และโซนเหนือ', 6, 3000, 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=500&q=80', 'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=1600&q=85', '0822222215', 'maesaivisual', 'https://facebook.com/maesaivisual', 'https://instagram.com/maesaivisual', '', 9, 'approved', 1, 198, 0, 0),
+(7, 16, 'พาน โปรไฟล์', 'phan-profile', 'ถ่ายรับปริญญา โปรไฟล์ธุรกิจ และภาพครอบครัว โทนอบอุ่น สื่อสารง่าย', 5, 1800, 'https://images.unsplash.com/photo-1531891437562-4301cf35b7e4?auto=format&fit=crop&w=500&q=80', 'https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&w=1600&q=85', '0822222216', 'phanprofile', 'https://facebook.com/phanprofile', 'https://instagram.com/phanprofile', '', 5, 'approved', 1, 166, 0, 0),
+(8, 17, 'แม่สรวย ครีเอทีฟ', 'mae-suai-creative', 'ภาพสินค้า คาเฟ่ โรงแรม และรีสอร์ทในโซนแม่สรวย เวียงป่าเป้า เน้นภาพขายได้จริง', 8, 3600, 'https://images.unsplash.com/photo-1530268729831-4b0b9e170218?auto=format&fit=crop&w=500&q=80', 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=1600&q=85', '0822222217', 'maesuai', 'https://facebook.com/maesuai', 'https://instagram.com/maesuai', '', 10, 'approved', 1, 230, 0, 0),
+(9, 18, 'เชียงแสน สตูดิโอ', 'chiang-saen-studio', 'ถ่ายครอบครัว งานแต่งเล็ก ๆ และภาพท่องเที่ยวริมโขงในเชียงแสน', 10, 3900, 'https://images.unsplash.com/photo-1527980965255-d3b416303d12?auto=format&fit=crop&w=500&q=80', 'https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&w=1600&q=85', '0822222218', 'chiangsaenstudio', 'https://facebook.com/chiangsaenstudio', 'https://instagram.com/chiangsaenstudio', '', 8, 'approved', 1, 310, 0, 0),
+(10, 19, 'เทิง อีเวนต์ โฟโต้', 'thoeng-event-photo', 'ถ่ายงานประชุม กีฬา งานโรงเรียน และกิจกรรมองค์กร เก็บจังหวะไว ส่งงานเป็นระบบ', 6, 4500, 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=500&q=80', 'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&w=1600&q=85', '0822222219', 'thoengevent', 'https://facebook.com/thoengevent', 'https://instagram.com/thoengevent', '', 4, 'approved', 1, 141, 0, 0),
+(11, 20, 'แม่ฟ้าหลวง เวดดิ้ง', 'mae-fah-luang-wedding', 'ทีมงานแต่งและพรีเวดดิ้งบนดอย โทนภาพ cinematic พร้อมช่วยวางแผนโลเคชัน', 11, 6500, 'https://images.unsplash.com/photo-1519345182560-3f2917c472ef?auto=format&fit=crop&w=500&q=80', 'https://images.unsplash.com/photo-1523438885200-e635ba2c371e?auto=format&fit=crop&w=1600&q=85', '0822222220', 'mflwedding', 'https://facebook.com/mflwedding', 'https://instagram.com/mflwedding', '', 15, 'approved', 1, 412, 0, 0),
+(12, 21, 'เวียงแก่น แกลเลอรี', 'wiang-kaen-gallery', 'ถ่ายภาพท่องเที่ยว คู่รัก และครอบครัวในเวียงแก่น เชียงของ และริมแม่น้ำโขง', 4, 2600, 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=500&q=80', 'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1600&q=85', '0822222221', 'wiangkaengallery', 'https://facebook.com/wiangkaengallery', 'https://instagram.com/wiangkaengallery', '', 13, 'approved', 1, 116, 0, 0),
+(13, 22, 'แม่ลาว พิคเจอร์', 'mae-lao-picture', 'ถ่ายโปรไฟล์ รับปริญญา และคอนเทนต์โซเชียลในแม่ลาว เมืองเชียงราย และพาน', 5, 2100, 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=500&q=80', 'https://images.unsplash.com/photo-1520975682031-a769b5b874c3?auto=format&fit=crop&w=1600&q=85', '0822222222', 'maelaopicture', 'https://facebook.com/maelaopicture', 'https://instagram.com/maelaopicture', '', 16, 'approved', 1, 177, 0, 0);
+
+INSERT INTO photographer_services (photographer_id, category_id, description, starting_price, is_active) VALUES
+(4, 2, 'รับปริญญาและโปรไฟล์ในเมืองเชียงราย', 2200, 1),(4, 6, 'โปรไฟล์ธุรกิจ ภาพผู้บริหาร และ personal branding', 2600, 1),
+(5, 1, 'พรีเวดดิ้งภูเขาและงานแต่ง intimate', 7200, 1),(5, 3, 'ถ่ายคู่รักและครอบครัวกลางธรรมชาติ', 4200, 1),
+(6, 4, 'ถ่ายสินค้า ร้านค้า คาเฟ่ และคอนเทนต์แบรนด์', 3400, 1),(6, 5, 'ถ่ายงานอีเวนต์และกิจกรรมในแม่สาย', 4800, 1),
+(7, 2, 'รับปริญญาและรูปครอบครัวในอำเภอพาน', 1800, 1),(7, 6, 'ภาพโปรไฟล์สมัครงานและโซเชียล', 1900, 1),
+(8, 4, 'ภาพสินค้า อาหาร โรงแรม และรีสอร์ท', 4200, 1),(8, 5, 'อีเวนต์องค์กรและกิจกรรมรีสอร์ท', 5000, 1),
+(9, 1, 'งานแต่งเล็กริมโขงและพิธีครอบครัว', 5900, 1),(9, 3, 'ภาพครอบครัวและทริปเชียงแสน', 3900, 1),
+(10, 5, 'งานประชุม งานกีฬา และกิจกรรมองค์กร', 4500, 1),(10, 4, 'ภาพโปรโมทกิจกรรมและสื่อประชาสัมพันธ์', 3800, 1),
+(11, 1, 'งานแต่งและพรีเวดดิ้งบนดอยแบบเต็มวัน', 9800, 1),(11, 6, 'โปรไฟล์คู่รักและแฟชั่น outdoor', 4200, 1),
+(12, 3, 'คู่รัก ครอบครัว และท่องเที่ยวเวียงแก่น', 2600, 1),(12, 5, 'อีเวนต์เล็กและงานชุมชนริมโขง', 3600, 1),
+(13, 2, 'รับปริญญาและภาพครอบครัวโซนแม่ลาว', 2100, 1),(13, 6, 'โปรไฟล์ส่วนตัวและคอนเทนต์ออนไลน์', 2300, 1);
+
+INSERT INTO photographer_service_areas (photographer_id, district_id, is_primary, is_active) VALUES
+(4, 1, 1, 1),(4, 2, 0, 1),(4, 16, 0, 1),
+(5, 4, 1, 1),(5, 12, 0, 1),(5, 14, 0, 1),
+(6, 9, 1, 1),(6, 8, 0, 1),(6, 15, 0, 1),
+(7, 5, 1, 1),(7, 6, 0, 1),(7, 16, 0, 1),
+(8, 10, 1, 1),(8, 11, 0, 1),(8, 16, 0, 1),
+(9, 8, 1, 1),(9, 3, 0, 1),(9, 9, 0, 1),
+(10, 4, 1, 1),(10, 12, 0, 1),(10, 14, 0, 1),
+(11, 15, 1, 1),(11, 7, 0, 1),(11, 9, 0, 1),
+(12, 13, 1, 1),(12, 3, 0, 1),(12, 14, 0, 1),
+(13, 16, 1, 1),(13, 1, 0, 1),(13, 5, 0, 1);
+
+INSERT INTO photographer_portfolios (photographer_id, title, description, image_path, is_featured, sort_order) VALUES
+(4, 'City Portrait Set', 'พอร์ตเทรตเมืองเชียงราย', 'https://images.unsplash.com/photo-1492447166138-50c3889fccb1?auto=format&fit=crop&w=900&q=85', 1, 1),
+(4, 'Graduation Morning', 'รับปริญญาแสงเช้า', 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=900&q=85', 0, 2),
+(4, 'Business Profile', 'ภาพผู้บริหาร', 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=900&q=85', 0, 3),
+(4, 'Warm Studio', 'โทนอบอุ่นในสตูดิโอ', 'https://images.unsplash.com/photo-1512316609839-ce289d3eba0a?auto=format&fit=crop&w=900&q=85', 0, 4),
+(5, 'Mountain Prewedding', 'พรีเวดดิ้งภูเขา', 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=900&q=85', 1, 1),
+(5, 'Golden Fog', 'หมอกเช้าและแสงทอง', 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=85', 0, 2),
+(5, 'Couple Journey', 'ภาพคู่รักระหว่างเดินทาง', 'https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&w=900&q=85', 0, 3),
+(5, 'Outdoor Vows', 'พิธีเล็กกลางแจ้ง', 'https://images.unsplash.com/photo-1523438885200-e635ba2c371e?auto=format&fit=crop&w=900&q=85', 0, 4),
+(6, 'Brand Event', 'อีเวนต์ธุรกิจ', 'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=900&q=85', 1, 1),
+(6, 'Cafe Campaign', 'ภาพคาเฟ่และเมนู', 'https://images.unsplash.com/photo-1445116572660-236099ec97a0?auto=format&fit=crop&w=900&q=85', 0, 2),
+(6, 'Product Lightbox', 'ภาพสินค้าแสงนุ่ม', 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=900&q=85', 0, 3),
+(6, 'Team Activity', 'กิจกรรมองค์กร', 'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&w=900&q=85', 0, 4),
+(7, 'Graduation Smile', 'รับปริญญาโทนสดใส', 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=900&q=85', 1, 1),
+(7, 'Family Field', 'ครอบครัวกลางทุ่ง', 'https://images.unsplash.com/photo-1511895426328-dc8714191300?auto=format&fit=crop&w=900&q=85', 0, 2),
+(7, 'Profile Daylight', 'โปรไฟล์แสงธรรมชาติ', 'https://images.unsplash.com/photo-1531891437562-4301cf35b7e4?auto=format&fit=crop&w=900&q=85', 0, 3),
+(7, 'Casual Portrait', 'พอร์ตเทรตเรียบง่าย', 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=900&q=85', 0, 4),
+(8, 'Resort Dining', 'ภาพอาหารรีสอร์ท', 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=900&q=85', 1, 1),
+(8, 'Hotel Room', 'ภาพห้องพัก', 'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=900&q=85', 0, 2),
+(8, 'Coffee Texture', 'ภาพเครื่องดื่ม', 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=900&q=85', 0, 3),
+(8, 'Lifestyle Product', 'สินค้าไลฟ์สไตล์', 'https://images.unsplash.com/photo-1511556820780-d912e42b4980?auto=format&fit=crop&w=900&q=85', 0, 4),
+(9, 'Mekong Wedding', 'งานแต่งริมโขง', 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=900&q=85', 1, 1),
+(9, 'Family River', 'ครอบครัวริมแม่น้ำ', 'https://images.unsplash.com/photo-1511895426328-dc8714191300?auto=format&fit=crop&w=900&q=85', 0, 2),
+(9, 'Travel Couple', 'คู่รักท่องเที่ยว', 'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=900&q=85', 0, 3),
+(9, 'Golden Triangle', 'ภาพทริปเชียงแสน', 'https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&w=900&q=85', 0, 4),
+(10, 'Conference Hall', 'งานประชุม', 'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&w=900&q=85', 1, 1),
+(10, 'Stage Moment', 'บนเวที', 'https://images.unsplash.com/photo-1501612780327-45045538702b?auto=format&fit=crop&w=900&q=85', 0, 2),
+(10, 'School Activity', 'กิจกรรมโรงเรียน', 'https://images.unsplash.com/photo-1523580846011-d3a5bc25702b?auto=format&fit=crop&w=900&q=85', 0, 3),
+(10, 'Corporate Team', 'ภาพทีมองค์กร', 'https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=900&q=85', 0, 4),
+(11, 'Doi Wedding', 'งานแต่งบนดอย', 'https://images.unsplash.com/photo-1523438885200-e635ba2c371e?auto=format&fit=crop&w=900&q=85', 1, 1),
+(11, 'Bride Portrait', 'พอร์ตเทรตเจ้าสาว', 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=900&q=85', 0, 2),
+(11, 'Cinematic Couple', 'คู่รัก cinematic', 'https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&w=900&q=85', 0, 3),
+(11, 'Outdoor Fashion', 'แฟชั่น outdoor', 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=900&q=85', 0, 4),
+(12, 'River Family', 'ครอบครัวเวียงแก่น', 'https://images.unsplash.com/photo-1511895426328-dc8714191300?auto=format&fit=crop&w=900&q=85', 1, 1),
+(12, 'Local Event', 'งานชุมชน', 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&w=900&q=85', 0, 2),
+(12, 'Travel Portrait', 'พอร์ตเทรตท่องเที่ยว', 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=900&q=85', 0, 3),
+(12, 'Mekong Lifestyle', 'ไลฟ์สไตล์ริมโขง', 'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=900&q=85', 0, 4),
+(13, 'Mae Lao Profile', 'โปรไฟล์แม่ลาว', 'https://images.unsplash.com/photo-1512316609839-ce289d3eba0a?auto=format&fit=crop&w=900&q=85', 1, 1),
+(13, 'Graduation Family', 'รับปริญญาครอบครัว', 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=900&q=85', 0, 2),
+(13, 'Social Content', 'คอนเทนต์โซเชียล', 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=900&q=85', 0, 3),
+(13, 'Warm Portrait', 'พอร์ตเทรตอบอุ่น', 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=900&q=85', 0, 4);
+
+INSERT INTO photographer_availability (photographer_id, available_date, time_slot, status, note) VALUES
+(4, '2026-06-04', 'morning', 'available', ''),(4, '2026-06-04', 'afternoon', 'available', ''),(4, '2026-06-08', 'full_day', 'available', ''),
+(5, '2026-06-05', 'full_day', 'available', ''),(5, '2026-06-12', 'morning', 'available', ''),
+(6, '2026-06-06', 'morning', 'available', ''),(6, '2026-06-06', 'afternoon', 'available', ''),
+(7, '2026-06-07', 'full_day', 'available', ''),(7, '2026-06-13', 'morning', 'available', ''),
+(8, '2026-06-08', 'afternoon', 'available', ''),(8, '2026-06-15', 'full_day', 'available', ''),
+(9, '2026-06-09', 'morning', 'available', ''),(9, '2026-06-16', 'full_day', 'available', ''),
+(10, '2026-06-10', 'full_day', 'available', ''),(10, '2026-06-17', 'afternoon', 'available', ''),
+(11, '2026-06-11', 'full_day', 'available', ''),(11, '2026-06-18', 'morning', 'available', ''),
+(12, '2026-06-12', 'afternoon', 'available', ''),(12, '2026-06-19', 'full_day', 'available', ''),
+(13, '2026-06-13', 'morning', 'available', ''),(13, '2026-06-20', 'afternoon', 'available', '');
+
+INSERT INTO bookings (id, booking_code, customer_id, photographer_id, category_id, district_id, booking_date, time_slot, contact_name, contact_phone, contact_channel, job_detail, note, status, completed_at) VALUES
+(2, 'CRB260402000002', 6, 4, 6, 1, '2026-04-02', 'morning', 'ภัทรา ใจดี', '0811111106', 'LINE: pattra', 'ถ่ายโปรไฟล์ธุรกิจในเมืองเชียงราย', '', 'completed', '2026-04-02 14:00:00'),
+(3, 'CRB260403000003', 7, 5, 1, 4, '2026-04-03', 'full_day', 'ณัฐพล เชียงราย', '0811111107', 'Facebook', 'ถ่ายพรีเวดดิ้งบนภูเขา', 'อยากได้หมอกเช้า', 'completed', '2026-04-03 18:00:00'),
+(4, 'CRB260404000004', 8, 6, 4, 9, '2026-04-04', 'afternoon', 'ชลธิชา เมืองเหนือ', '0811111108', 'LINE: chon', 'ถ่ายภาพสินค้าและร้านค้า', '', 'completed', '2026-04-04 16:00:00'),
+(5, 'CRB260405000005', 9, 7, 2, 5, '2026-04-05', 'morning', 'กิตติพงษ์ แม่สาย', '0811111109', 'โทรศัพท์', 'ถ่ายรับปริญญาพร้อมครอบครัว', '', 'completed', '2026-04-05 13:00:00'),
+(6, 'CRB260406000006', 10, 8, 4, 10, '2026-04-06', 'full_day', 'อรทัย พาน', '0811111110', 'LINE: ornthai', 'ถ่ายภาพรีสอร์ทและอาหาร', '', 'completed', '2026-04-06 17:00:00'),
+(7, 'CRB260407000007', 11, 9, 3, 8, '2026-04-07', 'afternoon', 'ธนวัฒน์ เทิง', '0811111112', 'Facebook', 'ถ่ายครอบครัวริมโขง', '', 'completed', '2026-04-07 16:30:00'),
+(8, 'CRB260408000008', 12, 10, 5, 4, '2026-04-08', 'full_day', 'มินตรา แม่จัน', '0811111113', 'LINE: mintra', 'ถ่ายงานสัมมนาบริษัท', '', 'completed', '2026-04-08 18:00:00'),
+(9, 'CRB260409000009', 6, 11, 1, 15, '2026-04-09', 'full_day', 'ภัทรา ใจดี', '0811111106', 'LINE: pattra', 'ถ่ายงานแต่งบนดอย', '', 'completed', '2026-04-09 20:00:00'),
+(10, 'CRB260410000010', 7, 12, 3, 13, '2026-04-10', 'morning', 'ณัฐพล เชียงราย', '0811111107', 'โทรศัพท์', 'ถ่ายภาพทริปครอบครัว', '', 'completed', '2026-04-10 13:00:00'),
+(11, 'CRB260411000011', 8, 13, 6, 16, '2026-04-11', 'afternoon', 'ชลธิชา เมืองเหนือ', '0811111108', 'Instagram', 'ถ่ายโปรไฟล์โซเชียล', '', 'completed', '2026-04-11 16:00:00'),
+(12, 'CRB260412000012', 9, 1, 1, 1, '2026-04-12', 'full_day', 'กิตติพงษ์ แม่สาย', '0811111109', 'LINE: kitti', 'ถ่ายงานแต่งในสวน', '', 'completed', '2026-04-12 19:00:00'),
+(13, 'CRB260413000013', 10, 2, 5, 3, '2026-04-13', 'morning', 'อรทัย พาน', '0811111110', 'Facebook', 'ถ่ายอีเวนต์ริมโขง', '', 'completed', '2026-04-13 14:00:00'),
+(14, 'CRB260414000014', 11, 4, 2, 1, '2026-04-14', 'afternoon', 'ธนวัฒน์ เทิง', '0811111112', 'LINE: thanawat', 'ถ่ายรับปริญญาในเมือง', '', 'completed', '2026-04-14 17:00:00'),
+(15, 'CRB260415000015', 12, 5, 3, 4, '2026-04-15', 'full_day', 'มินตรา แม่จัน', '0811111113', 'โทรศัพท์', 'ถ่ายคู่รักบนภูเขา', '', 'completed', '2026-04-15 18:00:00'),
+(16, 'CRB260416000016', 6, 6, 4, 9, '2026-04-16', 'morning', 'ภัทรา ใจดี', '0811111106', 'LINE: pattra', 'ถ่ายสินค้าเปิดตัวใหม่', '', 'completed', '2026-04-16 12:00:00'),
+(17, 'CRB260417000017', 7, 7, 6, 5, '2026-04-17', 'afternoon', 'ณัฐพล เชียงราย', '0811111107', 'Facebook', 'ถ่ายภาพโปรไฟล์ทีม', '', 'completed', '2026-04-17 16:00:00'),
+(18, 'CRB260418000018', 8, 8, 4, 10, '2026-04-18', 'full_day', 'ชลธิชา เมืองเหนือ', '0811111108', 'LINE: chon', 'ถ่ายภาพโรงแรม', '', 'completed', '2026-04-18 18:00:00'),
+(19, 'CRB260501000019', 9, 9, 3, 8, '2026-05-01', 'morning', 'กิตติพงษ์ แม่สาย', '0811111109', 'โทรศัพท์', 'ถ่ายภาพครอบครัว', '', 'accepted', NULL),
+(20, 'CRB260502000020', 10, 10, 5, 4, '2026-05-02', 'full_day', 'อรทัย พาน', '0811111110', 'LINE: ornthai', 'ถ่ายงานเปิดตัวสินค้า', '', 'pending', NULL),
+(21, 'CRB260503000021', 11, 11, 1, 15, '2026-05-03', 'full_day', 'ธนวัฒน์ เทิง', '0811111112', 'Facebook', 'สอบถามแพ็กเกจพรีเวดดิ้ง', '', 'confirmed', NULL),
+(22, 'CRB260419000022', 9, 12, 5, 13, '2026-04-19', 'afternoon', 'กิตติพงษ์ แม่สาย', '0811111109', 'LINE: kitti', 'ถ่ายงานชุมชนริมโขง', '', 'completed', '2026-04-19 17:00:00'),
+(23, 'CRB260420000023', 10, 13, 2, 16, '2026-04-20', 'morning', 'อรทัย พาน', '0811111110', 'Facebook', 'ถ่ายรับปริญญาครอบครัว', '', 'completed', '2026-04-20 13:00:00');
+
+INSERT INTO reviews (id, booking_id, customer_id, photographer_id, rating_overall, rating_quality, rating_communication, rating_punctuality, rating_professional, comment, status) VALUES
+(2, 2, 6, 4, 5, 5, 5, 5, 5, 'ภาพโปรไฟล์ดูมืออาชีพมาก ช่วยแนะนำท่าทางดีมาก', 'visible'),
+(3, 3, 7, 5, 5, 5, 5, 4, 5, 'แสงเช้าสวยมาก ทีมงานตรงเวลาและช่วยเลือกมุมได้ดี', 'visible'),
+(4, 4, 8, 6, 4, 5, 4, 4, 4, 'รูปสินค้าใช้งานขายออนไลน์ได้ดี สีตรงและส่งไฟล์ครบ', 'visible'),
+(5, 5, 9, 7, 5, 5, 5, 5, 5, 'บรรยากาศสบาย ครอบครัวชอบรูปมาก', 'visible'),
+(6, 6, 10, 8, 5, 5, 4, 5, 5, 'ภาพอาหารและห้องพักดูแพงขึ้นมาก', 'visible'),
+(7, 7, 11, 9, 4, 4, 5, 4, 4, 'ถ่ายเด็กเก่งและใจเย็น ได้ภาพธรรมชาติ', 'visible'),
+(8, 8, 12, 10, 5, 5, 5, 5, 5, 'งานอีเวนต์เก็บครบทุกช่วงสำคัญ ส่งงานเป็นระบบ', 'visible'),
+(9, 9, 6, 11, 5, 5, 5, 5, 5, 'ภาพงานแต่งสวยเหมือนหนัง ประทับใจมาก', 'visible'),
+(10, 10, 7, 12, 4, 4, 4, 5, 4, 'โลเคชันดี ภาพครอบครัวออกมาอบอุ่น', 'visible'),
+(11, 11, 8, 13, 5, 5, 5, 5, 5, 'โปรไฟล์โซเชียลสวยและได้ไฟล์เร็ว', 'visible'),
+(12, 12, 9, 1, 5, 5, 5, 5, 5, 'งานแต่งโทนอบอุ่น เก็บโมเมนต์ดีมาก', 'visible'),
+(13, 13, 10, 2, 4, 4, 5, 4, 4, 'ถ่ายอีเวนต์ครบและคุยง่าย', 'visible'),
+(14, 14, 11, 4, 5, 5, 5, 5, 5, 'รูปออกมาดูแพงกว่าที่คิด ชอบมาก', 'visible'),
+(15, 15, 12, 5, 5, 5, 4, 5, 5, 'ภูเขาและแสงสวย ทีมงานช่วยดูแลดี', 'visible'),
+(16, 16, 6, 6, 4, 4, 4, 5, 4, 'รูปสินค้าชัดเจน เหมาะกับลงเว็บ', 'visible'),
+(17, 17, 7, 7, 5, 5, 5, 4, 5, 'ภาพทีมดูเป็นธรรมชาติ ไม่แข็ง', 'visible'),
+(18, 18, 8, 8, 5, 5, 5, 5, 5, 'ภาพโรงแรมดูน่าเข้าพักขึ้นมาก', 'visible'),
+(19, 22, 9, 12, 4, 4, 5, 4, 4, 'ถ่ายงานชุมชนได้ครบและบรรยากาศดี', 'visible'),
+(20, 23, 10, 13, 5, 5, 5, 5, 5, 'รับปริญญาครอบครัวออกมาน่ารักมาก', 'visible');
+
+INSERT INTO photographer_articles (photographer_id, title, slug, cover_image, content, status, published_at) VALUES
+(4, 'เลือกชุดถ่ายโปรไฟล์ธุรกิจอย่างไรให้ดูน่าเชื่อถือ', 'business-profile-outfit', 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=900&q=85', 'เลือกสีเรียบ เนื้อผ้าดี และเตรียมชุดสำรองอย่างน้อยหนึ่งชุดเพื่อให้ภาพมีตัวเลือกหลากหลาย', 'published', NOW()),
+(5, 'ช่วงเวลาที่เหมาะกับการถ่ายพรีเวดดิ้งบนภูเขา', 'mountain-prewedding-time', 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=85', 'แสงเช้าและก่อนพระอาทิตย์ตกช่วยให้ผิวดูนุ่มและเห็นมิติของภูเขาชัดเจน', 'published', NOW()),
+(6, 'ถ่ายภาพสินค้าให้ขายดีต้องเตรียมอะไรบ้าง', 'product-photo-brief', 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=900&q=85', 'เตรียมสินค้าให้สะอาด ระบุ mood ของแบรนด์ และทำ shot list ก่อนวันถ่าย', 'published', NOW()),
+(7, 'ท่าโพสรับปริญญาที่ดูธรรมชาติ', 'natural-graduation-pose', 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=900&q=85', 'เริ่มจากเดิน หัวเราะ และคุยกับครอบครัว ช่วยให้ภาพไม่แข็งและดูเป็นตัวเอง', 'published', NOW()),
+(8, 'ภาพโรงแรมและรีสอร์ทควรมีมุมไหนบ้าง', 'hotel-photo-shot-list', 'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=900&q=85', 'ควรมีภาพห้องพัก รายละเอียดสิ่งอำนวยความสะดวก อาหาร บรรยากาศ และ lifestyle scene', 'published', NOW()),
+(9, 'ไอเดียถ่ายภาพครอบครัวริมแม่น้ำโขง', 'mekong-family-ideas', 'https://images.unsplash.com/photo-1511895426328-dc8714191300?auto=format&fit=crop&w=900&q=85', 'เลือกกิจกรรมง่าย ๆ เช่น เดินเล่น จับมือ หรือเล่นกับเด็ก เพื่อให้ภาพมีเรื่องราว', 'published', NOW()),
+(10, 'เช็กลิสต์ก่อนถ่ายงานอีเวนต์องค์กร', 'event-photo-checklist', 'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&w=900&q=85', 'ส่งกำหนดการ รายชื่อบุคคลสำคัญ และจุดที่ต้องเก็บภาพให้ช่างภาพก่อนวันงาน', 'published', NOW()),
+(11, 'เตรียม mood board งานแต่งให้ช่างภาพเข้าใจเร็ว', 'wedding-moodboard-guide', 'https://images.unsplash.com/photo-1523438885200-e635ba2c371e?auto=format&fit=crop&w=900&q=85', 'รวมโทนสี ตัวอย่างภาพ และสิ่งที่ไม่ชอบไว้ในไฟล์เดียว ช่วยลดการสื่อสารผิดพลาด', 'published', NOW());
+
+INSERT INTO banners (title, subtitle, image_path, button_text, button_url, is_active, sort_order) VALUES
+('ช่างภาพงานแต่งและพรีเวดดิ้งเชียงราย', 'เลือกดู Portfolio และส่งคำขอจองได้ในไม่กี่ขั้นตอน', 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1600&q=85', 'ดูช่างภาพงานแต่ง', '/photographers.php?category_id=1', 1, 2),
+('ถ่ายโปรไฟล์ธุรกิจและคอนเทนต์โซเชียล', 'ค้นหาช่างภาพที่เข้าใจภาพลักษณ์มืออาชีพ', 'https://images.unsplash.com/photo-1512316609839-ce289d3eba0a?auto=format&fit=crop&w=1600&q=85', 'ค้นหาโปรไฟล์', '/photographers.php?category_id=6', 1, 3);
+
+UPDATE photographer_profiles p
+SET average_rating = (
+    SELECT COALESCE(ROUND(AVG(r.rating_overall), 2), 0)
+    FROM reviews r
+    WHERE r.photographer_id = p.id AND r.status = 'visible' AND r.deleted_at IS NULL
+),
+total_reviews = (
+    SELECT COUNT(*)
+    FROM reviews r
+    WHERE r.photographer_id = p.id AND r.status = 'visible' AND r.deleted_at IS NULL
+);
+
+INSERT INTO booking_status_logs (booking_id, old_status, new_status, changed_by, note)
+SELECT id, NULL, status, customer_id, 'Seed booking status'
+FROM bookings
+WHERE id BETWEEN 2 AND 23;
+
+UPDATE photographer_profiles
+SET response_rate = 96.50,
+    average_response_hours = 2.20,
+    is_verified = 1,
+    verified_at = NOW()
+WHERE approval_status = 'approved';
+
+UPDATE photographer_profiles
+SET is_featured = 1,
+    featured_until = DATE_ADD(NOW(), INTERVAL 45 DAY)
+WHERE id IN (1, 4, 5, 8, 11);
+
+INSERT INTO favorite_photographers (customer_id, photographer_id) VALUES
+(2, 1), (2, 4), (6, 4), (6, 11), (7, 5), (8, 6), (9, 9), (10, 8), (11, 10), (12, 13);
+
+INSERT INTO faqs (category, question, answer, is_active, sort_order) VALUES
+('การจอง', 'ต้องเข้าสู่ระบบก่อนส่งคำขอจองไหม', 'ต้องเข้าสู่ระบบก่อน เพื่อให้ระบบบันทึกประวัติคำขอจองและแจ้งเตือนได้ถูกต้อง', 1, 1),
+('การติดต่อ', 'เว็บไซต์รับชำระเงินแทนช่างภาพไหม', 'ไม่รับชำระเงิน เว็บไซต์เป็นเพียงตัวกลางค้นหา ส่งคำขอจอง และติดต่อช่างภาพเท่านั้น', 1, 2),
+('รีวิว', 'รีวิวช่างภาพได้เมื่อไหร่', 'รีวิวได้เมื่อ booking มีสถานะ completed และ 1 booking รีวิวได้ 1 ครั้ง', 1, 3),
+('ช่างภาพ', 'ช่างภาพต้องได้รับอนุมัติก่อนแสดงผลไหม', 'ใช่ ช่างภาพต้องได้รับการอนุมัติจาก Admin ก่อนจึงจะแสดงในหน้าค้นหา', 1, 4),
+('การค้นหา', 'ถ้าไม่พบช่างภาพในอำเภอที่เลือกทำอย่างไร', 'ระบบจะแนะนำช่างภาพใกล้เคียงโดยคำนวณจาก latitude/longitude ของอำเภอ', 1, 5);
+
+INSERT INTO blogs (admin_id, title, slug, cover_image, excerpt, content, status, published_at) VALUES
+(1, 'วิธีเลือกช่างภาพให้เหมาะกับงาน', 'choose-right-photographer', 'https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?auto=format&fit=crop&w=1200&q=85', 'เช็กลิสต์สั้น ๆ ก่อนเลือกช่างภาพให้ตรงกับสไตล์และงบประมาณ', 'เริ่มจากดู Portfolio ให้ตรงกับงาน ตรวจพื้นที่ให้บริการ อ่านรีวิว และคุยรายละเอียดวัน เวลา จำนวนคน และไฟล์ที่ต้องการก่อนส่งคำขอจอง', 'published', NOW()),
+(1, 'เตรียมตัวก่อนถ่ายรับปริญญา', 'graduation-photo-preparation', 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1200&q=85', 'เตรียมชุด เวลา และแผนถ่ายภาพให้วันถ่ายราบรื่น', 'เตรียมชุดสำรอง นัดหมายเวลาชัดเจน เลือกโลเคชันหลักและสำรอง พร้อมแจ้งจำนวนสมาชิกครอบครัวให้ช่างภาพทราบล่วงหน้า', 'published', NOW()),
+(1, 'ควรถามอะไรช่างภาพก่อนจอง', 'questions-before-booking-photographer', 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=1200&q=85', 'คำถามสำคัญที่ช่วยลดความเข้าใจผิดก่อนวันถ่าย', 'สอบถามระยะเวลาถ่าย จำนวนรูปที่ส่ง ระยะเวลาส่งงาน วิธีส่งไฟล์ ค่าเดินทาง และช่องทางติดต่อหลักให้ครบก่อนตกลงรายละเอียด', 'published', NOW()),
+(1, 'เช็กลิสต์ก่อนวันถ่ายภาพ', 'photo-day-checklist', 'https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&w=1200&q=85', 'รวมสิ่งที่ควรเตรียมก่อนถึงวันถ่ายจริง', 'เตรียม reference ชุด พร็อพ แผนเดินทาง และเผื่อเวลาแต่งหน้าเดินทางอย่างน้อย 30-60 นาที เพื่อให้วันถ่ายไม่เร่งเกินไป', 'published', NOW());
+
+INSERT INTO tags (id, name, slug) VALUES
+(1, 'Wedding', 'wedding'),
+(2, 'Portrait', 'portrait'),
+(3, 'Graduation', 'graduation'),
+(4, 'Family', 'family'),
+(5, 'Product', 'product'),
+(6, 'Chiang Rai', 'chiang-rai');
+
+INSERT INTO blog_tags (blog_id, tag_id) VALUES
+(1, 6), (1, 2), (2, 3), (2, 6), (3, 6), (4, 2);
+
+INSERT INTO article_tags (article_id, tag_id) VALUES
+(1, 1), (2, 4), (3, 2), (4, 1), (5, 5), (6, 3);
+
+INSERT INTO portfolio_tags (portfolio_id, tag_id)
+SELECT id, 6 FROM photographer_portfolios WHERE id <= 12;
+
+INSERT INTO contact_messages (name, email, phone, subject, message, status) VALUES
+('ลูกค้าทดลอง', 'demo-contact@example.com', '0800000000', 'สอบถามการใช้งาน', 'ต้องการทราบวิธีติดต่อช่างภาพหลังส่งคำขอจอง', 'unread');
+
+INSERT INTO reports (reporter_id, target_type, target_id, reason, detail, status) VALUES
+(2, 'photographer', 1, 'ข้อมูลติดต่อไม่ชัดเจน', 'อยากให้ตรวจสอบ LINE ID อีกครั้ง', 'pending'),
+(6, 'review', 1, 'รีวิวไม่เหมาะสม', 'ขอให้ Admin ตรวจสอบข้อความรีวิว', 'reviewed');
+
+INSERT INTO search_logs (user_id, keyword, district_id, category_id, search_date, ip_address) VALUES
+(2, 'งานแต่ง', 1, 1, CURDATE(), '127.0.0.1'),
+(6, 'โปรไฟล์', 16, 6, CURDATE(), '127.0.0.1'),
+(NULL, 'รับปริญญา', 5, 2, CURDATE(), '127.0.0.1');
+
+INSERT INTO recently_viewed_photographers (user_id, photographer_id, viewed_at) VALUES
+(2, 1, NOW()), (2, 4, NOW()), (6, 11, NOW()), (7, 5, NOW());

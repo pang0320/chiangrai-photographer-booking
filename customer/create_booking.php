@@ -3,7 +3,16 @@ require_once __DIR__ . '/../includes/functions.php';
 requireRole('customer');
 $user = current_user();
 $photographerId = (int)($_GET['photographer_id'] ?? $_POST['photographer_id'] ?? 0);
-$stmt = db()->prepare('SELECT p.*, u.id photographer_user_id FROM photographer_profiles p JOIN users u ON u.id=p.user_id WHERE p.id=? AND p.approval_status="approved" AND p.is_available=1 AND p.deleted_at IS NULL LIMIT 1');
+$stmt = db()->prepare('SELECT p.*, u.id AS photographer_user_id
+                       FROM photographer_profiles p
+                       JOIN users u ON u.id = p.user_id
+                       WHERE p.id = ?
+                         AND p.approval_status = "approved"
+                         AND p.is_available = 1
+                         AND u.status = "active"
+                         AND p.deleted_at IS NULL
+                         AND u.deleted_at IS NULL
+                       LIMIT 1');
 $stmt->execute([$photographerId]);
 $profile = $stmt->fetch();
 if (!$profile) exit('Photographer unavailable');
@@ -23,6 +32,32 @@ if (is_post()) {
     $slot = (string)($_POST['time_slot'] ?? '');
     if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date) || !in_array($slot, ['morning','afternoon','evening','full_day'], true) || !can_book_slot($photographerId, $date, $slot)) {
         flash('error', 'วันหรือช่วงเวลานี้ไม่พร้อมจอง');
+        redirect('/customer/create_booking.php?photographer_id=' . $photographerId);
+    }
+
+    $categoryAllowed = false;
+    foreach ($categories as $category) {
+        if ((int)$category['id'] === $categoryId) {
+            $categoryAllowed = true;
+            break;
+        }
+    }
+
+    $districtAllowed = false;
+    foreach ($districts as $district) {
+        if ((int)$district['id'] === $districtId) {
+            $districtAllowed = true;
+            break;
+        }
+    }
+
+    if (!$categoryAllowed || !$districtAllowed) {
+        flash('error', 'ประเภทงานหรือพื้นที่ไม่ถูกต้อง');
+        redirect('/customer/create_booking.php?photographer_id=' . $photographerId);
+    }
+
+    if (trim((string)$_POST['contact_name']) === '' || trim((string)$_POST['contact_phone']) === '' || trim((string)$_POST['job_detail']) === '') {
+        flash('error', 'กรุณากรอกข้อมูลสำคัญให้ครบ');
         redirect('/customer/create_booking.php?photographer_id=' . $photographerId);
     }
     $code = generate_booking_code();
@@ -74,7 +109,7 @@ include __DIR__ . '/../includes/header.php';
             <input name="contact_channel" required placeholder="ช่องทางติดต่อกลับ เช่น LINE, Facebook" class="stock-input rounded-2xl px-4 py-3 font-semibold">
             <textarea name="job_detail" required rows="5" placeholder="รายละเอียดงาน" class="stock-input rounded-2xl px-4 py-3 font-semibold"></textarea>
             <textarea name="note" rows="3" placeholder="หมายเหตุ" class="stock-input rounded-2xl px-4 py-3 font-semibold"></textarea>
-            <button class="stock-button rounded-full px-5 py-3 font-black">ส่งคำขอจอง</button>
+            <button data-confirm="ยืนยันส่งคำขอจอง?" class="stock-button rounded-full px-5 py-3 font-black"><i class="fa-solid fa-calendar-check mr-2"></i>ส่งคำขอจอง</button>
         </form>
     </div>
 </section>

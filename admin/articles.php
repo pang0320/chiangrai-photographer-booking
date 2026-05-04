@@ -68,9 +68,9 @@ include __DIR__ . '/../includes/header.php';
                             <form method="post" class="flex flex-wrap gap-2">
                                 <?= csrf_field() ?>
                                 <input type="hidden" name="id" value="<?= (int)$article['id'] ?>">
-                                <button name="action" value="publish" class="rounded-full bg-emerald-50 px-3 py-1.5 font-black text-emerald-700">publish</button>
-                                <button name="action" value="hide" class="rounded-full bg-amber-50 px-3 py-1.5 font-black text-amber-700">hide</button>
-                                <button data-confirm="ลบบทความนี้?" name="action" value="delete" class="rounded-full bg-red-50 px-3 py-1.5 font-black text-red-700">delete</button>
+                                <button name="action" value="publish" class="rounded-full bg-emerald-50 px-3 py-1.5 font-black text-emerald-700"><i class="fa-solid fa-check mr-1"></i>publish</button>
+                                <button name="action" value="hide" class="rounded-full bg-amber-50 px-3 py-1.5 font-black text-amber-700"><i class="fa-solid fa-eye-slash mr-1"></i>hide</button>
+                                <button data-confirm="ลบบทความนี้?" name="action" value="delete" class="rounded-full bg-red-50 px-3 py-1.5 font-black text-red-700"><i class="fa-solid fa-trash mr-1"></i>delete</button>
                             </form>
                         </td>
                     </tr>

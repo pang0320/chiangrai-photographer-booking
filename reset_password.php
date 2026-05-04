@@ -31,9 +31,8 @@ include __DIR__ . '/includes/header.php';
             <input type="hidden" name="token" value="<?= h($token) ?>">
             <input type="password" name="password" required minlength="8" placeholder="รหัสผ่านใหม่" class="rounded-2xl border px-4 py-3">
             <input type="password" name="password_confirmation" required minlength="8" placeholder="ยืนยันรหัสผ่าน" class="rounded-2xl border px-4 py-3">
-            <button class="rounded-2xl bg-indigo-600 px-5 py-3 font-bold text-white">บันทึกรหัสผ่าน</button>
+            <button class="rounded-2xl bg-indigo-600 px-5 py-3 font-bold text-white"><i class="fa-solid fa-floppy-disk mr-2"></i>บันทึกรหัสผ่าน</button>
         </form>
     </div>
 </section>
 <?php include __DIR__ . '/includes/footer.php'; ?>
-

@@ -1,6 +1,13 @@
 <?php
 $me = current_user();
-$currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+$sidebarRequestUri = '/';
+if (isset($_SERVER['REQUEST_URI'])) {
+    $sidebarRequestUri = $_SERVER['REQUEST_URI'];
+}
+$currentPath = parse_url($sidebarRequestUri, PHP_URL_PATH);
+if (!$currentPath) {
+    $currentPath = '/';
+}
 $navItems = [];
 $roleTitle = 'Workspace';
 $roleIcon = 'fa-grid-2';
@@ -10,18 +17,23 @@ if ($me) {
         $roleTitle = 'Admin Console';
         $roleIcon = 'fa-user-shield';
         $navItems = [
-            ['/admin/dashboard.php', 'Dashboard', 'fa-chart-line'],
+            ['/admin/dashboard.php', 'Dashboard', 'fa-gauge'],
             ['/admin/users.php', 'Users', 'fa-users'],
             ['/admin/photographers.php', 'Photographers', 'fa-camera'],
             ['/admin/categories.php', 'Categories', 'fa-layer-group'],
-            ['/admin/districts.php', 'Districts', 'fa-location-dot'],
+            ['/admin/districts.php', 'Districts', 'fa-map'],
             ['/admin/bookings.php', 'Bookings', 'fa-calendar-check'],
             ['/admin/reviews.php', 'Reviews', 'fa-star'],
             ['/admin/articles.php', 'Articles', 'fa-newspaper'],
+            ['/admin/blogs.php', 'Blogs', 'fa-blog'],
+            ['/admin/faqs.php', 'FAQ', 'fa-circle-question'],
             ['/admin/banners.php', 'Banners', 'fa-images'],
-            ['/admin/reports.php', 'Reports', 'fa-chart-pie'],
-            ['/admin/activity_logs.php', 'Activity Logs', 'fa-clock-rotate-left'],
+            ['/admin/reports.php', 'Reports', 'fa-chart-line'],
+            ['/admin/reports_moderation.php', 'Moderation', 'fa-shield-halved'],
+            ['/admin/contact_messages.php', 'Contact Messages', 'fa-envelope-open-text'],
+            ['/admin/activity_logs.php', 'Activity Logs', 'fa-clipboard-list'],
             ['/admin/settings.php', 'Settings', 'fa-gear'],
+            ['/notifications.php', 'Notifications', 'fa-bell'],
         ];
     }
 
@@ -29,15 +41,17 @@ if ($me) {
         $roleTitle = 'Photographer Studio';
         $roleIcon = 'fa-camera-retro';
         $navItems = [
-            ['/photographer/dashboard.php', 'Dashboard', 'fa-chart-line'],
+            ['/photographer/dashboard.php', 'Dashboard', 'fa-gauge'],
+            ['/photographer/onboarding.php', 'Onboarding', 'fa-list-check'],
             ['/photographer/profile.php', 'Profile', 'fa-id-card'],
             ['/photographer/service_areas.php', 'Service Areas', 'fa-map-location-dot'],
             ['/photographer/services.php', 'Services', 'fa-list-check'],
             ['/photographer/portfolio.php', 'Portfolio', 'fa-images'],
-            ['/photographer/availability.php', 'Availability', 'fa-calendar-days'],
+            ['/photographer/availability.php', 'Availability', 'fa-calendar'],
             ['/photographer/bookings.php', 'Bookings', 'fa-calendar-check'],
             ['/photographer/articles.php', 'Articles', 'fa-newspaper'],
             ['/photographer/reviews.php', 'Reviews', 'fa-star'],
+            ['/notifications.php', 'Notifications', 'fa-bell'],
         ];
     }
 
@@ -45,10 +59,13 @@ if ($me) {
         $roleTitle = 'Customer Space';
         $roleIcon = 'fa-user';
         $navItems = [
-            ['/customer/dashboard.php', 'Dashboard', 'fa-chart-line'],
+            ['/customer/dashboard.php', 'Dashboard', 'fa-gauge'],
             ['/photographers.php', 'Find Photographers', 'fa-magnifying-glass'],
             ['/customer/bookings.php', 'My Bookings', 'fa-calendar-check'],
+            ['/customer/favorites.php', 'Favorites', 'fa-heart'],
+            ['/customer/recently_viewed.php', 'Recently Viewed', 'fa-clock-rotate-left'],
             ['/customer/profile.php', 'Profile', 'fa-id-card'],
+            ['/notifications.php', 'Notifications', 'fa-bell'],
         ];
     }
 }

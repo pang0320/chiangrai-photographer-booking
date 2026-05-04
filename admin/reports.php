@@ -2,24 +2,24 @@
 require_once __DIR__ . '/../includes/functions.php';
 requireRole('admin');
 
-$topCategories = db()->query('SELECT sc.name, COUNT(b.id) AS total
-                              FROM service_categories sc
-                              LEFT JOIN bookings b ON b.category_id = sc.id AND b.deleted_at IS NULL
-                              GROUP BY sc.id
+$topCategories = db_fetch_all('SELECT sc.name, COUNT(b.id) AS total
+                               FROM service_categories sc
+                               LEFT JOIN bookings b ON b.category_id = sc.id AND b.deleted_at IS NULL
+                               GROUP BY sc.id
+                               ORDER BY total DESC
+                               LIMIT 10');
+$topDistricts = db_fetch_all('SELECT d.district_name, COUNT(b.id) AS total
+                              FROM districts d
+                              LEFT JOIN bookings b ON b.district_id = d.id AND b.deleted_at IS NULL
+                              GROUP BY d.id
                               ORDER BY total DESC
-                              LIMIT 10')->fetchAll();
-$topDistricts = db()->query('SELECT d.district_name, COUNT(b.id) AS total
-                             FROM districts d
-                             LEFT JOIN bookings b ON b.district_id = d.id AND b.deleted_at IS NULL
-                             GROUP BY d.id
-                             ORDER BY total DESC
-                             LIMIT 10')->fetchAll();
-$topPhotographers = db()->query('SELECT display_name, average_rating, total_reviews
-                                 FROM photographer_profiles
-                                 WHERE deleted_at IS NULL
-                                 ORDER BY average_rating DESC, total_reviews DESC
-                                 LIMIT 10')->fetchAll();
-$avgReview = db()->query('SELECT AVG(rating_overall) FROM reviews WHERE status = "visible" AND deleted_at IS NULL')->fetchColumn();
+                              LIMIT 10');
+$topPhotographers = db_fetch_all('SELECT display_name, average_rating, total_reviews
+                                  FROM photographer_profiles
+                                  WHERE deleted_at IS NULL
+                                  ORDER BY average_rating DESC, total_reviews DESC
+                                  LIMIT 10');
+$avgReview = db_fetch_value('SELECT AVG(rating_overall) FROM reviews WHERE status = "visible" AND deleted_at IS NULL');
 
 $pageTitle = 'รายงาน';
 include __DIR__ . '/../includes/header.php';

@@ -59,7 +59,7 @@ include __DIR__ . '/../includes/header.php';
             <option value="published">published</option>
             <option value="hidden">hidden</option>
         </select>
-        <button class="stock-button rounded-full px-5 py-3 font-black">บันทึกบทความ</button>
+        <button class="stock-button rounded-full px-5 py-3 font-black"><i class="fa-solid fa-floppy-disk mr-2"></i>บันทึกบทความ</button>
     </form>
 
     <div class="mt-6 grid gap-3">
@@ -75,7 +75,7 @@ include __DIR__ . '/../includes/header.php';
                     <input type="hidden" name="action" value="delete">
                     <input type="hidden" name="id" value="<?= (int)$item['id'] ?>">
                     <button data-confirm="ลบบทความนี้?" class="rounded-full bg-red-50 px-3 py-2 text-sm font-black text-red-700">
-                        ลบ
+                        <i class="fa-solid fa-trash mr-1"></i>ลบ
                     </button>
                 </form>
             </div>

@@ -2,11 +2,11 @@
 require_once __DIR__ . '/../includes/functions.php';
 requireRole('admin');
 
-$items = db()->query('SELECT l.*, u.name
-                      FROM activity_logs l
-                      LEFT JOIN users u ON u.id = l.user_id
-                      ORDER BY l.created_at DESC
-                      LIMIT 500')->fetchAll();
+$items = db_fetch_all('SELECT l.*, u.name
+                       FROM activity_logs l
+                       LEFT JOIN users u ON u.id = l.user_id
+                       ORDER BY l.created_at DESC
+                       LIMIT 500');
 
 $pageTitle = 'Activity Logs';
 include __DIR__ . '/../includes/header.php';
@@ -33,9 +33,15 @@ include __DIR__ . '/../includes/header.php';
             </thead>
             <tbody>
                 <?php foreach ($items as $log): ?>
+                    <?php
+                    $logName = '-';
+                    if (!empty($log['name'])) {
+                        $logName = $log['name'];
+                    }
+                    ?>
                     <tr>
                         <td><?= h($log['created_at']) ?></td>
-                        <td><?= h($log['name'] ?: '-') ?></td>
+                        <td><?= h($logName) ?></td>
                         <td class="font-black"><?= h($log['action']) ?></td>
                         <td><?= h($log['table_name']) ?></td>
                         <td><?= h($log['record_id']) ?></td>

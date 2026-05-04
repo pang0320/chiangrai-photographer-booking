@@ -38,7 +38,7 @@ if (is_post()) {
     }
 }
 
-$items = db()->query('SELECT * FROM banners ORDER BY sort_order, id DESC')->fetchAll();
+$items = db_fetch_all('SELECT * FROM banners ORDER BY sort_order, id DESC');
 
 $pageTitle = 'Banner';
 include __DIR__ . '/../includes/header.php';
@@ -62,7 +62,7 @@ include __DIR__ . '/../includes/header.php';
             <input type="checkbox" name="is_active" checked>
             active
         </label>
-        <button class="stock-button rounded-2xl px-5 py-3 font-black md:col-span-2">เพิ่ม Banner</button>
+        <button class="stock-button rounded-2xl px-5 py-3 font-black md:col-span-2"><i class="fa-solid fa-plus mr-2"></i>เพิ่ม Banner</button>
     </form>
 
     <div class="stock-card mt-6 overflow-x-auto rounded-[1.5rem] p-5">
@@ -87,7 +87,7 @@ include __DIR__ . '/../includes/header.php';
                                 <input type="hidden" name="action" value="delete">
                                 <input type="hidden" name="id" value="<?= (int)$banner['id'] ?>">
                                 <button data-confirm="ลบ banner นี้?" class="rounded-full bg-red-50 px-3 py-1.5 font-black text-red-700">
-                                    delete
+                                    <i class="fa-solid fa-trash mr-1"></i>delete
                                 </button>
                             </form>
                         </td>

@@ -21,7 +21,7 @@ include __DIR__ . '/includes/header.php';
         <form method="post" class="mt-6 grid gap-4">
             <?= csrf_field() ?>
             <input type="email" name="email" required placeholder="อีเมล" class="rounded-2xl border px-4 py-3">
-            <button class="rounded-2xl bg-indigo-600 px-5 py-3 font-bold text-white">สร้างลิงก์รีเซ็ต</button>
+            <button class="rounded-2xl bg-indigo-600 px-5 py-3 font-bold text-white"><i class="fa-solid fa-key mr-2"></i>สร้างลิงก์รีเซ็ต</button>
         </form>
         <?php if ($resetLink): ?>
             <p class="mt-5 break-all rounded-2xl bg-slate-50 p-4 text-sm">

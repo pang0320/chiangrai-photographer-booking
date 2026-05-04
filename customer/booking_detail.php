@@ -2,14 +2,21 @@
 require_once __DIR__ . '/../includes/functions.php';
 requireRole('customer');
 $user = current_user();
-$id = (int)($_GET['id'] ?? 0);
+$id = 0;
+if (isset($_GET['id'])) {
+    $id = (int)$_GET['id'];
+}
 
 $stmt = db()->prepare('SELECT b.*, p.display_name, p.phone_public, p.line_id, p.facebook_url, p.instagram_url, sc.name category_name, d.district_name FROM bookings b JOIN photographer_profiles p ON p.id=b.photographer_id JOIN service_categories sc ON sc.id=b.category_id JOIN districts d ON d.id=b.district_id WHERE b.id=? AND b.customer_id=? AND b.deleted_at IS NULL LIMIT 1');
 $stmt->execute([$id, (int)$user['id']]);
 $booking = $stmt->fetch();
 if (!$booking) exit('Booking not found');
 
-if (is_post() && ($_POST['action'] ?? '') === 'cancel') {
+$postedAction = '';
+if (isset($_POST['action'])) {
+    $postedAction = (string)$_POST['action'];
+}
+if (is_post() && $postedAction === 'cancel') {
     verify_csrf();
     if (!in_array($booking['status'], ['completed','cancelled'], true)) {
         db()->prepare('UPDATE bookings SET status="cancelled", updated_at=NOW() WHERE id=?')->execute([$id]);
@@ -45,14 +52,14 @@ include __DIR__ . '/../includes/header.php';
                     <?= csrf_field() ?>
                     <input type="hidden" name="action" value="cancel">
                     <button data-confirm="ยืนยันยกเลิกคำขอจอง?" class="rounded-2xl bg-rose-600 px-5 py-3 font-bold text-white">
-                        ยกเลิก
+                        <i class="fa-solid fa-xmark mr-2"></i>ยกเลิก
                     </button>
                 </form>
             <?php endif; ?>
 
             <?php if ($booking['status'] === 'completed' && !$hasReview): ?>
                 <a class="rounded-2xl bg-emerald-600 px-5 py-3 font-bold text-white" href="/customer/review.php?booking_id=<?= $id ?>">
-                    รีวิวช่างภาพ
+                    <i class="fa-solid fa-star mr-2"></i>รีวิวช่างภาพ
                 </a>
             <?php endif; ?>
         </div>
@@ -61,11 +68,21 @@ include __DIR__ . '/../includes/header.php';
         <h2 class="text-xl font-extrabold">ประวัติสถานะ</h2>
         <div class="mt-4 grid gap-3">
             <?php foreach ($logs as $log): ?>
+                <?php
+                $oldStatusText = '-';
+                if (!empty($log['old_status'])) {
+                    $oldStatusText = $log['old_status'];
+                }
+                $changedByName = 'System';
+                if (!empty($log['name'])) {
+                    $changedByName = $log['name'];
+                }
+                ?>
                 <div class="rounded-2xl bg-slate-50 p-4 text-sm">
                     <?= h($log['created_at']) ?>
-                    · <?= h($log['old_status'] ?: '-') ?>
+                    · <?= h($oldStatusText) ?>
                     → <?= h($log['new_status']) ?>
-                    โดย <?= h($log['name'] ?: 'System') ?>
+                    โดย <?= h($changedByName) ?>
                     <?= h($log['note']) ?>
                 </div>
             <?php endforeach; ?>

@@ -34,6 +34,7 @@ if (is_post()) {
         $stmt->execute([$newStatus, $rejectionReason, $newStatus, $id]);
 
         add_booking_status_log($id, $booking['status'], $newStatus, (int)current_user()['id'], $reason);
+        update_photographer_response_stats($pid);
         notify_user((int)$booking['customer_id'], 'สถานะคำขอจองเปลี่ยนแปลง', $booking['booking_code'] . ' เป็น ' . booking_status_label($newStatus), 'booking', $id);
         log_activity('change_booking_status', 'bookings', $id);
         flash('success', 'เปลี่ยนสถานะแล้ว');
@@ -124,8 +125,8 @@ include __DIR__ . '/../includes/header.php';
                                         <option value="rejected">ปฏิเสธ</option>
                                     </select>
                                     <input name="rejection_reason" placeholder="เหตุผลถ้าปฏิเสธ" class="stock-input rounded-xl px-3 py-2">
-                                    <button class="rounded-xl bg-neutral-950 px-3 py-2 font-black text-white hover:bg-red-600">
-                                        บันทึก
+                                    <button data-confirm="ยืนยันเปลี่ยนสถานะคำขอจอง?" class="rounded-xl bg-neutral-950 px-3 py-2 font-black text-white hover:bg-red-600">
+                                        <i class="fa-solid fa-floppy-disk mr-1"></i>บันทึก
                                     </button>
                                 </form>
                             <?php endif; ?>

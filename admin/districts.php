@@ -32,7 +32,7 @@ if (is_post()) {
     redirect('/admin/districts.php');
 }
 
-$items = db()->query('SELECT * FROM districts ORDER BY district_name')->fetchAll();
+$items = db_fetch_all('SELECT * FROM districts ORDER BY district_name');
 
 $pageTitle = 'อำเภอ';
 include __DIR__ . '/../includes/header.php';
@@ -53,7 +53,7 @@ include __DIR__ . '/../includes/header.php';
             <input type="checkbox" name="is_active" checked>
             active
         </label>
-        <button class="stock-button rounded-2xl px-5 py-3 font-black">เพิ่ม/อัปเดต</button>
+        <button class="stock-button rounded-2xl px-5 py-3 font-black"><i class="fa-solid fa-plus mr-2"></i>เพิ่ม/อัปเดต</button>
     </form>
 
     <div class="stock-card mt-6 overflow-x-auto rounded-[1.5rem] p-5">
@@ -82,7 +82,7 @@ include __DIR__ . '/../includes/header.php';
                                 <input type="hidden" name="action" value="toggle">
                                 <input type="hidden" name="id" value="<?= (int)$item['id'] ?>">
                                 <button class="rounded-full bg-neutral-100 px-3 py-1.5 font-black text-neutral-700">
-                                    toggle
+                                    <i class="fa-solid fa-check mr-1"></i>toggle
                                 </button>
                             </form>
                         </td>

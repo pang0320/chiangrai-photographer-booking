@@ -5,7 +5,7 @@ requireRole('photographer');
 $profile = photographer_profile_by_user((int)current_user()['id']);
 $pid = (int)$profile['id'];
 
-$districts = db()->query('SELECT * FROM districts WHERE is_active = 1 ORDER BY district_name')->fetchAll();
+$districts = db_fetch_all('SELECT * FROM districts WHERE is_active = 1 ORDER BY district_name');
 
 $stmt = db()->prepare('SELECT * FROM photographer_service_areas WHERE photographer_id = ?');
 $stmt->execute([$pid]);
@@ -95,7 +95,7 @@ include __DIR__ . '/../includes/header.php';
             <?php endforeach; ?>
         </div>
 
-        <button class="stock-button mt-6 rounded-full px-6 py-3 font-black">บันทึก</button>
+        <button class="stock-button mt-6 rounded-full px-6 py-3 font-black"><i class="fa-solid fa-floppy-disk mr-2"></i>บันทึก</button>
     </form>
 </section>
 

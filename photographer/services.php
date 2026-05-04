@@ -4,7 +4,7 @@ requireRole('photographer');
 
 $profile = photographer_profile_by_user((int)current_user()['id']);
 $pid = (int)$profile['id'];
-$categories = db()->query('SELECT * FROM service_categories WHERE is_active = 1 ORDER BY sort_order')->fetchAll();
+$categories = db_fetch_all('SELECT * FROM service_categories WHERE is_active = 1 ORDER BY sort_order');
 
 if (is_post()) {
     verify_csrf();
@@ -72,7 +72,7 @@ include __DIR__ . '/../includes/header.php';
             เปิด
         </label>
 
-        <button class="stock-button rounded-2xl px-5 py-3 font-black md:col-span-5">บันทึกบริการ</button>
+        <button class="stock-button rounded-2xl px-5 py-3 font-black md:col-span-5"><i class="fa-solid fa-floppy-disk mr-2"></i>บันทึกบริการ</button>
     </form>
 
     <div class="mt-6 grid gap-3">
@@ -90,7 +90,7 @@ include __DIR__ . '/../includes/header.php';
                     <input type="hidden" name="action" value="delete">
                     <input type="hidden" name="id" value="<?= (int)$service['id'] ?>">
                     <button data-confirm="ลบบริการนี้?" class="rounded-full bg-red-50 px-3 py-2 text-sm font-black text-red-700">
-                        ลบ
+                        <i class="fa-solid fa-trash mr-1"></i>ลบ
                     </button>
                 </form>
             </div>

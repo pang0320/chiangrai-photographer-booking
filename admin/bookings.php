@@ -19,6 +19,16 @@ if (is_post()) {
         $stmt->execute([$newStatus, $newStatus, $id]);
 
         add_booking_status_log($id, $booking['status'], $newStatus, (int)current_user()['id'], 'Admin change');
+        notify_user((int)$booking['customer_id'], 'Admin เปลี่ยนสถานะคำขอจอง', $booking['booking_code'] . ' เป็น ' . booking_status_label($newStatus), 'booking', $id);
+
+        $stmt = db()->prepare('SELECT user_id FROM photographer_profiles WHERE id = ? LIMIT 1');
+        $stmt->execute([(int)$booking['photographer_id']]);
+        $photographerUserId = (int)$stmt->fetchColumn();
+
+        if ($photographerUserId > 0) {
+            notify_user($photographerUserId, 'Admin เปลี่ยนสถานะคำขอจอง', $booking['booking_code'] . ' เป็น ' . booking_status_label($newStatus), 'booking', $id);
+        }
+
         log_activity('admin_change_booking', 'bookings', $id);
         flash('success', 'อัปเดต booking แล้ว');
     }
@@ -83,7 +93,7 @@ include __DIR__ . '/../includes/header.php';
         <input name="photographer_id" value="<?= h($_GET['photographer_id'] ?? '') ?>" placeholder="photographer_id" class="stock-input rounded-2xl px-4 py-3 font-semibold">
         <input name="customer_id" value="<?= h($_GET['customer_id'] ?? '') ?>" placeholder="customer_id" class="stock-input rounded-2xl px-4 py-3 font-semibold">
         <input type="date" name="date" value="<?= h($_GET['date'] ?? '') ?>" class="stock-input rounded-2xl px-4 py-3 font-semibold">
-        <button class="stock-button rounded-2xl px-5 py-3 font-black">ค้นหา</button>
+        <button class="stock-button rounded-2xl px-5 py-3 font-black"><i class="fa-solid fa-magnifying-glass mr-2"></i>ค้นหา</button>
     </form>
 
     <div class="stock-card mt-6 overflow-x-auto rounded-[1.5rem] p-5">
@@ -121,8 +131,8 @@ include __DIR__ . '/../includes/header.php';
                                     <?php endforeach; ?>
                                 </select>
 
-                                <button class="rounded-xl bg-neutral-950 px-3 py-2 font-black text-white hover:bg-red-600">
-                                    save
+                                <button data-confirm="ยืนยันเปลี่ยนสถานะ booking?" class="rounded-xl bg-neutral-950 px-3 py-2 font-black text-white hover:bg-red-600">
+                                    <i class="fa-solid fa-floppy-disk mr-1"></i>save
                                 </button>
                             </form>
                         </td>

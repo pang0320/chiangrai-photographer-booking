@@ -46,7 +46,7 @@ include __DIR__ . '/../includes/header.php';
                 </label>
             <?php endforeach; ?>
 
-            <button class="stock-button rounded-full px-5 py-3 font-black">บันทึก</button>
+            <button class="stock-button rounded-full px-5 py-3 font-black"><i class="fa-solid fa-floppy-disk mr-2"></i>บันทึก</button>
         </form>
     </div>
 </section>

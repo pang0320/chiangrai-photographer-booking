@@ -4,7 +4,10 @@ requireRole('photographer');
 
 $profile = photographer_profile_by_user((int)current_user()['id']);
 $pid = (int)$profile['id'];
-$id = (int)($_GET['id'] ?? 0);
+$id = 0;
+if (isset($_GET['id'])) {
+    $id = (int)$_GET['id'];
+}
 
 $stmt = db()->prepare('SELECT b.*, u.name AS customer_name, u.email AS customer_email, u.phone AS customer_phone, sc.name AS category_name, d.district_name
                        FROM bookings b
@@ -55,13 +58,19 @@ include __DIR__ . '/../includes/header.php';
                 <b>ข้อมูลลูกค้า</b>
                 <p class="mt-2"><?= h($booking['customer_name']) ?></p>
                 <p><?= h($booking['customer_email']) ?></p>
-                <p><?= h($booking['contact_phone'] ?: $booking['customer_phone']) ?></p>
+                <?php
+                $contactPhoneText = $booking['customer_phone'];
+                if (!empty($booking['contact_phone'])) {
+                    $contactPhoneText = $booking['contact_phone'];
+                }
+                ?>
+                <p><?= h($contactPhoneText) ?></p>
                 <p><?= h($booking['contact_channel']) ?></p>
             </div>
         </div>
 
         <a class="mt-6 inline-flex rounded-full bg-neutral-950 px-5 py-3 font-black text-white hover:bg-red-600" href="/photographer/bookings.php">
-            จัดการสถานะ
+            <i class="fa-solid fa-pen mr-2"></i>จัดการสถานะ
         </a>
     </div>
 
@@ -69,11 +78,21 @@ include __DIR__ . '/../includes/header.php';
         <h2 class="text-xl font-black">ประวัติสถานะ</h2>
         <div class="mt-4 grid gap-3">
             <?php foreach ($logs as $log): ?>
+                <?php
+                $oldStatusText = '-';
+                if (!empty($log['old_status'])) {
+                    $oldStatusText = $log['old_status'];
+                }
+                $changedByName = 'System';
+                if (!empty($log['name'])) {
+                    $changedByName = $log['name'];
+                }
+                ?>
                 <div class="rounded-2xl bg-neutral-50 p-4 text-sm">
                     <?= h($log['created_at']) ?>
-                    · <?= h($log['old_status'] ?: '-') ?>
+                    · <?= h($oldStatusText) ?>
                     → <?= h($log['new_status']) ?>
-                    โดย <?= h($log['name'] ?: 'System') ?>
+                    โดย <?= h($changedByName) ?>
                     <?= h($log['note']) ?>
                 </div>
             <?php endforeach; ?>

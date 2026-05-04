@@ -76,7 +76,7 @@ include __DIR__ . '/../includes/header.php';
         </select>
 
         <input name="note" placeholder="note" class="stock-input rounded-2xl px-4 py-3 font-semibold">
-        <button class="stock-button rounded-2xl px-5 py-3 font-black">บันทึก</button>
+        <button class="stock-button rounded-2xl px-5 py-3 font-black"><i class="fa-solid fa-floppy-disk mr-2"></i>บันทึก</button>
     </form>
 
     <div class="stock-card mt-6 overflow-x-auto rounded-[1.5rem] p-5">
@@ -103,7 +103,7 @@ include __DIR__ . '/../includes/header.php';
                                 <input type="hidden" name="action" value="delete">
                                 <input type="hidden" name="id" value="<?= (int)$item['id'] ?>">
                                 <button data-confirm="ลบรายการนี้?" class="rounded-full bg-red-50 px-3 py-1.5 font-black text-red-700">
-                                    ลบ
+                                    <i class="fa-solid fa-trash mr-1"></i>ลบ
                                 </button>
                             </form>
                         </td>

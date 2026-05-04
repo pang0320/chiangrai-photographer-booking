@@ -6,15 +6,35 @@ $user = current_user();
 if (is_post()) {
     verify_csrf();
     try {
-        $avatar = upload_image($_FILES['avatar'] ?? [], 'avatars') ?: $user['avatar'];
-        $name = trim((string)($_POST['name'] ?? ''));
-        $email = trim((string)($_POST['email'] ?? ''));
-        $phone = trim((string)($_POST['phone'] ?? ''));
+        $avatarFile = [];
+        if (isset($_FILES['avatar'])) {
+            $avatarFile = $_FILES['avatar'];
+        }
+        $avatar = upload_image($avatarFile, 'avatars');
+        if (!$avatar) {
+            $avatar = $user['avatar'];
+        }
+        $name = '';
+        if (isset($_POST['name'])) {
+            $name = trim((string)$_POST['name']);
+        }
+        $email = '';
+        if (isset($_POST['email'])) {
+            $email = trim((string)$_POST['email']);
+        }
+        $phone = '';
+        if (isset($_POST['phone'])) {
+            $phone = trim((string)$_POST['phone']);
+        }
         if ($name === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
             throw new RuntimeException('ข้อมูลไม่ถูกต้อง');
         }
         if (!empty($_POST['password'])) {
-            if (mb_strlen((string)$_POST['password']) < 8 || $_POST['password'] !== ($_POST['password_confirmation'] ?? '')) {
+            $passwordConfirmation = '';
+            if (isset($_POST['password_confirmation'])) {
+                $passwordConfirmation = (string)$_POST['password_confirmation'];
+            }
+            if (mb_strlen((string)$_POST['password']) < 8 || $_POST['password'] !== $passwordConfirmation) {
                 throw new RuntimeException('รหัสผ่านไม่ถูกต้อง');
             }
             db()->prepare('UPDATE users SET name=?, email=?, phone=?, avatar=?, password=?, updated_at=NOW() WHERE id=?')->execute([$name, $email, $phone, $avatar, password_hash((string)$_POST['password'], PASSWORD_DEFAULT), (int)$user['id']]);
@@ -45,9 +65,8 @@ include __DIR__ . '/../includes/header.php';
                 <input type="password" name="password" placeholder="รหัสผ่านใหม่ (ไม่บังคับ)" class="rounded-2xl border px-4 py-3">
                 <input type="password" name="password_confirmation" placeholder="ยืนยันรหัสผ่าน" class="rounded-2xl border px-4 py-3">
             </div>
-            <button class="rounded-2xl bg-indigo-600 px-5 py-3 font-bold text-white">บันทึก</button>
+            <button class="rounded-2xl bg-indigo-600 px-5 py-3 font-bold text-white"><i class="fa-solid fa-floppy-disk mr-2"></i>บันทึก</button>
         </form>
     </div>
 </section>
 <?php include __DIR__ . '/../includes/footer.php'; ?>
-

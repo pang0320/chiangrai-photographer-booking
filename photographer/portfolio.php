@@ -72,7 +72,7 @@ include __DIR__ . '/../includes/header.php';
             <input type="checkbox" name="is_featured">
             Featured
         </label>
-        <button class="stock-button rounded-2xl px-5 py-3 font-black md:col-span-2">เพิ่มรูป</button>
+        <button class="stock-button rounded-2xl px-5 py-3 font-black md:col-span-2"><i class="fa-solid fa-plus mr-2"></i>เพิ่มรูป</button>
     </form>
 
     <div class="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -87,7 +87,7 @@ include __DIR__ . '/../includes/header.php';
                         <input type="hidden" name="action" value="delete">
                         <input type="hidden" name="id" value="<?= (int)$item['id'] ?>">
                         <button data-confirm="ลบผลงานนี้?" class="rounded-full bg-red-50 px-3 py-2 text-sm font-black text-red-700">
-                            ลบ
+                            <i class="fa-solid fa-trash mr-1"></i>ลบ
                         </button>
                     </form>
                 </div>

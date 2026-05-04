@@ -8,19 +8,55 @@ if (is_post()) {
     $id = (int)($_POST['id'] ?? 0);
     $action = (string)($_POST['action'] ?? '');
 
+    $stmt = db()->prepare('SELECT u.*, r.name AS role_name
+                           FROM users u
+                           JOIN roles r ON r.id = u.role_id
+                           WHERE u.id = ? AND u.deleted_at IS NULL
+                           LIMIT 1');
+    $stmt->execute([$id]);
+    $targetUser = $stmt->fetch();
+
+    if (!$targetUser) {
+        flash('error', 'ไม่พบผู้ใช้');
+        redirect('/admin/users.php');
+    }
+
     if ($action === 'activate') {
         $stmt = db()->prepare('UPDATE users SET status = "active", updated_at = NOW() WHERE id = ?');
         $stmt->execute([$id]);
+
+        if ($targetUser['role_name'] === 'photographer') {
+            $stmt = db()->prepare('UPDATE photographer_profiles
+                                   SET approval_status = "approved", updated_at = NOW()
+                                   WHERE user_id = ? AND approval_status = "suspended" AND deleted_at IS NULL');
+            $stmt->execute([$id]);
+        }
+
+        notify_user($id, 'บัญชีถูกเปิดใช้งาน', 'Admin เปิดใช้งานบัญชีของคุณแล้ว', 'account', $id);
     }
 
     if ($action === 'suspend') {
         $stmt = db()->prepare('UPDATE users SET status = "suspended", updated_at = NOW() WHERE id = ?');
         $stmt->execute([$id]);
+
+        if ($targetUser['role_name'] === 'photographer') {
+            $stmt = db()->prepare('UPDATE photographer_profiles
+                                   SET approval_status = "suspended", is_available = 0, updated_at = NOW()
+                                   WHERE user_id = ? AND deleted_at IS NULL');
+            $stmt->execute([$id]);
+        }
+
+        notify_user($id, 'บัญชีถูกระงับ', 'Admin ระงับบัญชีของคุณ กรุณาติดต่อผู้ดูแลระบบ', 'account', $id);
     }
 
     if ($action === 'delete') {
         $stmt = db()->prepare('UPDATE users SET deleted_at = NOW() WHERE id = ?');
         $stmt->execute([$id]);
+
+        if ($targetUser['role_name'] === 'photographer') {
+            $stmt = db()->prepare('UPDATE photographer_profiles SET deleted_at = NOW(), updated_at = NOW() WHERE user_id = ? AND deleted_at IS NULL');
+            $stmt->execute([$id]);
+        }
     }
 
     log_activity('admin_' . $action . '_user', 'users', $id);
@@ -70,7 +106,7 @@ include __DIR__ . '/../includes/header.php';
             <h1 class="mt-1 text-3xl font-black text-neutral-950">จัดการผู้ใช้</h1>
         </div>
         <a href="/admin/dashboard.php" class="rounded-full bg-neutral-950 px-5 py-3 text-sm font-black text-white hover:bg-red-600">
-            Dashboard
+            <i class="fa-solid fa-gauge mr-2"></i>Dashboard
         </a>
     </div>
 
@@ -95,7 +131,7 @@ include __DIR__ . '/../includes/header.php';
             <?php endforeach; ?>
         </select>
 
-        <button class="stock-button rounded-2xl px-5 py-3 font-black">ค้นหา</button>
+        <button class="stock-button rounded-2xl px-5 py-3 font-black"><i class="fa-solid fa-magnifying-glass mr-2"></i>ค้นหา</button>
     </form>
 
     <div class="stock-card mt-6 overflow-x-auto rounded-[1.5rem] p-5">
@@ -123,14 +159,14 @@ include __DIR__ . '/../includes/header.php';
                                 <?= csrf_field() ?>
                                 <input type="hidden" name="id" value="<?= (int)$user['id'] ?>">
 
-                                <button name="action" value="activate" class="rounded-full bg-emerald-50 px-3 py-1.5 font-black text-emerald-700">
-                                    activate
+                                <button data-confirm="ยืนยันเปิดใช้งานบัญชีนี้?" name="action" value="activate" class="rounded-full bg-emerald-50 px-3 py-1.5 font-black text-emerald-700">
+                                    <i class="fa-solid fa-check mr-1"></i>activate
                                 </button>
-                                <button name="action" value="suspend" class="rounded-full bg-amber-50 px-3 py-1.5 font-black text-amber-700">
-                                    suspend
+                                <button data-confirm="ยืนยันระงับบัญชีนี้?" name="action" value="suspend" class="rounded-full bg-amber-50 px-3 py-1.5 font-black text-amber-700">
+                                    <i class="fa-solid fa-ban mr-1"></i>suspend
                                 </button>
                                 <button data-confirm="ลบผู้ใช้นี้?" name="action" value="delete" class="rounded-full bg-red-50 px-3 py-1.5 font-black text-red-700">
-                                    delete
+                                    <i class="fa-solid fa-trash mr-1"></i>delete
                                 </button>
                             </form>
                         </td>

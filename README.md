@@ -61,9 +61,23 @@ php -S localhost:8000
 - Customer register/login/profile/booking/review
 - Photographer profile/service areas/services/portfolio/availability/bookings/articles/reviews
 - Admin dashboard/users/photographers/categories/districts/bookings/reviews/articles/banners/reports/activity logs/settings
+- Notifications for booking requests, booking status changes, reviews, photographer approval, and account suspension
+- Login attempt limiting: 5 failed attempts per email/IP in 15 minutes
+- Breadcrumb, loading state, sticky navbar, role sidebar, searchable admin tables
 - No payment system
 - Disclaimer shown on photographer profile and booking form
 - CSRF protection, password_hash/password_verify, PDO prepared statements, XSS escaping, upload validation, role checks, activity logs
+- `.htaccess` blocks direct access to `config`, `includes`, `database.sql`, hidden files, and risky upload extensions
+
+## HTTPS
+
+เปิดบังคับ HTTPS ได้ด้วย environment variable:
+
+```bash
+export ENFORCE_HTTPS=1
+```
+
+เมื่อใช้งานผ่าน HTTPS ระบบจะส่ง HSTS header และตั้งค่า session cookie แบบ secure ให้อัตโนมัติ
 
 ## Notes
 

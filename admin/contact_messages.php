@@ -27,8 +27,8 @@ include __DIR__ . '/../includes/header.php';
 
 <section class="px-4 py-8 sm:px-6 lg:px-8">
     <div>
-        <p class="section-kicker">Contact Inbox</p>
-        <h1 class="mt-1 text-3xl font-black text-neutral-950"><i class="fa-solid fa-envelope-open-text mr-2 text-red-600"></i>ข้อความจากหน้า Contact</h1>
+            <p class="section-kicker">กล่องข้อความติดต่อ</p>
+            <h1 class="mt-1 text-3xl font-black text-neutral-950"><i class="fa-solid fa-envelope-open-text mr-2 text-red-600"></i>ข้อความจากหน้าติดต่อเรา</h1>
     </div>
 
     <div class="mt-6 grid gap-4 md:grid-cols-3">
@@ -44,9 +44,9 @@ include __DIR__ . '/../includes/header.php';
                     <th>ผู้ติดต่อ</th>
                     <th>หัวข้อ</th>
                     <th>ข้อความ</th>
-                    <th>Status</th>
+                    <th>สถานะ</th>
                     <th>วันที่</th>
-                    <th>Action</th>
+                    <th>จัดการ</th>
                 </tr>
             </thead>
             <tbody>
@@ -59,7 +59,7 @@ include __DIR__ . '/../includes/header.php';
                         <td class="font-black"><?= h($item['subject']) ?></td>
                         <td class="max-w-md"><?= nl2br(h($item['message'])) ?></td>
                         <td><?= status_badge($item['status'] === 'unread' ? 'pending' : ($item['status'] === 'replied' ? 'completed' : 'visible')) ?></td>
-                        <td><?= h($item['created_at']) ?></td>
+                        <td><?= h(format_be_datetime($item['created_at'])) ?></td>
                         <td>
                             <form method="post" class="flex flex-wrap gap-2">
                                 <?= csrf_field() ?>

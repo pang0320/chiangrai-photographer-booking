@@ -124,7 +124,7 @@ include __DIR__ . '/includes/header.php';
 
 <section class="relative bg-neutral-950 text-white">
     <div class="absolute inset-0">
-        <img class="h-full w-full object-cover opacity-55" src="<?= h(public_image($profile['cover_image'], 'https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?auto=format&fit=crop&w=1800&q=85')) ?>" alt="">
+        <img class="h-full w-full object-cover opacity-55" src="<?= h(public_image($profile['cover_image'], '/assets/uploads/seed/photo-1492691527719-9d1e07e534b4.jpg')) ?>" alt="">
         <div class="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-950/65 to-neutral-950/25"></div>
     </div>
     <div class="relative stock-shell px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
@@ -159,7 +159,7 @@ include __DIR__ . '/includes/header.php';
             </div>
             <div class="glass-panel rounded-[2rem] p-5 text-neutral-950 lg:sticky lg:top-24">
                 <div class="flex items-center gap-4">
-                    <img class="h-20 w-20 rounded-3xl object-cover" src="<?= h(public_image($profile['profile_image'], 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80')) ?>" alt="">
+                    <img class="h-20 w-20 rounded-3xl object-cover" src="<?= h(public_image($profile['profile_image'], '/assets/uploads/seed/photo-1500648767791-00dcc994a43e.jpg')) ?>" alt="">
                     <div>
                         <p class="font-black"><?= h($profile['display_name']) ?></p>
                         <p class="mt-1 text-sm font-semibold text-neutral-500"><?= h($profile['district_name']) ?></p>
@@ -219,8 +219,8 @@ include __DIR__ . '/includes/header.php';
                     <?php endif; ?>
                 </div>
                 <div class="mt-4 grid grid-cols-3 gap-2">
-                    <button type="button" onclick="navigator.clipboard.writeText('<?= h($shareUrl) ?>'); Swal.fire({icon:'success',title:'Copy link แล้ว',timer:1600,showConfirmButton:false});" class="rounded-full bg-neutral-100 px-3 py-2 text-xs font-black hover:bg-neutral-950 hover:text-white"><i class="fa-solid fa-copy mr-1"></i>Copy</button>
-                    <a target="_blank" href="https://www.facebook.com/sharer/sharer.php?u=<?= urlencode($shareUrl) ?>" class="rounded-full bg-[#1877f2] px-3 py-2 text-center text-xs font-black text-white"><i class="fa-brands fa-facebook mr-1"></i>Share</a>
+                    <button type="button" onclick="navigator.clipboard.writeText('<?= h($shareUrl) ?>'); Swal.fire({icon:'success',title:'คัดลอกลิงก์แล้ว',timer:1600,showConfirmButton:false});" class="rounded-full bg-neutral-100 px-3 py-2 text-xs font-black hover:bg-neutral-950 hover:text-white"><i class="fa-solid fa-copy mr-1"></i>คัดลอก</button>
+                    <a target="_blank" href="https://www.facebook.com/sharer/sharer.php?u=<?= urlencode($shareUrl) ?>" class="rounded-full bg-[#1877f2] px-3 py-2 text-center text-xs font-black text-white"><i class="fa-brands fa-facebook mr-1"></i>แชร์</a>
                     <a target="_blank" href="https://social-plugins.line.me/lineit/share?url=<?= urlencode($shareUrl) ?>" class="rounded-full bg-[#06c755] px-3 py-2 text-center text-xs font-black text-white"><i class="fa-brands fa-line mr-1"></i>LINE</a>
                 </div>
                 <form method="post" class="mt-4 grid gap-2 rounded-2xl bg-neutral-50 p-3">
@@ -242,14 +242,14 @@ include __DIR__ . '/includes/header.php';
             <div>
                 <div class="flex items-end justify-between gap-4">
                     <div>
-                        <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">Portfolio gallery</p>
+                        <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">แกลเลอรีผลงาน</p>
                         <h2 class="mt-1 text-3xl font-black text-neutral-950">ผลงานภาพถ่าย</h2>
                     </div>
                 </div>
                 <?php if (!$portfolio): ?>
                     <div class="empty-state mt-6 rounded-[2rem] p-10 text-center">
                         <i class="fa-solid fa-images text-4xl text-red-600"></i>
-                        <h3 class="mt-3 text-xl font-black">ยังไม่มี Portfolio</h3>
+                        <h3 class="mt-3 text-xl font-black">ยังไม่มีผลงาน</h3>
                         <p class="mt-2 text-neutral-600">เมื่อช่างภาพอัปโหลดผลงาน รูปจะแสดงในส่วนนี้</p>
                     </div>
                 <?php endif; ?>
@@ -262,7 +262,7 @@ include __DIR__ . '/includes/header.php';
                         }
                         ?>
                         <figure class="media-tile rounded-[1.5rem] shadow-xl">
-                            <img class="<?= h($portfolioImageClass) ?>" src="<?= h(public_image($item['image_path'], 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=900&q=85')) ?>" alt="">
+                            <img class="<?= h($portfolioImageClass) ?>" src="<?= h(public_image($item['image_path'], '/assets/uploads/seed/photo-1516035069371-29a1b244cc32.jpg')) ?>" alt="">
                             <figcaption class="media-overlay p-5 opacity-100">
                                 <div>
                                     <b class="text-lg"><?= h($item['title']) ?></b>
@@ -275,7 +275,7 @@ include __DIR__ . '/includes/header.php';
             </div>
 
             <div>
-                <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">Services</p>
+                <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">บริการ</p>
                 <h2 class="mt-1 text-3xl font-black text-neutral-950">ข้อมูลบริการ</h2>
                 <div class="mt-6 grid gap-4 md:grid-cols-2">
                     <?php foreach ($services as $s): ?>
@@ -297,14 +297,14 @@ include __DIR__ . '/includes/header.php';
             </div>
 
             <div class="stock-card rounded-[1.75rem] p-7">
-                <p class="section-kicker">About Photographer</p>
+                <p class="section-kicker">เกี่ยวกับช่างภาพ</p>
                 <h2 class="mt-1 text-3xl font-black text-neutral-950">แนะนำตัว</h2>
                 <p class="mt-4 leading-8 text-neutral-700"><?= nl2br(h($profile['bio'])) ?></p>
                 <div class="mt-5 rounded-[1.5rem] bg-red-50 p-5 text-sm font-black leading-7 text-red-700"><?= h(PAYMENT_DISCLAIMER) ?></div>
             </div>
 
             <div>
-                <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">Reviews</p>
+                <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">รีวิว</p>
                 <h2 class="mt-1 text-3xl font-black text-neutral-950">รีวิวจากลูกค้า</h2>
                 <div class="stock-card mt-6 rounded-[1.75rem] p-6">
                     <div class="grid gap-6 md:grid-cols-[220px_1fr] md:items-center">
@@ -366,7 +366,7 @@ include __DIR__ . '/includes/header.php';
                         <div class="empty-state rounded-[2rem] p-10 text-center">
                             <i class="fa-solid fa-star-half-stroke text-4xl text-red-600"></i>
                             <h3 class="mt-3 text-xl font-black">ยังไม่มีรีวิว</h3>
-                            <p class="mt-2 text-neutral-600">รีวิวจะแสดงหลังลูกค้าทำงานเสร็จและ booking เป็น completed</p>
+                            <p class="mt-2 text-neutral-600">รีวิวจะแสดงหลังลูกค้าทำงานเสร็จและรายการจองเป็นสถานะเสร็จสิ้น</p>
                         </div>
                     <?php endif; ?>
                 </div>
@@ -389,7 +389,7 @@ include __DIR__ . '/includes/header.php';
                 <div class="mt-4 grid gap-2">
                     <?php foreach ($availability as $a): ?>
                         <div class="rounded-2xl border border-neutral-100 bg-neutral-50 px-4 py-3 text-sm font-semibold">
-                            <?= h($a['available_date']) ?> · <?= h(time_slot_label($a['time_slot'])) ?> · <?= h($a['status']) ?>
+                            <?= h(format_be_date($a['available_date'])) ?> · <?= h(time_slot_label($a['time_slot'])) ?> · <?= h(booking_status_label($a['status'])) ?>
                         </div>
                     <?php endforeach; ?>
                     <?php if (!$availability): ?>
@@ -423,7 +423,7 @@ include __DIR__ . '/includes/header.php';
     <section class="mt-14">
         <div class="flex flex-wrap items-end justify-between gap-5">
             <div>
-                <p class="section-kicker">Similar Photographers</p>
+                <p class="section-kicker">ช่างภาพที่คล้ายกัน</p>
                 <h2 class="mt-1 text-3xl font-black text-neutral-950">ช่างภาพใกล้เคียงที่น่าสนใจ</h2>
             </div>
             <a href="/photographers.php?district_id=<?= (int)$profile['main_district_id'] ?>" class="rounded-full border border-neutral-200 px-5 py-3 font-black hover:bg-neutral-950 hover:text-white"><i class="fa-solid fa-location-dot mr-2"></i>ดูในพื้นที่นี้</a>
@@ -437,12 +437,12 @@ include __DIR__ . '/includes/header.php';
 
     <section class="mt-14 grid gap-5 md:grid-cols-2">
         <div class="stock-card rounded-[1.75rem] p-7">
-            <p class="section-kicker">FAQ</p>
+            <p class="section-kicker">คำถามที่พบบ่อย</p>
             <h2 class="mt-1 text-2xl font-black text-neutral-950">การจองและติดต่อ</h2>
             <p class="mt-4 leading-7 text-neutral-600">ลูกค้าต้องเข้าสู่ระบบก่อนส่งคำขอจอง หลังจากช่างภาพตอบรับ สามารถติดต่อผ่านช่องทางภายนอกเพื่อตกลงรายละเอียดได้โดยตรง</p>
         </div>
         <div class="stock-card rounded-[1.75rem] bg-red-50 p-7">
-            <p class="section-kicker">Disclaimer</p>
+            <p class="section-kicker">หมายเหตุสำคัญ</p>
             <h2 class="mt-1 text-2xl font-black text-neutral-950">ไม่มีระบบชำระเงิน</h2>
             <p class="mt-4 font-bold leading-7 text-red-700"><?= h(PAYMENT_DISCLAIMER) ?></p>
         </div>

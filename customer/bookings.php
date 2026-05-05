@@ -21,7 +21,7 @@ include __DIR__ . '/../includes/header.php';
 
 <section class="px-4 py-8 sm:px-6 lg:px-8">
     <div>
-        <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">Customer Space</p>
+        <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">พื้นที่ลูกค้า</p>
         <h1 class="mt-1 text-3xl font-black text-neutral-950">รายการจองของฉัน</h1>
     </div>
 
@@ -29,7 +29,7 @@ include __DIR__ . '/../includes/header.php';
         <table class="w-full text-left text-sm">
             <thead class="text-neutral-500">
                 <tr>
-                    <th class="py-3">Code</th>
+                    <th class="py-3">รหัสจอง</th>
                     <th>ช่างภาพ</th>
                     <th>ประเภท</th>
                     <th>วันที่</th>
@@ -44,7 +44,7 @@ include __DIR__ . '/../includes/header.php';
                         <td class="py-3 font-black"><?= h($booking['booking_code']) ?></td>
                         <td><?= h($booking['display_name']) ?></td>
                         <td><?= h($booking['category_name']) ?></td>
-                        <td><?= h($booking['booking_date']) ?> <?= h(time_slot_label($booking['time_slot'])) ?></td>
+                        <td><?= h(format_be_date($booking['booking_date'])) ?> <?= h(time_slot_label($booking['time_slot'])) ?></td>
                         <td><?= h($booking['district_name']) ?></td>
                         <td><?= status_badge($booking['status']) ?></td>
                         <td class="whitespace-nowrap">

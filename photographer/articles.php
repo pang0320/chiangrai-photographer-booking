@@ -45,7 +45,7 @@ include __DIR__ . '/../includes/header.php';
 
 <section class="px-4 py-8 sm:px-6 lg:px-8">
     <div>
-        <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">Photographer Studio</p>
+        <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">สตูดิโอช่างภาพ</p>
         <h1 class="mt-1 text-3xl font-black text-neutral-950">บทความ/คำแนะนำ</h1>
     </div>
 
@@ -55,9 +55,9 @@ include __DIR__ . '/../includes/header.php';
         <input type="file" name="cover_image" accept="image/jpeg,image/png,image/webp" class="stock-input rounded-2xl px-4 py-3 font-semibold">
         <textarea name="content" rows="8" required placeholder="เนื้อหา" class="stock-input rounded-2xl px-4 py-3 font-semibold"></textarea>
         <select name="status" class="stock-input rounded-2xl px-4 py-3 font-semibold">
-            <option value="draft">draft</option>
-            <option value="published">published</option>
-            <option value="hidden">hidden</option>
+            <option value="draft">ฉบับร่าง</option>
+            <option value="published">เผยแพร่</option>
+            <option value="hidden">ซ่อน</option>
         </select>
         <button class="stock-button rounded-full px-5 py-3 font-black"><i class="fa-solid fa-floppy-disk mr-2"></i>บันทึกบทความ</button>
     </form>

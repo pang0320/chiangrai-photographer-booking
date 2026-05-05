@@ -32,7 +32,7 @@ include __DIR__ . '/../includes/header.php';
 <section class="px-4 py-8 sm:px-6 lg:px-8">
     <div class="mx-auto max-w-3xl">
         <div>
-            <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">Admin</p>
+            <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">ผู้ดูแลระบบ</p>
             <h1 class="mt-1 text-3xl font-black text-neutral-950">ตั้งค่าระบบ</h1>
         </div>
 

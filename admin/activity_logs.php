@@ -14,7 +14,7 @@ include __DIR__ . '/../includes/header.php';
 
 <section class="px-4 py-8 sm:px-6 lg:px-8">
     <div>
-        <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">Admin</p>
+        <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">ผู้ดูแลระบบ</p>
         <h1 class="mt-1 text-3xl font-black text-neutral-950">Activity Logs</h1>
     </div>
 
@@ -24,7 +24,7 @@ include __DIR__ . '/../includes/header.php';
                 <tr>
                     <th>เวลา</th>
                     <th>User</th>
-                    <th>Action</th>
+                    <th>การกระทำ</th>
                     <th>Table</th>
                     <th>Record</th>
                     <th>IP</th>
@@ -40,7 +40,7 @@ include __DIR__ . '/../includes/header.php';
                     }
                     ?>
                     <tr>
-                        <td><?= h($log['created_at']) ?></td>
+                        <td><?= h(format_be_datetime($log['created_at'])) ?></td>
                         <td><?= h($logName) ?></td>
                         <td class="font-black"><?= h($log['action']) ?></td>
                         <td><?= h($log['table_name']) ?></td>

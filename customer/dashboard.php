@@ -53,14 +53,14 @@ $recentlyViewed = db_fetch_all('SELECT p.*, rv.viewed_at, d.district_name,
                                 ORDER BY rv.viewed_at DESC
                                 LIMIT 4', [(int)$user['id']]);
 
-$pageTitle = 'Customer Dashboard';
+$pageTitle = 'แดชบอร์ดลูกค้า';
 include __DIR__ . '/../includes/header.php';
 ?>
 <section class="px-4 py-8 sm:px-6 lg:px-8">
     <div class="dashboard-hero overflow-hidden rounded-[2rem] p-6 text-white sm:p-8">
         <div class="grid gap-6 lg:grid-cols-[1fr_360px] lg:items-center">
             <div>
-                <p class="text-sm font-black uppercase tracking-[0.22em] text-white/58">Customer Workspace</p>
+                <p class="text-sm font-black uppercase tracking-[0.22em] text-white/58">พื้นที่ลูกค้า</p>
                 <h1 class="mt-2 text-3xl font-black sm:text-5xl">สวัสดี <?= h($user['name']) ?></h1>
                 <p class="mt-3 max-w-2xl leading-8 text-white/68">ค้นหาช่างภาพ ส่งคำขอจอง ติดตามสถานะ และรีวิวหลังงานเสร็จจากแดชบอร์ดเดียว</p>
                 <div class="mt-6 flex flex-wrap gap-3">
@@ -83,7 +83,7 @@ include __DIR__ . '/../includes/header.php';
         <div class="stock-card rounded-[1.75rem] p-6">
             <div class="flex flex-wrap items-center justify-between gap-4">
                 <div>
-                    <p class="section-kicker">Recent Bookings</p>
+                    <p class="section-kicker">รายการจองล่าสุด</p>
                     <h2 class="mt-1 text-2xl font-black text-neutral-950">รายการจองล่าสุด</h2>
                 </div>
                 <a class="rounded-full border border-neutral-200 px-4 py-2 text-sm font-black hover:bg-neutral-950 hover:text-white" href="/customer/bookings.php"><i class="fa-solid fa-eye mr-2"></i>ดูทั้งหมด</a>
@@ -91,14 +91,14 @@ include __DIR__ . '/../includes/header.php';
             <div class="mt-5 overflow-x-auto">
                 <?php if ($bookings): ?>
                     <table class="w-full text-left text-sm">
-                        <thead class="text-neutral-500"><tr><th class="py-3">Code</th><th>ช่างภาพ</th><th>ประเภท</th><th>วันที่</th><th>สถานะ</th><th></th></tr></thead>
+                        <thead class="text-neutral-500"><tr><th class="py-3">รหัสจอง</th><th>ช่างภาพ</th><th>ประเภท</th><th>วันที่</th><th>สถานะ</th><th></th></tr></thead>
                         <tbody>
                         <?php foreach ($bookings as $b): ?>
                             <tr class="border-t border-neutral-100">
                                 <td class="py-4 font-black"><?= h($b['booking_code']) ?></td>
                                 <td class="font-bold"><?= h($b['display_name']) ?></td>
                                 <td><?= h($b['category_name']) ?></td>
-                                <td><?= h($b['booking_date']) ?> · <?= h(time_slot_label($b['time_slot'])) ?></td>
+                                <td><?= h(format_be_date($b['booking_date'])) ?> · <?= h(time_slot_label($b['time_slot'])) ?></td>
                                 <td><?= status_badge($b['status']) ?></td>
                                 <td><a class="font-black text-red-600" href="/customer/booking_detail.php?id=<?= (int)$b['id'] ?>">ดู</a></td>
                             </tr>
@@ -117,7 +117,7 @@ include __DIR__ . '/../includes/header.php';
 
         <div class="grid gap-6">
             <div class="stock-card rounded-[1.75rem] p-6">
-                <p class="section-kicker">Review Reminder</p>
+                <p class="section-kicker">แจ้งเตือนรีวิว</p>
                 <h2 class="mt-1 text-xl font-black text-neutral-950">งานที่รอรีวิว</h2>
                 <div class="mt-4 grid gap-3">
                     <?php foreach ($reviewReminders as $item): ?>
@@ -126,19 +126,19 @@ include __DIR__ . '/../includes/header.php';
                         </a>
                     <?php endforeach; ?>
                     <?php if (!$reviewReminders): ?>
-                        <div class="rounded-2xl bg-neutral-50 p-5 text-sm font-bold text-neutral-600">ยังไม่มีงาน completed ที่รอรีวิว</div>
+                        <div class="rounded-2xl bg-neutral-50 p-5 text-sm font-bold text-neutral-600">ยังไม่มีงานเสร็จสิ้นที่รอรีวิว</div>
                     <?php endif; ?>
                 </div>
             </div>
 
             <div class="stock-card rounded-[1.75rem] p-6">
-                <p class="section-kicker">Booking Timeline</p>
+                <p class="section-kicker">ลำดับสถานะการจอง</p>
                 <h2 class="mt-1 text-xl font-black text-neutral-950">สถานะการจอง</h2>
                 <div class="mt-4 grid gap-3">
                     <?php foreach ([['fa-paper-plane','ส่งคำขอจอง','pending'],['fa-handshake','ช่างภาพตอบรับ','accepted'],['fa-circle-check','ยืนยันงาน','confirmed'],['fa-star','รีวิวหลังงานเสร็จ','completed']] as $step): ?>
                         <div class="flex items-center gap-3 rounded-2xl bg-neutral-50 p-3">
                             <div class="grid h-10 w-10 place-items-center rounded-xl bg-neutral-950 text-white"><i class="fa-solid <?= h($step[0]) ?>"></i></div>
-                            <div><p class="font-black"><?= h($step[1]) ?></p><p class="text-xs font-bold text-neutral-500"><?= h($step[2]) ?></p></div>
+                            <div><p class="font-black"><?= h($step[1]) ?></p><p class="text-xs font-bold text-neutral-500"><?= h(booking_status_label($step[2])) ?></p></div>
                         </div>
                     <?php endforeach; ?>
                 </div>
@@ -150,7 +150,7 @@ include __DIR__ . '/../includes/header.php';
         <div>
             <div class="flex flex-wrap items-end justify-between gap-4">
                 <div>
-                    <p class="section-kicker">Recommended</p>
+                    <p class="section-kicker">แนะนำสำหรับคุณ</p>
                     <h2 class="mt-1 text-2xl font-black text-neutral-950">ช่างภาพแนะนำสำหรับคุณ</h2>
                 </div>
             </div>
@@ -162,7 +162,7 @@ include __DIR__ . '/../includes/header.php';
         </div>
 
         <div class="stock-card rounded-[1.75rem] p-6">
-            <p class="section-kicker">Tips</p>
+            <p class="section-kicker">คำแนะนำ</p>
             <h2 class="mt-1 text-xl font-black text-neutral-950">เตรียมตัวก่อนถ่ายภาพ</h2>
             <div class="mt-4 grid gap-3 text-sm leading-7 text-neutral-700">
                 <p class="rounded-2xl bg-neutral-50 p-4"><b>1.</b> เตรียม reference ภาพและ mood board ให้ช่างภาพดู</p>
@@ -174,13 +174,13 @@ include __DIR__ . '/../includes/header.php';
 
     <div class="mt-6 stock-card rounded-[1.75rem] p-6">
         <div class="flex flex-wrap items-center justify-between gap-4">
-            <div><p class="section-kicker">Recently Viewed</p><h2 class="mt-1 text-2xl font-black">ช่างภาพที่เคยดู</h2></div>
+            <div><p class="section-kicker">ช่างภาพที่เคยดู</p><h2 class="mt-1 text-2xl font-black">ช่างภาพที่เคยดู</h2></div>
             <a href="/customer/recently_viewed.php" class="rounded-full border border-neutral-200 px-4 py-2 text-sm font-black hover:bg-neutral-950 hover:text-white"><i class="fa-solid fa-eye mr-2"></i>ดูทั้งหมด</a>
         </div>
         <div class="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <?php foreach ($recentlyViewed as $item): ?>
                 <a href="/photographer_detail.php?id=<?= (int)$item['id'] ?>" class="rounded-[1.5rem] bg-neutral-50 p-3 hover:bg-red-50">
-                    <img class="h-36 w-full rounded-[1.2rem] object-cover" src="<?= h(public_image($item['featured_image'], 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=900&q=80')) ?>" alt="">
+                    <img class="h-36 w-full rounded-[1.2rem] object-cover" src="<?= h(public_image($item['featured_image'], '/assets/uploads/seed/photo-1516035069371-29a1b244cc32.jpg')) ?>" alt="">
                     <b class="mt-3 block"><?= h($item['display_name']) ?></b>
                     <span class="text-sm font-bold text-neutral-500"><i class="fa-solid fa-location-dot mr-1 text-red-600"></i><?= h($item['district_name']) ?></span>
                 </a>

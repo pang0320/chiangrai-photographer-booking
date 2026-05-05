@@ -32,10 +32,10 @@ include __DIR__ . '/../includes/header.php';
 <section class="px-4 py-8 sm:px-6 lg:px-8">
     <div class="flex flex-wrap items-end justify-between gap-4">
         <div>
-            <p class="section-kicker">Moderation</p>
+            <p class="section-kicker">ตรวจสอบรายงาน</p>
             <h1 class="mt-1 text-3xl font-black text-neutral-950"><i class="fa-solid fa-shield-halved mr-2 text-red-600"></i>รายงานปัญหา</h1>
         </div>
-        <div class="rounded-full bg-red-50 px-5 py-3 text-sm font-black text-red-700"><i class="fa-solid fa-hourglass-half mr-2"></i><?= table_count('reports', 'status = "pending"') ?> pending</div>
+        <div class="rounded-full bg-red-50 px-5 py-3 text-sm font-black text-red-700"><i class="fa-solid fa-hourglass-half mr-2"></i><?= table_count('reports', 'status = "pending"') ?> รอตรวจสอบ</div>
     </div>
 
     <div class="stock-card mt-6 overflow-x-auto rounded-[1.75rem] p-5">
@@ -46,15 +46,15 @@ include __DIR__ . '/../includes/header.php';
                     <th>เป้าหมาย</th>
                     <th>เหตุผล</th>
                     <th>รายละเอียด</th>
-                    <th>Status</th>
-                    <th>Action</th>
+                    <th>สถานะ</th>
+                    <th>จัดการ</th>
                 </tr>
             </thead>
             <tbody>
                 <?php foreach ($items as $item): ?>
                     <tr>
                         <td>
-                            <b><?php if ($item['reporter_name']): ?><?= h($item['reporter_name']) ?><?php else: ?>Guest<?php endif; ?></b>
+                            <b><?php if ($item['reporter_name']): ?><?= h($item['reporter_name']) ?><?php else: ?>ผู้เยี่ยมชม<?php endif; ?></b>
                             <p class="text-xs text-neutral-500"><?= h($item['reporter_email']) ?></p>
                         </td>
                         <td><span class="rounded-full bg-neutral-100 px-3 py-1 text-xs font-black"><i class="fa-solid fa-bullseye mr-1 text-red-600"></i><?= h($item['target_type']) ?> #<?= (int)$item['target_id'] ?></span></td>
@@ -65,11 +65,11 @@ include __DIR__ . '/../includes/header.php';
                             <form method="post" class="grid min-w-[260px] gap-2">
                                 <?= csrf_field() ?>
                                 <input type="hidden" name="id" value="<?= (int)$item['id'] ?>">
-                                <input name="admin_note" value="<?= h($item['admin_note']) ?>" placeholder="Admin note" class="stock-input rounded-xl px-3 py-2 text-sm">
+                                <input name="admin_note" value="<?= h($item['admin_note']) ?>" placeholder="บันทึกผู้ดูแล" class="stock-input rounded-xl px-3 py-2 text-sm">
                                 <div class="flex flex-wrap gap-2">
-                                    <button name="status" value="reviewed" class="rounded-full bg-sky-50 px-3 py-1.5 font-black text-sky-700"><i class="fa-solid fa-eye mr-1"></i>reviewed</button>
-                                    <button name="status" value="resolved" class="rounded-full bg-emerald-50 px-3 py-1.5 font-black text-emerald-700"><i class="fa-solid fa-check mr-1"></i>resolved</button>
-                                    <button name="status" value="rejected" class="rounded-full bg-red-50 px-3 py-1.5 font-black text-red-700"><i class="fa-solid fa-xmark mr-1"></i>reject</button>
+                                    <button name="status" value="reviewed" class="rounded-full bg-sky-50 px-3 py-1.5 font-black text-sky-700"><i class="fa-solid fa-eye mr-1"></i>ตรวจแล้ว</button>
+                                    <button name="status" value="resolved" class="rounded-full bg-emerald-50 px-3 py-1.5 font-black text-emerald-700"><i class="fa-solid fa-check mr-1"></i>แก้ไขแล้ว</button>
+                                    <button name="status" value="rejected" class="rounded-full bg-red-50 px-3 py-1.5 font-black text-red-700"><i class="fa-solid fa-xmark mr-1"></i>ปฏิเสธ</button>
                                 </div>
                             </form>
                         </td>

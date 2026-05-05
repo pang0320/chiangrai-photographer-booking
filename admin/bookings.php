@@ -18,7 +18,7 @@ if (is_post()) {
         $stmt = db()->prepare('UPDATE bookings SET status = ?, completed_at = IF(? = "completed", NOW(), completed_at), updated_at = NOW() WHERE id = ?');
         $stmt->execute([$newStatus, $newStatus, $id]);
 
-        add_booking_status_log($id, $booking['status'], $newStatus, (int)current_user()['id'], 'Admin change');
+        add_booking_status_log($id, $booking['status'], $newStatus, (int)current_user()['id'], 'ผู้ดูแลระบบเปลี่ยนสถานะ');
         notify_user((int)$booking['customer_id'], 'Admin เปลี่ยนสถานะคำขอจอง', $booking['booking_code'] . ' เป็น ' . booking_status_label($newStatus), 'booking', $id);
 
         $stmt = db()->prepare('SELECT user_id FROM photographer_profiles WHERE id = ? LIMIT 1');
@@ -30,7 +30,7 @@ if (is_post()) {
         }
 
         log_activity('admin_change_booking', 'bookings', $id);
-        flash('success', 'อัปเดต booking แล้ว');
+        flash('success', 'อัปเดตคำขอจองแล้ว');
     }
 
     redirect('/admin/bookings.php');
@@ -55,8 +55,11 @@ if (!empty($_GET['customer_id'])) {
 }
 
 if (!empty($_GET['date'])) {
-    $where[] = 'b.booking_date = ?';
-    $params[] = (string)$_GET['date'];
+    $filterDate = parse_be_date_to_iso((string)$_GET['date']);
+    if ($filterDate !== '') {
+        $where[] = 'b.booking_date = ?';
+        $params[] = $filterDate;
+    }
 }
 
 $sql = 'SELECT b.*, u.name AS customer_name, p.display_name, sc.name AS category_name
@@ -70,14 +73,14 @@ $stmt = db()->prepare($sql);
 $stmt->execute($params);
 $items = $stmt->fetchAll();
 
-$pageTitle = 'จัดการ Booking';
+$pageTitle = 'จัดการคำขอจอง';
 include __DIR__ . '/../includes/header.php';
 ?>
 
 <section class="px-4 py-8 sm:px-6 lg:px-8">
     <div>
-        <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">Admin</p>
-        <h1 class="mt-1 text-3xl font-black text-neutral-950">จัดการ Booking</h1>
+        <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">ผู้ดูแลระบบ</p>
+        <h1 class="mt-1 text-3xl font-black text-neutral-950">จัดการคำขอจอง</h1>
     </div>
 
     <form class="stock-card mt-6 grid gap-3 rounded-[1.5rem] p-5 md:grid-cols-5">
@@ -90,9 +93,9 @@ include __DIR__ . '/../includes/header.php';
             <?php endforeach; ?>
         </select>
 
-        <input name="photographer_id" value="<?= h($_GET['photographer_id'] ?? '') ?>" placeholder="photographer_id" class="stock-input rounded-2xl px-4 py-3 font-semibold">
-        <input name="customer_id" value="<?= h($_GET['customer_id'] ?? '') ?>" placeholder="customer_id" class="stock-input rounded-2xl px-4 py-3 font-semibold">
-        <input type="date" name="date" value="<?= h($_GET['date'] ?? '') ?>" class="stock-input rounded-2xl px-4 py-3 font-semibold">
+        <input name="photographer_id" value="<?= h($_GET['photographer_id'] ?? '') ?>" placeholder="รหัสช่างภาพ" class="stock-input rounded-2xl px-4 py-3 font-semibold">
+        <input name="customer_id" value="<?= h($_GET['customer_id'] ?? '') ?>" placeholder="รหัสลูกค้า" class="stock-input rounded-2xl px-4 py-3 font-semibold">
+        <?= be_date_input('date', (string)($_GET['date'] ?? ''), 'stock-input rounded-2xl px-4 py-3 font-semibold', false, 'วันที่จอง พ.ศ.') ?>
         <button class="stock-button rounded-2xl px-5 py-3 font-black"><i class="fa-solid fa-magnifying-glass mr-2"></i>ค้นหา</button>
     </form>
 
@@ -100,13 +103,13 @@ include __DIR__ . '/../includes/header.php';
         <table class="datatable w-full text-sm">
             <thead>
                 <tr>
-                    <th>Code</th>
+                    <th>รหัสจอง</th>
                     <th>ลูกค้า</th>
                     <th>ช่างภาพ</th>
                     <th>ประเภท</th>
                     <th>วันที่</th>
-                    <th>Status</th>
-                    <th>Change</th>
+                    <th>สถานะ</th>
+                    <th>เปลี่ยนสถานะ</th>
                 </tr>
             </thead>
             <tbody>
@@ -116,7 +119,7 @@ include __DIR__ . '/../includes/header.php';
                         <td><?= h($booking['customer_name']) ?></td>
                         <td><?= h($booking['display_name']) ?></td>
                         <td><?= h($booking['category_name']) ?></td>
-                        <td><?= h($booking['booking_date']) ?> <?= h(time_slot_label($booking['time_slot'])) ?></td>
+                        <td><?= h(format_be_date($booking['booking_date'])) ?> <?= h(time_slot_label($booking['time_slot'])) ?></td>
                         <td><?= status_badge($booking['status']) ?></td>
                         <td>
                             <form method="post" class="flex flex-wrap gap-2">
@@ -132,7 +135,7 @@ include __DIR__ . '/../includes/header.php';
                                 </select>
 
                                 <button data-confirm="ยืนยันเปลี่ยนสถานะ booking?" class="rounded-xl bg-neutral-950 px-3 py-2 font-black text-white hover:bg-red-600">
-                                    <i class="fa-solid fa-floppy-disk mr-1"></i>save
+                                    <i class="fa-solid fa-floppy-disk mr-1"></i>บันทึก
                                 </button>
                             </form>
                         </td>

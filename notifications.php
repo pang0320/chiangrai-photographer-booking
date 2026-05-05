@@ -88,7 +88,7 @@ include __DIR__ . '/includes/header.php';
                             <?php endif; ?>
                         </span>
                     </div>
-                    <p class="mt-3 text-xs font-bold text-neutral-400"><?= h($notification['created_at']) ?></p>
+                    <p class="mt-3 text-xs font-bold text-neutral-400"><?= h(format_be_datetime($notification['created_at'])) ?></p>
                 </article>
             <?php endforeach; ?>
         </div>

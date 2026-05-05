@@ -40,7 +40,7 @@ include __DIR__ . '/../includes/header.php';
 
 <section class="px-4 py-8 sm:px-6 lg:px-8">
     <div>
-        <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">Admin</p>
+        <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">ผู้ดูแลระบบ</p>
         <h1 class="mt-1 text-3xl font-black text-neutral-950">จัดการอำเภอ</h1>
     </div>
 
@@ -51,7 +51,7 @@ include __DIR__ . '/../includes/header.php';
         <input name="longitude" required placeholder="longitude" class="stock-input rounded-2xl px-4 py-3 font-semibold">
         <label class="rounded-2xl bg-neutral-50 px-4 py-3 font-bold">
             <input type="checkbox" name="is_active" checked>
-            active
+            เปิดใช้งาน
         </label>
         <button class="stock-button rounded-2xl px-5 py-3 font-black"><i class="fa-solid fa-plus mr-2"></i>เพิ่ม/อัปเดต</button>
     </form>

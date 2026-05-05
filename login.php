@@ -2,7 +2,7 @@
 require_once __DIR__ . '/includes/functions.php';
 
 if (current_user()) {
-    redirect(dashboard_path(current_user()['role_name']));
+    redirect(user_workspace_path(current_user()));
 }
 
 if (is_post()) {
@@ -33,15 +33,7 @@ if (is_post()) {
         db()->prepare('UPDATE users SET last_login_at = NOW() WHERE id = ?')->execute([(int)$user['id']]);
         log_activity('login', 'users', (int)$user['id'], 'User logged in');
         flash('success', 'เข้าสู่ระบบสำเร็จ');
-        if ($user['role_name'] === 'photographer') {
-            $profile = photographer_profile_by_user((int)$user['id']);
-            if ($profile) {
-                if (photographer_completion_percent((int)$profile['id']) < 100) {
-                    redirect('/photographer/onboarding.php');
-                }
-            }
-        }
-        redirect(dashboard_path($user['role_name']));
+        redirect(user_workspace_path($user));
     }
 
     record_login_attempt($email, false);

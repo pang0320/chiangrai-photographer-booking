@@ -19,6 +19,7 @@ document.addEventListener('click', function (event) {
           button.form.appendChild(hidden);
         }
 
+        syncAllBeDateInputs();
         const loader = document.getElementById('page-loader');
         if (loader) loader.classList.remove('hidden');
         button.form.submit();
@@ -32,9 +33,125 @@ document.addEventListener('DOMContentLoaded', function () {
   if (window.jQuery && jQuery.fn.DataTable) {
     jQuery('.datatable').DataTable({ pageLength: 25, order: [] });
   }
+
+  document.querySelectorAll('[data-be-date-visible]').forEach(function (input) {
+    const hidden = document.getElementById(input.dataset.target || '');
+    if (!hidden) return;
+
+    const syncDate = function (shouldFormat) {
+      const isoDate = parseBeDateToIso(input.value);
+      hidden.value = isoDate;
+
+      if (shouldFormat && isoDate) {
+        input.value = formatIsoToBeDate(isoDate);
+      }
+    };
+
+    input.addEventListener('input', function () {
+      syncDate(false);
+    });
+
+    input.addEventListener('blur', function () {
+      syncDate(true);
+    });
+
+    if (hidden.value && !input.value) {
+      input.value = formatIsoToBeDate(hidden.value);
+    }
+  });
 });
 
 document.addEventListener('submit', function () {
+  syncAllBeDateInputs();
+
   const loader = document.getElementById('page-loader');
   if (loader) loader.classList.remove('hidden');
 });
+
+function syncAllBeDateInputs() {
+  document.querySelectorAll('[data-be-date-visible]').forEach(function (input) {
+    const hidden = document.getElementById(input.dataset.target || '');
+    if (!hidden) return;
+    hidden.value = parseBeDateToIso(input.value);
+  });
+}
+
+function parseBeDateToIso(value) {
+  const raw = String(value || '').trim();
+  let match;
+  let year;
+  let month;
+  let day;
+
+  if (raw === '') {
+    return '';
+  }
+
+  match = raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (match) {
+    year = parseInt(match[1], 10);
+    month = parseInt(match[2], 10);
+    day = parseInt(match[3], 10);
+
+    if (year >= 2400) {
+      year -= 543;
+    }
+
+    if (isValidDate(year, month, day)) {
+      return buildIsoDate(year, month, day);
+    }
+  }
+
+  match = raw.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/);
+  if (match) {
+    day = parseInt(match[1], 10);
+    month = parseInt(match[2], 10);
+    year = parseInt(match[3], 10);
+
+    if (year >= 2400) {
+      year -= 543;
+    }
+
+    if (isValidDate(year, month, day)) {
+      return buildIsoDate(year, month, day);
+    }
+  }
+
+  match = raw.match(/^(\d{4})[\/.](\d{1,2})[\/.](\d{1,2})$/);
+  if (match) {
+    year = parseInt(match[1], 10);
+    month = parseInt(match[2], 10);
+    day = parseInt(match[3], 10);
+
+    if (year >= 2400) {
+      year -= 543;
+    }
+
+    if (isValidDate(year, month, day)) {
+      return buildIsoDate(year, month, day);
+    }
+  }
+
+  return '';
+}
+
+function formatIsoToBeDate(value) {
+  const isoDate = parseBeDateToIso(value);
+  const match = isoDate.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+
+  if (!match) {
+    return '';
+  }
+
+  return match[3] + '/' + match[2] + '/' + (parseInt(match[1], 10) + 543);
+}
+
+function isValidDate(year, month, day) {
+  const date = new Date(year, month - 1, day);
+
+  return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day;
+}
+
+function buildIsoDate(year, month, day) {
+  return String(year).padStart(4, '0') + '-' + String(month).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+}

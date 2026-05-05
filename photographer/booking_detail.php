@@ -20,7 +20,7 @@ $stmt->execute([$id, $pid]);
 $booking = $stmt->fetch();
 
 if (!$booking) {
-    exit('Booking not found');
+    exit('ไม่พบรายการจอง');
 }
 
 $stmt = db()->prepare('SELECT l.*, u.name
@@ -39,7 +39,7 @@ include __DIR__ . '/../includes/header.php';
     <div class="stock-card rounded-[1.5rem] p-6">
         <div class="flex flex-wrap justify-between gap-4">
             <div>
-                <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">Booking Detail</p>
+                <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">รายละเอียดการจอง</p>
                 <h1 class="mt-1 text-3xl font-black text-neutral-950"><?= h($booking['booking_code']) ?></h1>
                 <p class="text-neutral-600"><?= h($booking['customer_name']) ?> · <?= h($booking['category_name']) ?></p>
             </div>
@@ -51,7 +51,7 @@ include __DIR__ . '/../includes/header.php';
                 <b>ข้อมูลงาน</b>
                 <p class="mt-2"><?= nl2br(h($booking['job_detail'])) ?></p>
                 <p class="mt-3 text-sm text-neutral-600">
-                    <?= h($booking['booking_date']) ?> · <?= h(time_slot_label($booking['time_slot'])) ?> · <?= h($booking['district_name']) ?>
+                    <?= h(format_be_date($booking['booking_date'])) ?> · <?= h(time_slot_label($booking['time_slot'])) ?> · <?= h($booking['district_name']) ?>
                 </p>
             </div>
             <div class="rounded-[1.35rem] bg-neutral-50 p-5">
@@ -81,7 +81,7 @@ include __DIR__ . '/../includes/header.php';
                 <?php
                 $oldStatusText = '-';
                 if (!empty($log['old_status'])) {
-                    $oldStatusText = $log['old_status'];
+                    $oldStatusText = booking_status_label((string)$log['old_status']);
                 }
                 $changedByName = 'System';
                 if (!empty($log['name'])) {
@@ -89,7 +89,7 @@ include __DIR__ . '/../includes/header.php';
                 }
                 ?>
                 <div class="rounded-2xl bg-neutral-50 p-4 text-sm">
-                    <?= h($log['created_at']) ?>
+                    <?= h(format_be_datetime($log['created_at'])) ?>
                     · <?= h($oldStatusText) ?>
                     → <?= h($log['new_status']) ?>
                     โดย <?= h($changedByName) ?>

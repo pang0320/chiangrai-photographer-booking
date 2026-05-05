@@ -51,7 +51,7 @@ include __DIR__ . '/../includes/header.php';
 
 <section class="px-4 py-8 sm:px-6 lg:px-8">
     <div>
-        <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">Photographer Studio</p>
+        <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">สตูดิโอช่างภาพ</p>
         <h1 class="mt-1 text-3xl font-black text-neutral-950">ประเภทงานที่รับ</h1>
     </div>
 

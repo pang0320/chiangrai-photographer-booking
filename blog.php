@@ -5,13 +5,13 @@ $blogs = db_fetch_all('SELECT b.*, u.name AS admin_name
                        JOIN users u ON u.id = b.admin_id
                        WHERE b.status = "published" AND b.deleted_at IS NULL
                        ORDER BY b.published_at DESC, b.created_at DESC');
-$pageTitle = 'Blog';
+$pageTitle = 'บทความ';
 include __DIR__ . '/includes/header.php';
 ?>
 <section class="stock-shell px-4 py-12 sm:px-6 lg:px-8">
     <div class="flex flex-wrap items-end justify-between gap-4">
         <div>
-            <p class="section-kicker">Blog</p>
+            <p class="section-kicker">บทความ</p>
             <h1 class="mt-2 text-4xl font-black">บทความจากระบบ</h1>
             <p class="mt-2 text-neutral-600">คำแนะนำการเลือกช่างภาพ การเตรียมตัว และเช็กลิสต์ก่อนวันถ่าย</p>
         </div>
@@ -20,7 +20,7 @@ include __DIR__ . '/includes/header.php';
     <div class="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
         <?php foreach ($blogs as $blog): ?>
             <article class="stock-card stock-card-hover rounded-[1.75rem]">
-                <img class="h-56 w-full object-cover" src="<?= h(public_image($blog['cover_image'], 'https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?auto=format&fit=crop&w=900&q=80')) ?>" alt="">
+                <img class="h-56 w-full object-cover" src="<?= h(public_image($blog['cover_image'], '/assets/uploads/seed/photo-1492691527719-9d1e07e534b4.jpg')) ?>" alt="">
                 <div class="p-6">
                     <p class="text-sm font-black text-red-600"><i class="fa-solid fa-user-shield mr-1"></i><?= h($blog['admin_name']) ?></p>
                     <h2 class="mt-2 text-xl font-black"><?= h($blog['title']) ?></h2>

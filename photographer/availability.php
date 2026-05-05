@@ -18,10 +18,15 @@ if (is_post()) {
         $stmt->execute([$id, $pid]);
         flash('success', 'ลบวันว่างแล้ว');
     } else {
-        $availableDate = (string)($_POST['available_date'] ?? '');
+        $availableDate = parse_be_date_to_iso((string)($_POST['available_date'] ?? ''));
         $timeSlot = (string)($_POST['time_slot'] ?? '');
         $status = (string)($_POST['status'] ?? 'available');
         $note = trim((string)($_POST['note'] ?? ''));
+
+        if ($availableDate === '') {
+            flash('error', 'รูปแบบวันที่ไม่ถูกต้อง กรุณากรอกแบบ วว/ดด/พ.ศ.');
+            redirect('/photographer/availability.php');
+        }
 
         if (!array_key_exists($timeSlot, $timeSlots)) {
             flash('error', 'ช่วงเวลาไม่ถูกต้อง');
@@ -54,14 +59,14 @@ include __DIR__ . '/../includes/header.php';
 
 <section class="px-4 py-8 sm:px-6 lg:px-8">
     <div>
-        <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">Photographer Studio</p>
+        <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">สตูดิโอช่างภาพ</p>
         <h1 class="mt-1 text-3xl font-black text-neutral-950">จัดการวันว่าง</h1>
     </div>
 
     <form method="post" class="stock-card mt-6 grid gap-4 rounded-[1.5rem] p-5 md:grid-cols-5">
         <?= csrf_field() ?>
 
-        <input type="date" name="available_date" required class="stock-input rounded-2xl px-4 py-3 font-semibold">
+        <?= be_date_input('available_date', '', 'stock-input rounded-2xl px-4 py-3 font-semibold', true, 'วันที่ พ.ศ. เช่น 05/05/2569') ?>
 
         <select name="time_slot" class="stock-input rounded-2xl px-4 py-3 font-semibold">
             <?php foreach ($timeSlots as $value => $label): ?>
@@ -71,11 +76,11 @@ include __DIR__ . '/../includes/header.php';
 
         <select name="status" class="stock-input rounded-2xl px-4 py-3 font-semibold">
             <?php foreach ($statuses as $status): ?>
-                <option value="<?= h($status) ?>"><?= h($status) ?></option>
+                <option value="<?= h($status) ?>"><?= h(booking_status_label($status)) ?></option>
             <?php endforeach; ?>
         </select>
 
-        <input name="note" placeholder="note" class="stock-input rounded-2xl px-4 py-3 font-semibold">
+        <input name="note" placeholder="หมายเหตุ" class="stock-input rounded-2xl px-4 py-3 font-semibold">
         <button class="stock-button rounded-2xl px-5 py-3 font-black"><i class="fa-solid fa-floppy-disk mr-2"></i>บันทึก</button>
     </form>
 
@@ -93,9 +98,9 @@ include __DIR__ . '/../includes/header.php';
             <tbody>
                 <?php foreach ($items as $item): ?>
                     <tr class="border-t">
-                        <td class="py-3 font-bold"><?= h($item['available_date']) ?></td>
+                        <td class="py-3 font-bold"><?= h(format_be_date($item['available_date'])) ?></td>
                         <td><?= h(time_slot_label($item['time_slot'])) ?></td>
-                        <td><?= h($item['status']) ?></td>
+                        <td><?= h(booking_status_label($item['status'])) ?></td>
                         <td><?= h($item['note']) ?></td>
                         <td>
                             <form method="post">

@@ -15,7 +15,7 @@ $stmt = db()->prepare('SELECT p.*, u.id AS photographer_user_id
                        LIMIT 1');
 $stmt->execute([$photographerId]);
 $profile = $stmt->fetch();
-if (!$profile) exit('Photographer unavailable');
+if (!$profile) exit('ช่างภาพไม่พร้อมรับจอง');
 
 $categories = db()->prepare('SELECT sc.* FROM photographer_services ps JOIN service_categories sc ON sc.id=ps.category_id WHERE ps.photographer_id=? AND ps.is_active=1 ORDER BY sc.sort_order');
 $categories->execute([$photographerId]);
@@ -28,7 +28,7 @@ if (is_post()) {
     verify_csrf();
     $categoryId = (int)($_POST['category_id'] ?? 0);
     $districtId = (int)($_POST['district_id'] ?? 0);
-    $date = (string)($_POST['booking_date'] ?? '');
+    $date = parse_be_date_to_iso((string)($_POST['booking_date'] ?? ''));
     $slot = (string)($_POST['time_slot'] ?? '');
     if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date) || !in_array($slot, ['morning','afternoon','evening','full_day'], true) || !can_book_slot($photographerId, $date, $slot)) {
         flash('error', 'วันหรือช่วงเวลานี้ไม่พร้อมจอง');
@@ -78,7 +78,7 @@ include __DIR__ . '/../includes/header.php';
 ?>
 <section class="stock-shell px-4 py-10">
     <div class="mx-auto max-w-3xl stock-card rounded-[2rem] p-8">
-        <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">Booking request</p>
+        <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">คำขอจอง</p>
         <h1 class="mt-2 text-3xl font-black text-neutral-950">ส่งคำขอจอง: <?= h($profile['display_name']) ?></h1>
         <p class="mt-4 rounded-2xl bg-red-50 p-4 text-sm font-black text-red-700"><?= h(PAYMENT_DISCLAIMER) ?></p>
         <form method="post" class="mt-6 grid gap-4">
@@ -101,7 +101,7 @@ include __DIR__ . '/../includes/header.php';
                         </option>
                     <?php endforeach; ?>
                 </select>
-                <input type="date" name="booking_date" required class="stock-input rounded-2xl px-4 py-3 font-semibold">
+                <?= be_date_input('booking_date', '', 'stock-input rounded-2xl px-4 py-3 font-semibold', true, 'วันที่ถ่าย พ.ศ. เช่น 05/05/2569') ?>
                 <select name="time_slot" required class="stock-input rounded-2xl px-4 py-3 font-semibold"><option value="">ช่วงเวลา</option><option value="morning">เช้า</option><option value="afternoon">บ่าย</option><option value="evening">เย็น</option><option value="full_day">เต็มวัน</option></select>
                 <input name="contact_name" value="<?= h($user['name']) ?>" required placeholder="ชื่อผู้ติดต่อ" class="stock-input rounded-2xl px-4 py-3 font-semibold">
                 <input name="contact_phone" value="<?= h($user['phone']) ?>" required placeholder="เบอร์โทรศัพท์" class="stock-input rounded-2xl px-4 py-3 font-semibold">

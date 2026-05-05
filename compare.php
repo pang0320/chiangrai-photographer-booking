@@ -41,7 +41,7 @@ include __DIR__ . '/includes/header.php';
     <div class="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
         <?php foreach ($items as $p): ?>
             <article class="stock-card rounded-[1.75rem] p-6">
-                <img class="h-28 w-28 rounded-3xl object-cover" src="<?= h(public_image($p['profile_image'], 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80')) ?>" alt="">
+                <img class="h-28 w-28 rounded-3xl object-cover" src="<?= h(public_image($p['profile_image'], '/assets/uploads/seed/photo-1500648767791-00dcc994a43e.jpg')) ?>" alt="">
                 <h2 class="mt-4 text-2xl font-black"><?= h($p['display_name']) ?></h2>
                 <div class="mt-4 grid gap-3 text-sm font-bold text-neutral-700">
                     <p><i class="fa-solid fa-star mr-2 text-red-600"></i><?= number_format((float)$p['average_rating'], 1) ?> / <?= (int)$p['total_reviews'] ?> รีวิว</p>

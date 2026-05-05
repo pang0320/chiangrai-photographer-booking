@@ -8,28 +8,28 @@ if (!$breadcrumbPath) {
     $breadcrumbPath = '/';
 }
 $breadcrumbLabels = [
-    'admin' => 'Admin',
-    'customer' => 'Customer',
-    'photographer' => 'Photographer',
-    'dashboard.php' => 'Dashboard',
-    'users.php' => 'Users',
-    'photographers.php' => 'Photographers',
-    'categories.php' => 'Categories',
-    'districts.php' => 'Districts',
-    'bookings.php' => 'Bookings',
-    'booking_detail.php' => 'Booking Detail',
-    'reviews.php' => 'Reviews',
-    'articles.php' => 'Articles',
-    'banners.php' => 'Banners',
-    'reports.php' => 'Reports',
-    'activity_logs.php' => 'Activity Logs',
-    'settings.php' => 'Settings',
-    'profile.php' => 'Profile',
-    'portfolio.php' => 'Portfolio',
-    'availability.php' => 'Availability',
-    'services.php' => 'Services',
-    'service_areas.php' => 'Service Areas',
-    'notifications.php' => 'Notifications',
+    'admin' => 'ผู้ดูแลระบบ',
+    'customer' => 'ลูกค้า',
+    'photographer' => 'ช่างภาพ',
+    'dashboard.php' => 'แดชบอร์ด',
+    'users.php' => 'ผู้ใช้งาน',
+    'photographers.php' => 'ช่างภาพ',
+    'categories.php' => 'หมวดหมู่',
+    'districts.php' => 'อำเภอ',
+    'bookings.php' => 'คำขอจอง',
+    'booking_detail.php' => 'รายละเอียดการจอง',
+    'reviews.php' => 'รีวิว',
+    'articles.php' => 'บทความ',
+    'banners.php' => 'แบนเนอร์',
+    'reports.php' => 'รายงาน',
+    'activity_logs.php' => 'ประวัติการใช้งาน',
+    'settings.php' => 'ตั้งค่า',
+    'profile.php' => 'โปรไฟล์',
+    'portfolio.php' => 'ผลงาน',
+    'availability.php' => 'วันว่าง',
+    'services.php' => 'ประเภทงาน',
+    'service_areas.php' => 'พื้นที่ให้บริการ',
+    'notifications.php' => 'แจ้งเตือน',
 ];
 
 if ($breadcrumbPath !== '/' && $breadcrumbPath !== '/index.php'):
@@ -38,7 +38,7 @@ if ($breadcrumbPath !== '/' && $breadcrumbPath !== '/index.php'):
 ?>
     <div class="stock-shell px-4 pt-4 sm:px-6 lg:px-8">
         <nav class="flex flex-wrap items-center gap-2 text-xs font-black uppercase tracking-[0.12em] text-neutral-500">
-            <a href="/index.php" class="hover:text-red-600">Home</a>
+            <a href="/index.php" class="hover:text-red-600">หน้าแรก</a>
             <?php foreach ($parts as $part): ?>
                 <?php
                 $runningPath .= '/' . $part;

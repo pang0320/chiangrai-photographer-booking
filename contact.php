@@ -26,7 +26,7 @@ include __DIR__ . '/includes/header.php';
 ?>
 <section class="stock-shell grid gap-8 px-4 py-12 sm:px-6 lg:grid-cols-[.9fr_1.1fr] lg:px-8">
     <div class="dashboard-hero rounded-[2rem] p-8 text-white">
-        <p class="section-kicker text-red-300">Contact Us</p>
+        <p class="section-kicker text-red-300">ติดต่อเรา</p>
         <h1 class="mt-3 text-4xl font-black">ติดต่อผู้ดูแลระบบ</h1>
         <p class="mt-4 leading-8 text-white/70">สอบถามการใช้งาน แจ้งปัญหา หรือเสนอแนะระบบค้นหาช่างภาพเชียงราย</p>
         <div class="mt-8 grid gap-3 text-sm font-bold">

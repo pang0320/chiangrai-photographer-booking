@@ -27,31 +27,31 @@ include __DIR__ . '/../includes/header.php';
 
 <section class="px-4 py-8 sm:px-6 lg:px-8">
     <div>
-        <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">Admin</p>
+        <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">ผู้ดูแลระบบ</p>
         <h1 class="mt-1 text-3xl font-black text-neutral-950">รายงาน</h1>
     </div>
 
     <div class="mt-6 grid gap-4 sm:grid-cols-4">
         <div class="stock-card rounded-[1.5rem] p-5">
-            <p class="text-sm font-bold text-neutral-500">Users</p>
+            <p class="text-sm font-bold text-neutral-500">ผู้ใช้งาน</p>
             <b class="mt-2 block text-3xl"><?= table_count('users', 'deleted_at IS NULL') ?></b>
         </div>
         <div class="stock-card rounded-[1.5rem] p-5">
-            <p class="text-sm font-bold text-neutral-500">Photographers</p>
+            <p class="text-sm font-bold text-neutral-500">ช่างภาพ</p>
             <b class="mt-2 block text-3xl"><?= table_count('photographer_profiles', 'deleted_at IS NULL') ?></b>
         </div>
         <div class="stock-card rounded-[1.5rem] p-5">
-            <p class="text-sm font-bold text-neutral-500">Bookings</p>
+            <p class="text-sm font-bold text-neutral-500">คำขอจอง</p>
             <b class="mt-2 block text-3xl"><?= table_count('bookings', 'deleted_at IS NULL') ?></b>
         </div>
         <div class="stock-card rounded-[1.5rem] p-5">
-            <p class="text-sm font-bold text-neutral-500">Avg Review</p>
+            <p class="text-sm font-bold text-neutral-500">คะแนนรีวิวเฉลี่ย</p>
             <b class="mt-2 block text-3xl"><?= number_format((float)$avgReview, 1) ?></b>
         </div>
     </div>
 
     <div class="mt-6 grid gap-6 lg:grid-cols-3">
-        <?php foreach ([['Top Categories', $topCategories, 'name'], ['Top Districts', $topDistricts, 'district_name'], ['Top Rated', $topPhotographers, 'display_name']] as $box): ?>
+        <?php foreach ([['หมวดหมู่ยอดนิยม', $topCategories, 'name'], ['อำเภอยอดนิยม', $topDistricts, 'district_name'], ['ช่างภาพคะแนนสูง', $topPhotographers, 'display_name']] as $box): ?>
             <div class="stock-card rounded-[1.5rem] p-6">
                 <h2 class="font-black"><?= h($box[0]) ?></h2>
                 <div class="mt-4 grid gap-2">

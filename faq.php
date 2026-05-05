@@ -5,13 +5,13 @@ $grouped = [];
 foreach ($faqs as $faq) {
     $grouped[$faq['category']][] = $faq;
 }
-$pageTitle = 'FAQ';
+$pageTitle = 'คำถามที่พบบ่อย';
 include __DIR__ . '/includes/header.php';
 ?>
 <section class="stock-shell px-4 py-12 sm:px-6 lg:px-8">
     <div class="flex flex-wrap items-end justify-between gap-4">
         <div>
-            <p class="section-kicker">FAQ</p>
+            <p class="section-kicker">คำถามที่พบบ่อย</p>
             <h1 class="mt-2 text-4xl font-black">คำถามที่พบบ่อย</h1>
         </div>
         <a href="/contact.php" class="stock-button rounded-full px-5 py-3 font-black"><i class="fa-solid fa-envelope mr-2"></i>ติดต่อเรา</a>
@@ -33,8 +33,8 @@ include __DIR__ . '/includes/header.php';
         <?php if (!$grouped): ?>
             <div class="empty-state rounded-[2rem] p-10 text-center lg:col-span-2">
                 <i class="fa-solid fa-circle-question text-5xl text-red-600"></i>
-                <h2 class="mt-4 text-2xl font-black">ยังไม่มี FAQ</h2>
-                <p class="mt-2 text-neutral-600">Admin สามารถเพิ่มคำถามที่พบบ่อยได้จากหลังบ้าน</p>
+                <h2 class="mt-4 text-2xl font-black">ยังไม่มีคำถามที่พบบ่อย</h2>
+                <p class="mt-2 text-neutral-600">ผู้ดูแลระบบสามารถเพิ่มคำถามที่พบบ่อยได้จากหลังบ้าน</p>
             </div>
         <?php endif; ?>
     </div>

@@ -45,7 +45,7 @@ if (is_post()) {
         $stmt = db()->prepare('UPDATE blogs SET deleted_at = NOW(), updated_at = NOW() WHERE id = ?');
         $stmt->execute([$id]);
         log_activity('delete_blog', 'blogs', $id);
-        flash('success', 'ลบ Blog แล้ว');
+        flash('success', 'ลบบทความแล้ว');
         redirect('/admin/blogs.php');
     }
 
@@ -61,7 +61,7 @@ if (is_post()) {
         $stmt = db()->prepare('UPDATE blogs SET status = ?, published_at = ' . $publishedSql . ', updated_at = NOW() WHERE id = ?');
         $stmt->execute([$status, $id]);
         log_activity('update_blog_status', 'blogs', $id);
-        flash('success', 'อัปเดตสถานะ Blog แล้ว');
+        flash('success', 'อัปเดตสถานะบทความแล้ว');
         redirect('/admin/blogs.php');
     }
 
@@ -76,7 +76,7 @@ if (is_post()) {
     }
 
     if ($title === '' || $content === '') {
-        flash('error', 'กรุณากรอกหัวข้อและเนื้อหา Blog');
+        flash('error', 'กรุณากรอกหัวข้อและเนื้อหาบทความ');
         redirect('/admin/blogs.php');
     }
 
@@ -113,7 +113,7 @@ if (is_post()) {
             log_activity('create_blog', 'blogs', $id);
         }
 
-        flash('success', 'บันทึก Blog แล้ว');
+        flash('success', 'บันทึกบทความแล้ว');
         redirect('/admin/blogs.php');
     } catch (Throwable $e) {
         flash('error', $e->getMessage());
@@ -139,17 +139,17 @@ $items = db_fetch_all('SELECT b.*, u.name AS admin_name,
                        WHERE b.deleted_at IS NULL
                        ORDER BY b.created_at DESC');
 
-$pageTitle = 'จัดการ Blog';
+$pageTitle = 'จัดการบทความเว็บ';
 include __DIR__ . '/../includes/header.php';
 ?>
 
 <section class="px-4 py-8 sm:px-6 lg:px-8">
     <div class="flex flex-wrap items-end justify-between gap-4">
         <div>
-            <p class="section-kicker">Central Blog</p>
-            <h1 class="mt-1 text-3xl font-black text-neutral-950"><i class="fa-solid fa-newspaper mr-2 text-red-600"></i>จัดการ Blog กลาง</h1>
+            <p class="section-kicker">บทความส่วนกลาง</p>
+            <h1 class="mt-1 text-3xl font-black text-neutral-950"><i class="fa-solid fa-newspaper mr-2 text-red-600"></i>จัดการบทความเว็บ</h1>
         </div>
-        <a href="/blog.php" target="_blank" class="rounded-full border border-neutral-200 px-5 py-3 text-sm font-black hover:bg-neutral-950 hover:text-white"><i class="fa-solid fa-eye mr-2"></i>ดูหน้า Blog</a>
+        <a href="/blog.php" target="_blank" class="rounded-full border border-neutral-200 px-5 py-3 text-sm font-black hover:bg-neutral-950 hover:text-white"><i class="fa-solid fa-eye mr-2"></i>ดูหน้าบทความ</a>
     </div>
 
     <form method="post" enctype="multipart/form-data" class="stock-card mt-6 grid gap-4 rounded-[1.75rem] p-6">
@@ -161,33 +161,33 @@ include __DIR__ . '/../includes/header.php';
                 <input name="title" required value="<?php if ($editBlog): ?><?= h($editBlog['title']) ?><?php endif; ?>" class="stock-input rounded-2xl px-4 py-3 font-semibold">
             </label>
             <label class="grid gap-2 text-sm font-black text-neutral-700">
-                <span><i class="fa-solid fa-signal mr-1 text-red-600"></i>Status</span>
+                <span><i class="fa-solid fa-signal mr-1 text-red-600"></i>สถานะ</span>
                 <select name="status" class="stock-input rounded-2xl px-4 py-3 font-semibold">
                     <?php foreach (['draft', 'published', 'hidden'] as $status): ?>
-                        <option value="<?= h($status) ?>" <?php if ($editBlog && $editBlog['status'] === $status): ?>selected<?php endif; ?>><?= h($status) ?></option>
+                        <option value="<?= h($status) ?>" <?php if ($editBlog && $editBlog['status'] === $status): ?>selected<?php endif; ?>><?= h(booking_status_label($status)) ?></option>
                     <?php endforeach; ?>
                 </select>
             </label>
         </div>
         <label class="grid gap-2 text-sm font-black text-neutral-700">
-            <span><i class="fa-solid fa-align-left mr-1 text-red-600"></i>Excerpt</span>
+            <span><i class="fa-solid fa-align-left mr-1 text-red-600"></i>คำโปรย</span>
             <textarea name="excerpt" rows="2" class="stock-input rounded-2xl px-4 py-3 font-semibold"><?php if ($editBlog): ?><?= h($editBlog['excerpt']) ?><?php endif; ?></textarea>
         </label>
         <label class="grid gap-2 text-sm font-black text-neutral-700">
-            <span><i class="fa-solid fa-pen-nib mr-1 text-red-600"></i>Content</span>
+            <span><i class="fa-solid fa-pen-nib mr-1 text-red-600"></i>เนื้อหา</span>
             <textarea name="content" rows="8" required class="stock-input rounded-2xl px-4 py-3 font-semibold"><?php if ($editBlog): ?><?= h($editBlog['content']) ?><?php endif; ?></textarea>
         </label>
         <div class="grid gap-4 lg:grid-cols-2">
             <label class="grid gap-2 text-sm font-black text-neutral-700">
-                <span><i class="fa-solid fa-tags mr-1 text-red-600"></i>Tags คั่นด้วย comma</span>
-                <input name="tags" value="<?= h($editTags) ?>" class="stock-input rounded-2xl px-4 py-3 font-semibold" placeholder="wedding, portrait, chiangrai">
+                <span><i class="fa-solid fa-tags mr-1 text-red-600"></i>แท็ก คั่นด้วย comma</span>
+                <input name="tags" value="<?= h($editTags) ?>" class="stock-input rounded-2xl px-4 py-3 font-semibold" placeholder="งานแต่ง, พอร์ตเทรต, เชียงราย">
             </label>
             <label class="grid gap-2 text-sm font-black text-neutral-700">
-                <span><i class="fa-solid fa-image mr-1 text-red-600"></i>Cover Image</span>
+                <span><i class="fa-solid fa-image mr-1 text-red-600"></i>รูปปก</span>
                 <input type="file" name="cover_image" accept="image/jpeg,image/png,image/webp" class="stock-input rounded-2xl px-4 py-3 font-semibold">
             </label>
         </div>
-        <button class="stock-button rounded-2xl px-5 py-3 font-black"><i class="fa-solid fa-floppy-disk mr-2"></i>บันทึก Blog</button>
+        <button class="stock-button rounded-2xl px-5 py-3 font-black"><i class="fa-solid fa-floppy-disk mr-2"></i>บันทึกบทความ</button>
     </form>
 
     <div class="stock-card mt-6 overflow-x-auto rounded-[1.75rem] p-5">
@@ -195,11 +195,11 @@ include __DIR__ . '/../includes/header.php';
             <thead>
                 <tr>
                     <th>หัวข้อ</th>
-                    <th>Admin</th>
-                    <th>Tags</th>
-                    <th>Status</th>
+                    <th>ผู้ดูแล</th>
+                    <th>แท็ก</th>
+                    <th>สถานะ</th>
                     <th>วันที่</th>
-                    <th>Action</th>
+                    <th>จัดการ</th>
                 </tr>
             </thead>
             <tbody>
@@ -211,7 +211,7 @@ include __DIR__ . '/../includes/header.php';
                         <td><?= h($item['admin_name']) ?></td>
                         <td><?= h($item['tags']) ?></td>
                         <td><?= status_badge($item['status']) ?></td>
-                        <td><?= h($item['created_at']) ?></td>
+                        <td><?= h(format_be_datetime($item['created_at'])) ?></td>
                         <td>
                             <div class="flex flex-wrap gap-2">
                                 <a href="/admin/blogs.php?edit=<?= (int)$item['id'] ?>" class="rounded-full bg-amber-50 px-3 py-1.5 font-black text-amber-700"><i class="fa-solid fa-pen mr-1"></i>แก้ไข</a>
@@ -219,14 +219,14 @@ include __DIR__ . '/../includes/header.php';
                                     <?= csrf_field() ?>
                                     <input type="hidden" name="action" value="status">
                                     <input type="hidden" name="id" value="<?= (int)$item['id'] ?>">
-                                    <button name="status" value="published" class="rounded-full bg-emerald-50 px-3 py-1.5 font-black text-emerald-700"><i class="fa-solid fa-check mr-1"></i>publish</button>
-                                    <button name="status" value="hidden" class="rounded-full bg-slate-100 px-3 py-1.5 font-black text-slate-700"><i class="fa-solid fa-eye-slash mr-1"></i>hide</button>
+                                    <button name="status" value="published" class="rounded-full bg-emerald-50 px-3 py-1.5 font-black text-emerald-700"><i class="fa-solid fa-check mr-1"></i>เผยแพร่</button>
+                                    <button name="status" value="hidden" class="rounded-full bg-slate-100 px-3 py-1.5 font-black text-slate-700"><i class="fa-solid fa-eye-slash mr-1"></i>ซ่อน</button>
                                 </form>
                                 <form method="post">
                                     <?= csrf_field() ?>
                                     <input type="hidden" name="action" value="delete">
                                     <input type="hidden" name="id" value="<?= (int)$item['id'] ?>">
-                                    <button data-confirm="ลบ Blog นี้?" class="rounded-full bg-red-50 px-3 py-1.5 font-black text-red-700"><i class="fa-solid fa-trash mr-1"></i>ลบ</button>
+                                    <button data-confirm="ลบบทความนี้?" class="rounded-full bg-red-50 px-3 py-1.5 font-black text-red-700"><i class="fa-solid fa-trash mr-1"></i>ลบ</button>
                                 </form>
                             </div>
                         </td>

@@ -43,7 +43,7 @@ include __DIR__ . '/../includes/header.php';
     <div class="rounded-3xl bg-white p-8 shadow-sm ring-1 ring-slate-200">
         <div class="flex flex-wrap justify-between gap-4"><div><h1 class="text-2xl font-extrabold"><?= h($booking['booking_code']) ?></h1><p class="text-slate-600"><?= h($booking['display_name']) ?> · <?= h($booking['category_name']) ?></p></div><?= status_badge($booking['status']) ?></div>
         <div class="mt-6 grid gap-4 md:grid-cols-2">
-            <div class="rounded-3xl bg-slate-50 p-5"><b>รายละเอียดงาน</b><p class="mt-2"><?= nl2br(h($booking['job_detail'])) ?></p><p class="mt-3 text-sm text-slate-600"><?= h($booking['booking_date']) ?> · <?= h(time_slot_label($booking['time_slot'])) ?> · <?= h($booking['district_name']) ?></p></div>
+            <div class="rounded-3xl bg-slate-50 p-5"><b>รายละเอียดงาน</b><p class="mt-2"><?= nl2br(h($booking['job_detail'])) ?></p><p class="mt-3 text-sm text-slate-600"><?= h(format_be_date($booking['booking_date'])) ?> · <?= h(time_slot_label($booking['time_slot'])) ?> · <?= h($booking['district_name']) ?></p></div>
             <div class="rounded-3xl bg-slate-50 p-5"><b>ช่องทางติดต่อช่างภาพ</b><p class="mt-2">โทร: <?= h($booking['phone_public']) ?></p><p>LINE: <?= h($booking['line_id']) ?></p><p>Facebook: <?= h($booking['facebook_url']) ?></p><p>Instagram: <?= h($booking['instagram_url']) ?></p></div>
         </div>
         <div class="mt-6 flex flex-wrap gap-3">
@@ -79,7 +79,7 @@ include __DIR__ . '/../includes/header.php';
                 }
                 ?>
                 <div class="rounded-2xl bg-slate-50 p-4 text-sm">
-                    <?= h($log['created_at']) ?>
+                    <?= h(format_be_datetime($log['created_at'])) ?>
                     · <?= h($oldStatusText) ?>
                     → <?= h($log['new_status']) ?>
                     โดย <?= h($changedByName) ?>

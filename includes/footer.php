@@ -34,7 +34,7 @@ $footerDistricts = db_fetch_all('SELECT district_name FROM districts WHERE is_ac
                     </div>
                     <div>
                         <div class="text-xl font-black text-white">Chiang Rai<span class="text-red-500">Photo</span></div>
-                        <p class="text-xs font-black uppercase tracking-[0.22em] text-white/38">Marketplace</p>
+                        <p class="text-xs font-black uppercase tracking-[0.22em] text-white/38">ตลาดช่างภาพ</p>
                     </div>
                 </div>
                 <p class="mt-5 max-w-md text-sm leading-7 text-white/62"><?= h(PAYMENT_DISCLAIMER) ?></p>
@@ -51,8 +51,8 @@ $footerDistricts = db_fetch_all('SELECT district_name FROM districts WHERE is_ac
                     <a href="/index.php" class="hover:text-red-400"><i class="fa-solid fa-home mr-2"></i>หน้าแรก</a>
                     <a href="/photographers.php" class="hover:text-red-400"><i class="fa-solid fa-magnifying-glass mr-2"></i>ค้นหาช่างภาพ</a>
                     <a href="/about.php" class="hover:text-red-400"><i class="fa-solid fa-circle-info mr-2"></i>เกี่ยวกับเรา</a>
-                    <a href="/blog.php" class="hover:text-red-400"><i class="fa-solid fa-newspaper mr-2"></i>Blog</a>
-                    <a href="/faq.php" class="hover:text-red-400"><i class="fa-solid fa-circle-question mr-2"></i>FAQ</a>
+                    <a href="/blog.php" class="hover:text-red-400"><i class="fa-solid fa-newspaper mr-2"></i>บทความ</a>
+                    <a href="/faq.php" class="hover:text-red-400"><i class="fa-solid fa-circle-question mr-2"></i>คำถามที่พบบ่อย</a>
                     <a href="/contact.php" class="hover:text-red-400"><i class="fa-solid fa-envelope mr-2"></i>ติดต่อเรา</a>
                     <a href="/register.php?role=photographer" class="hover:text-red-400"><i class="fa-solid fa-user-plus mr-2"></i>สมัครเป็นช่างภาพ</a>
                     <a href="/login.php" class="hover:text-red-400"><i class="fa-solid fa-right-to-bracket mr-2"></i>เข้าสู่ระบบ</a>
@@ -82,11 +82,11 @@ $footerDistricts = db_fetch_all('SELECT district_name FROM districts WHERE is_ac
             </div>
         </div>
         <div class="mt-10 flex flex-wrap justify-between gap-4 border-t border-white/10 pt-6 text-xs font-bold text-white/42">
-            <span>© <?= date('Y') ?> <?= h(setting('site_name', APP_NAME)) ?>. Built for photographer discovery and direct contact.</span>
+            <span>© <?= current_be_year() ?> <?= h(setting('site_name', APP_NAME)) ?>. ระบบค้นหา จอง และติดต่อช่างภาพโดยตรง</span>
             <span class="flex flex-wrap gap-4">
-                <a href="/terms.php" class="hover:text-red-400"><i class="fa-solid fa-file-contract mr-1"></i>Terms</a>
-                <a href="/privacy.php" class="hover:text-red-400"><i class="fa-solid fa-shield-halved mr-1"></i>Privacy</a>
-                <a href="/sitemap.php" class="hover:text-red-400"><i class="fa-solid fa-sitemap mr-1"></i>Sitemap</a>
+                <a href="/terms.php" class="hover:text-red-400"><i class="fa-solid fa-file-contract mr-1"></i>เงื่อนไขการใช้งาน</a>
+                <a href="/privacy.php" class="hover:text-red-400"><i class="fa-solid fa-shield-halved mr-1"></i>นโยบายความเป็นส่วนตัว</a>
+                <a href="/sitemap.php" class="hover:text-red-400"><i class="fa-solid fa-sitemap mr-1"></i>แผนผังเว็บไซต์</a>
             </span>
         </div>
     </div>

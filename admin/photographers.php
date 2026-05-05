@@ -47,7 +47,7 @@ if (is_post()) {
     }
 
     if ($action === 'feature') {
-        $featuredUntil = trim((string)($_POST['featured_until'] ?? ''));
+        $featuredUntil = parse_be_date_to_iso((string)($_POST['featured_until'] ?? ''));
         $featuredUntilValue = null;
         if ($featuredUntil !== '') {
             $featuredUntilValue = $featuredUntil . ' 23:59:59';
@@ -136,7 +136,7 @@ include __DIR__ . '/../includes/header.php';
 <section class="px-4 py-8 sm:px-6 lg:px-8">
     <div class="flex flex-wrap items-end justify-between gap-4">
         <div>
-            <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">Admin</p>
+            <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">ผู้ดูแลระบบ</p>
             <h1 class="mt-1 text-3xl font-black text-neutral-950">จัดการช่างภาพ</h1>
         </div>
 
@@ -145,7 +145,7 @@ include __DIR__ . '/../includes/header.php';
                 <option value="">ทุกสถานะ</option>
                 <?php foreach (['pending', 'approved', 'rejected', 'suspended'] as $status): ?>
                     <option value="<?= h($status) ?>" <?php if ($filter === $status): ?>selected<?php endif; ?>>
-                        <?= h($status) ?>
+                        <?= h(booking_status_label($status)) ?>
                     </option>
                 <?php endforeach; ?>
             </select>
@@ -157,13 +157,13 @@ include __DIR__ . '/../includes/header.php';
             <thead>
                 <tr>
                     <th>ชื่อ</th>
-                    <th>Email</th>
+                    <th>อีเมล</th>
                     <th>อำเภอ</th>
                     <th>ราคา</th>
                     <th>คะแนน</th>
-                    <th>Badge</th>
-                    <th>Status</th>
-                    <th>Action</th>
+                    <th>ป้ายกำกับ</th>
+                    <th>สถานะ</th>
+                    <th>จัดการ</th>
                 </tr>
             </thead>
             <tbody>
@@ -181,10 +181,10 @@ include __DIR__ . '/../includes/header.php';
                         <td>
                             <div class="flex flex-wrap gap-1">
                                 <?php if ((int)$photographer['is_verified'] === 1): ?>
-                                    <span class="rounded-full bg-emerald-50 px-2 py-1 text-xs font-black text-emerald-700"><i class="fa-solid fa-circle-check mr-1"></i>verified</span>
+                                    <span class="rounded-full bg-emerald-50 px-2 py-1 text-xs font-black text-emerald-700"><i class="fa-solid fa-circle-check mr-1"></i>ยืนยันแล้ว</span>
                                 <?php endif; ?>
                                 <?php if ((int)$photographer['is_featured'] === 1): ?>
-                                    <span class="rounded-full bg-yellow-50 px-2 py-1 text-xs font-black text-yellow-700"><i class="fa-solid fa-award mr-1"></i>featured</span>
+                                    <span class="rounded-full bg-yellow-50 px-2 py-1 text-xs font-black text-yellow-700"><i class="fa-solid fa-award mr-1"></i>แนะนำ</span>
                                 <?php endif; ?>
                             </div>
                         </td>
@@ -193,15 +193,15 @@ include __DIR__ . '/../includes/header.php';
                             <form method="post" class="grid gap-2">
                                 <?= csrf_field() ?>
                                 <input type="hidden" name="id" value="<?= (int)$photographer['id'] ?>">
-                                <input name="rejection_reason" placeholder="เหตุผล reject" class="stock-input rounded-xl px-3 py-2 text-sm">
-                                <input type="date" name="featured_until" class="stock-input rounded-xl px-3 py-2 text-sm">
+                                <input name="rejection_reason" placeholder="เหตุผลปฏิเสธ" class="stock-input rounded-xl px-3 py-2 text-sm">
+                                <?= be_date_input('featured_until', '', 'stock-input rounded-xl px-3 py-2 text-sm', false, 'แนะนำถึง พ.ศ.') ?>
                                 <div class="flex flex-wrap gap-2">
-                                    <button data-confirm="ยืนยันอนุมัติช่างภาพนี้?" name="action" value="approve" class="rounded-full bg-emerald-50 px-3 py-1.5 font-black text-emerald-700"><i class="fa-solid fa-check mr-1"></i>approve</button>
-                                    <button data-confirm="ยืนยันปฏิเสธช่างภาพนี้?" name="action" value="reject" class="rounded-full bg-red-50 px-3 py-1.5 font-black text-red-700"><i class="fa-solid fa-xmark mr-1"></i>reject</button>
-                                    <button data-confirm="ยืนยันระงับช่างภาพนี้?" name="action" value="suspend" class="rounded-full bg-amber-50 px-3 py-1.5 font-black text-amber-700"><i class="fa-solid fa-ban mr-1"></i>suspend</button>
-                                    <button name="action" value="verify" class="rounded-full bg-sky-50 px-3 py-1.5 font-black text-sky-700"><i class="fa-solid fa-circle-check mr-1"></i>verify</button>
-                                    <button name="action" value="feature" class="rounded-full bg-yellow-50 px-3 py-1.5 font-black text-yellow-700"><i class="fa-solid fa-award mr-1"></i>feature</button>
-                                    <button name="action" value="unfeature" class="rounded-full bg-slate-100 px-3 py-1.5 font-black text-slate-700"><i class="fa-solid fa-eye-slash mr-1"></i>unfeature</button>
+                                    <button data-confirm="ยืนยันอนุมัติช่างภาพนี้?" name="action" value="approve" class="rounded-full bg-emerald-50 px-3 py-1.5 font-black text-emerald-700"><i class="fa-solid fa-check mr-1"></i>อนุมัติ</button>
+                                    <button data-confirm="ยืนยันปฏิเสธช่างภาพนี้?" name="action" value="reject" class="rounded-full bg-red-50 px-3 py-1.5 font-black text-red-700"><i class="fa-solid fa-xmark mr-1"></i>ปฏิเสธ</button>
+                                    <button data-confirm="ยืนยันระงับช่างภาพนี้?" name="action" value="suspend" class="rounded-full bg-amber-50 px-3 py-1.5 font-black text-amber-700"><i class="fa-solid fa-ban mr-1"></i>ระงับ</button>
+                                    <button name="action" value="verify" class="rounded-full bg-sky-50 px-3 py-1.5 font-black text-sky-700"><i class="fa-solid fa-circle-check mr-1"></i>ยืนยัน</button>
+                                    <button name="action" value="feature" class="rounded-full bg-yellow-50 px-3 py-1.5 font-black text-yellow-700"><i class="fa-solid fa-award mr-1"></i>แนะนำ</button>
+                                    <button name="action" value="unfeature" class="rounded-full bg-slate-100 px-3 py-1.5 font-black text-slate-700"><i class="fa-solid fa-eye-slash mr-1"></i>เลิกแนะนำ</button>
                                 </div>
                             </form>
                         </td>

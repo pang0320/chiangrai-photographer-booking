@@ -15,7 +15,7 @@ $pageTitle = 'ประวัติการดูช่างภาพ';
 include __DIR__ . '/../includes/header.php';
 ?>
 <section class="px-4 py-8 sm:px-6 lg:px-8">
-    <div><p class="section-kicker">Recently Viewed</p><h1 class="mt-1 text-3xl font-black">ช่างภาพที่เคยดู</h1></div>
+    <div><p class="section-kicker">ช่างภาพที่เคยดู</p><h1 class="mt-1 text-3xl font-black">ช่างภาพที่เคยดู</h1></div>
     <div class="mt-6 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
         <?php foreach ($items as $p): ?>
             <?php include __DIR__ . '/../includes/photographer_card.php'; ?>

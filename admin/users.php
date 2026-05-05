@@ -102,11 +102,11 @@ include __DIR__ . '/../includes/header.php';
 <section class="px-4 py-8 sm:px-6 lg:px-8">
     <div class="flex flex-wrap items-end justify-between gap-4">
         <div>
-            <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">Admin</p>
+            <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">ผู้ดูแลระบบ</p>
             <h1 class="mt-1 text-3xl font-black text-neutral-950">จัดการผู้ใช้</h1>
         </div>
         <a href="/admin/dashboard.php" class="rounded-full bg-neutral-950 px-5 py-3 text-sm font-black text-white hover:bg-red-600">
-            <i class="fa-solid fa-gauge mr-2"></i>Dashboard
+            <i class="fa-solid fa-gauge mr-2"></i>แดชบอร์ด
         </a>
     </div>
 
@@ -114,10 +114,10 @@ include __DIR__ . '/../includes/header.php';
         <input name="q" value="<?= h($q) ?>" placeholder="ค้นหา" class="stock-input rounded-2xl px-4 py-3 font-semibold">
 
         <select name="role" class="stock-input rounded-2xl px-4 py-3 font-semibold">
-            <option value="">ทุก role</option>
+            <option value="">ทุกบทบาท</option>
             <?php foreach (['customer', 'photographer', 'admin'] as $roleName): ?>
                 <option value="<?= h($roleName) ?>" <?php if ($role === $roleName): ?>selected<?php endif; ?>>
-                    <?= h($roleName) ?>
+                    <?= h(role_display_name($roleName)) ?>
                 </option>
             <?php endforeach; ?>
         </select>
@@ -126,7 +126,7 @@ include __DIR__ . '/../includes/header.php';
             <option value="">ทุกสถานะ</option>
             <?php foreach (['active', 'pending', 'suspended'] as $statusName): ?>
                 <option value="<?= h($statusName) ?>" <?php if ($status === $statusName): ?>selected<?php endif; ?>>
-                    <?= h($statusName) ?>
+                    <?= h(booking_status_label($statusName)) ?>
                 </option>
             <?php endforeach; ?>
         </select>
@@ -140,10 +140,10 @@ include __DIR__ . '/../includes/header.php';
                 <tr>
                     <th>ID</th>
                     <th>ชื่อ</th>
-                    <th>Email</th>
-                    <th>Role</th>
-                    <th>Status</th>
-                    <th>Action</th>
+                    <th>อีเมล</th>
+                    <th>บทบาท</th>
+                    <th>สถานะ</th>
+                    <th>จัดการ</th>
                 </tr>
             </thead>
             <tbody>
@@ -160,13 +160,13 @@ include __DIR__ . '/../includes/header.php';
                                 <input type="hidden" name="id" value="<?= (int)$user['id'] ?>">
 
                                 <button data-confirm="ยืนยันเปิดใช้งานบัญชีนี้?" name="action" value="activate" class="rounded-full bg-emerald-50 px-3 py-1.5 font-black text-emerald-700">
-                                    <i class="fa-solid fa-check mr-1"></i>activate
+                                    <i class="fa-solid fa-check mr-1"></i>เปิดใช้งาน
                                 </button>
                                 <button data-confirm="ยืนยันระงับบัญชีนี้?" name="action" value="suspend" class="rounded-full bg-amber-50 px-3 py-1.5 font-black text-amber-700">
-                                    <i class="fa-solid fa-ban mr-1"></i>suspend
+                                    <i class="fa-solid fa-ban mr-1"></i>ระงับ
                                 </button>
                                 <button data-confirm="ลบผู้ใช้นี้?" name="action" value="delete" class="rounded-full bg-red-50 px-3 py-1.5 font-black text-red-700">
-                                    <i class="fa-solid fa-trash mr-1"></i>delete
+                                    <i class="fa-solid fa-trash mr-1"></i>ลบ
                                 </button>
                             </form>
                         </td>

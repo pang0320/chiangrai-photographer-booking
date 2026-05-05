@@ -5,6 +5,7 @@ require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/csrf.php';
 require_once __DIR__ . '/flash.php';
 require_once __DIR__ . '/upload.php';
+require_once __DIR__ . '/security.php';
 
 function h($value): string
 {
@@ -94,6 +95,57 @@ function dashboard_path(string $role): string
         return '/photographer/dashboard.php';
     }
     return '/customer/dashboard.php';
+}
+
+function user_workspace_path(array $user): string
+{
+    $role = (string)($user['role_name'] ?? '');
+
+    if ($role === 'photographer') {
+        $profile = photographer_profile_by_user((int)($user['id'] ?? 0));
+
+        if ($profile) {
+            if (photographer_completion_percent((int)$profile['id']) < 100) {
+                return '/photographer/onboarding.php';
+            }
+        }
+    }
+
+    return dashboard_path($role);
+}
+
+function user_workspace_label(array $user): string
+{
+    $role = (string)($user['role_name'] ?? '');
+
+    if ($role === 'photographer') {
+        $profile = photographer_profile_by_user((int)($user['id'] ?? 0));
+
+        if ($profile) {
+            if (photographer_completion_percent((int)$profile['id']) < 100) {
+                return 'ตั้งค่าโปรไฟล์';
+            }
+        }
+    }
+
+    return 'เมนูของฉัน';
+}
+
+function user_workspace_icon(array $user): string
+{
+    $role = (string)($user['role_name'] ?? '');
+
+    if ($role === 'photographer') {
+        $profile = photographer_profile_by_user((int)($user['id'] ?? 0));
+
+        if ($profile) {
+            if (photographer_completion_percent((int)$profile['id']) < 100) {
+                return 'fa-list-check';
+            }
+        }
+    }
+
+    return 'fa-gauge';
 }
 
 function setting(string $key, string $default = ''): string
@@ -229,21 +281,169 @@ function photographer_id_for_user(int $userId): int
 function public_image(?string $path, string $fallback): string
 {
     if (!$path) {
-        return $fallback;
+        return normalize_local_image_fallback($fallback);
     }
     if (preg_match('#^https?://#i', $path)) {
-        return $path;
+        if (preg_match('#photo-[A-Za-z0-9_-]+#', $path, $matches)) {
+            $seedPath = 'seed/' . $matches[0] . '.jpg';
+            if (is_file(UPLOAD_PATH . '/' . $seedPath)) {
+                return '/assets/uploads/' . $seedPath;
+            }
+        }
+        return normalize_local_image_fallback($fallback);
     }
     if (!is_file(UPLOAD_PATH . '/' . ltrim($path, '/'))) {
-        return $fallback;
+        return normalize_local_image_fallback($fallback);
     }
     return '/assets/uploads/' . ltrim($path, '/');
+}
+
+function normalize_local_image_fallback(string $fallback): string
+{
+    if (preg_match('#^https?://#i', $fallback)) {
+        if (preg_match('#photo-[A-Za-z0-9_-]+#', $fallback, $matches)) {
+            $seedPath = 'seed/' . $matches[0] . '.jpg';
+            if (is_file(UPLOAD_PATH . '/' . $seedPath)) {
+                return '/assets/uploads/' . $seedPath;
+            }
+        }
+        return '/assets/uploads/seed/photo-1516035069371-29a1b244cc32.jpg';
+    }
+
+    if (strpos($fallback, '/assets/uploads/') === 0) {
+        return $fallback;
+    }
+
+    if (is_file(UPLOAD_PATH . '/' . ltrim($fallback, '/'))) {
+        return '/assets/uploads/' . ltrim($fallback, '/');
+    }
+
+    return $fallback;
 }
 
 function time_slot_label(string $slot): string
 {
     $map = ['morning' => 'เช้า', 'afternoon' => 'บ่าย', 'evening' => 'เย็น', 'full_day' => 'เต็มวัน'];
     return $map[$slot] ?? $slot;
+}
+
+function parse_be_date_to_iso(?string $value): string
+{
+    $value = trim((string)$value);
+
+    if ($value === '') {
+        return '';
+    }
+
+    if (preg_match('/^(\d{4})-(\d{1,2})-(\d{1,2})$/', $value, $matches)) {
+        $year = (int)$matches[1];
+        $month = (int)$matches[2];
+        $day = (int)$matches[3];
+
+        if ($year >= 2400) {
+            $year -= 543;
+        }
+
+        if (checkdate($month, $day, $year)) {
+            return sprintf('%04d-%02d-%02d', $year, $month, $day);
+        }
+    }
+
+    if (preg_match('/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/', $value, $matches)) {
+        $day = (int)$matches[1];
+        $month = (int)$matches[2];
+        $year = (int)$matches[3];
+
+        if ($year >= 2400) {
+            $year -= 543;
+        }
+
+        if (checkdate($month, $day, $year)) {
+            return sprintf('%04d-%02d-%02d', $year, $month, $day);
+        }
+    }
+
+    if (preg_match('/^(\d{4})[\/\.](\d{1,2})[\/\.](\d{1,2})$/', $value, $matches)) {
+        $year = (int)$matches[1];
+        $month = (int)$matches[2];
+        $day = (int)$matches[3];
+
+        if ($year >= 2400) {
+            $year -= 543;
+        }
+
+        if (checkdate($month, $day, $year)) {
+            return sprintf('%04d-%02d-%02d', $year, $month, $day);
+        }
+    }
+
+    return '';
+}
+
+function format_be_date(?string $value): string
+{
+    $value = trim((string)$value);
+
+    if ($value === '' || $value === '0000-00-00' || $value === '0000-00-00 00:00:00') {
+        return '-';
+    }
+
+    try {
+        $date = new DateTime($value);
+    } catch (Exception $exception) {
+        return $value;
+    }
+
+    $year = (int)$date->format('Y') + 543;
+    return $date->format('d/m/') . $year;
+}
+
+function format_be_datetime(?string $value): string
+{
+    $value = trim((string)$value);
+
+    if ($value === '' || $value === '0000-00-00' || $value === '0000-00-00 00:00:00') {
+        return '-';
+    }
+
+    try {
+        $date = new DateTime($value);
+    } catch (Exception $exception) {
+        return $value;
+    }
+
+    $year = (int)$date->format('Y') + 543;
+    return $date->format('d/m/') . $year . $date->format(' H:i');
+}
+
+function current_be_year(): int
+{
+    return (int)date('Y') + 543;
+}
+
+function be_date_input_value(?string $value): string
+{
+    $isoDate = parse_be_date_to_iso($value);
+
+    if ($isoDate === '') {
+        return '';
+    }
+
+    return format_be_date($isoDate);
+}
+
+function be_date_input(string $name, ?string $value = '', string $classes = '', bool $required = false, string $placeholder = 'วว/ดด/พ.ศ.'): string
+{
+    $isoDate = parse_be_date_to_iso($value);
+    $id = 'be_date_' . bin2hex(random_bytes(4));
+    $requiredAttribute = '';
+
+    if ($required) {
+        $requiredAttribute = ' required';
+    }
+
+    return '<input type="text" data-be-date-visible data-target="' . h($id) . '" value="' . h(be_date_input_value($isoDate)) . '" placeholder="' . h($placeholder) . '" autocomplete="off" inputmode="numeric" class="' . h($classes) . '"' . $requiredAttribute . '>'
+        . '<input type="hidden" id="' . h($id) . '" name="' . h($name) . '" value="' . h($isoDate) . '">';
 }
 
 function booking_status_label(string $status): string
@@ -261,8 +461,25 @@ function booking_status_label(string $status): string
         'hidden' => 'ซ่อน',
         'published' => 'เผยแพร่',
         'draft' => 'ฉบับร่าง',
+        'active' => 'ใช้งาน',
+        'unavailable' => 'ไม่ว่าง',
+        'available' => 'ว่าง',
+        'booked' => 'ถูกจองแล้ว',
+        'reviewed' => 'ตรวจสอบแล้ว',
+        'resolved' => 'แก้ไขแล้ว',
     ];
     return $map[$status] ?? $status;
+}
+
+function role_display_name(string $role): string
+{
+    $map = [
+        'customer' => 'ลูกค้า',
+        'photographer' => 'ช่างภาพ',
+        'admin' => 'ผู้ดูแลระบบ',
+    ];
+
+    return $map[$role] ?? $role;
 }
 
 function status_badge(string $status): string
@@ -281,6 +498,11 @@ function status_badge(string $status): string
         'hidden' => 'bg-slate-200 text-slate-700',
         'published' => 'bg-emerald-100 text-emerald-700',
         'draft' => 'bg-slate-200 text-slate-700',
+        'available' => 'bg-emerald-100 text-emerald-700',
+        'unavailable' => 'bg-slate-200 text-slate-700',
+        'booked' => 'bg-indigo-100 text-indigo-700',
+        'reviewed' => 'bg-sky-100 text-sky-700',
+        'resolved' => 'bg-emerald-100 text-emerald-700',
     ];
     $icons = [
         'active' => 'fa-circle-check',
@@ -296,6 +518,11 @@ function status_badge(string $status): string
         'hidden' => 'fa-eye-slash',
         'published' => 'fa-circle-check',
         'draft' => 'fa-pen',
+        'available' => 'fa-circle-check',
+        'unavailable' => 'fa-circle-minus',
+        'booked' => 'fa-calendar-check',
+        'reviewed' => 'fa-eye',
+        'resolved' => 'fa-check',
     ];
     $icon = 'fa-circle-info';
     if (isset($icons[$status])) {

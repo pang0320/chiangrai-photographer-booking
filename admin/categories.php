@@ -50,7 +50,7 @@ include __DIR__ . '/../includes/header.php';
 
 <section class="px-4 py-8 sm:px-6 lg:px-8">
     <div>
-        <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">Admin</p>
+        <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">ผู้ดูแลระบบ</p>
         <h1 class="mt-1 text-3xl font-black text-neutral-950">ประเภทงาน</h1>
     </div>
 
@@ -62,7 +62,7 @@ include __DIR__ . '/../includes/header.php';
         <input name="description" placeholder="รายละเอียด" class="stock-input rounded-2xl px-4 py-3 font-semibold md:col-span-2">
         <label class="rounded-2xl bg-neutral-50 px-4 py-3 font-bold">
             <input type="checkbox" name="is_active" checked>
-            active
+            เปิดใช้งาน
         </label>
         <button class="stock-button rounded-2xl px-5 py-3 font-black md:col-span-6"><i class="fa-solid fa-plus mr-2"></i>เพิ่ม</button>
     </form>
@@ -74,8 +74,8 @@ include __DIR__ . '/../includes/header.php';
                     <th>ID</th>
                     <th>ชื่อ</th>
                     <th>Slug</th>
-                    <th>Icon</th>
-                    <th>Active</th>
+                    <th>ไอคอน</th>
+                    <th>เปิดใช้งาน</th>
                     <th></th>
                 </tr>
             </thead>
@@ -93,7 +93,7 @@ include __DIR__ . '/../includes/header.php';
                                 <input type="hidden" name="action" value="delete">
                                 <input type="hidden" name="id" value="<?= (int)$item['id'] ?>">
                                 <button data-confirm="ปิดใช้งานหมวดหมู่นี้?" class="rounded-full bg-red-50 px-3 py-1.5 font-black text-red-700">
-                                    <i class="fa-solid fa-trash mr-1"></i>delete
+                                    <i class="fa-solid fa-trash mr-1"></i>ลบ
                                 </button>
                             </form>
                         </td>

@@ -5,10 +5,10 @@ requireRole('admin');
 $cards = [
     ['ลูกค้า', 'users', 'role_id = 1 AND deleted_at IS NULL', 'fa-users'],
     ['ช่างภาพ', 'photographer_profiles', 'deleted_at IS NULL', 'fa-camera-retro'],
-    ['Pending', 'photographer_profiles', 'approval_status = "pending" AND deleted_at IS NULL', 'fa-user-clock'],
-    ['Booking', 'bookings', 'deleted_at IS NULL', 'fa-calendar-check'],
-    ['Review', 'reviews', 'deleted_at IS NULL', 'fa-star'],
-    ['Article', 'photographer_articles', 'deleted_at IS NULL', 'fa-newspaper'],
+    ['รออนุมัติ', 'photographer_profiles', 'approval_status = "pending" AND deleted_at IS NULL', 'fa-user-clock'],
+    ['คำขอจอง', 'bookings', 'deleted_at IS NULL', 'fa-calendar-check'],
+    ['รีวิว', 'reviews', 'deleted_at IS NULL', 'fa-star'],
+    ['บทความ', 'photographer_articles', 'deleted_at IS NULL', 'fa-newspaper'],
 ];
 
 $latestBookings = db_fetch_all('SELECT b.*, u.name AS customer_name, p.display_name
@@ -91,7 +91,7 @@ foreach ($districts as $row) {
     }
 }
 
-$pageTitle = 'Admin Dashboard';
+$pageTitle = 'แดชบอร์ดผู้ดูแลระบบ';
 include __DIR__ . '/../includes/header.php';
 ?>
 
@@ -99,13 +99,13 @@ include __DIR__ . '/../includes/header.php';
     <div class="dashboard-hero rounded-[2rem] p-6 text-white sm:p-8">
         <div class="flex flex-wrap items-end justify-between gap-6">
             <div>
-                <p class="text-sm font-black uppercase tracking-[0.22em] text-white/58">Admin Console</p>
-                <h1 class="mt-2 text-3xl font-black sm:text-5xl">Admin Dashboard</h1>
+                <p class="text-sm font-black uppercase tracking-[0.22em] text-white/58">ผู้ดูแลระบบ</p>
+                <h1 class="mt-2 text-3xl font-black sm:text-5xl">แดชบอร์ดผู้ดูแลระบบ</h1>
                 <p class="mt-3 max-w-2xl leading-8 text-white/68">ภาพรวมระบบค้นหาและจองช่างภาพเชียงราย จัดการผู้ใช้ การอนุมัติ รายการจอง รีวิว และข้อมูลระบบ</p>
             </div>
             <div class="flex flex-wrap gap-3">
                 <a href="/admin/photographers.php" class="rounded-full bg-white px-5 py-3 font-black text-neutral-950 hover:bg-red-600 hover:text-white"><i class="fa-solid fa-camera-retro mr-2"></i>อนุมัติช่างภาพ</a>
-                <a href="/admin/bookings.php" class="rounded-full bg-white/12 px-5 py-3 font-black text-white hover:bg-white hover:text-neutral-950"><i class="fa-solid fa-calendar-check mr-2"></i>จัดการ Booking</a>
+                <a href="/admin/bookings.php" class="rounded-full bg-white/12 px-5 py-3 font-black text-white hover:bg-white hover:text-neutral-950"><i class="fa-solid fa-calendar-check mr-2"></i>จัดการคำขอจอง</a>
                 <a href="/admin/reports.php" class="rounded-full bg-white/12 px-5 py-3 font-black text-white hover:bg-white hover:text-neutral-950"><i class="fa-solid fa-chart-line mr-2"></i>รายงาน</a>
             </div>
         </div>
@@ -126,7 +126,7 @@ include __DIR__ . '/../includes/header.php';
     <div class="mt-6 grid gap-6 xl:grid-cols-[1.15fr_.85fr]">
         <div class="stock-card rounded-[1.75rem] p-6">
             <div class="flex items-center justify-between gap-4">
-                <div><p class="section-kicker">Monthly Bookings</p><h2 class="mt-1 text-2xl font-black text-neutral-950">Booking รายเดือน</h2></div>
+                <div><p class="section-kicker">คำขอจองรายเดือน</p><h2 class="mt-1 text-2xl font-black text-neutral-950">สรุปคำขอจองรายเดือน</h2></div>
             </div>
             <div class="mt-6 grid gap-3">
                 <?php foreach (array_reverse($monthly) as $month): ?>
@@ -140,12 +140,12 @@ include __DIR__ . '/../includes/header.php';
         </div>
 
         <div class="stock-card rounded-[1.75rem] p-6">
-            <p class="section-kicker">System Health</p>
+            <p class="section-kicker">สถานะระบบ</p>
             <h2 class="mt-1 text-2xl font-black text-neutral-950">สถานะระบบ</h2>
             <div class="mt-5 grid gap-3 sm:grid-cols-2">
-                <div class="rounded-2xl bg-emerald-50 p-4"><p class="font-black text-emerald-700">PDO</p><p class="text-sm font-bold text-emerald-700">Prepared Statement</p></div>
-                <div class="rounded-2xl bg-emerald-50 p-4"><p class="font-black text-emerald-700">CSRF</p><p class="text-sm font-bold text-emerald-700">Enabled</p></div>
-                <div class="rounded-2xl bg-emerald-50 p-4"><p class="font-black text-emerald-700">Upload</p><p class="text-sm font-bold text-emerald-700">MIME validated</p></div>
+                <div class="rounded-2xl bg-emerald-50 p-4"><p class="font-black text-emerald-700">PDO</p><p class="text-sm font-bold text-emerald-700">ใช้ Prepared Statement</p></div>
+                <div class="rounded-2xl bg-emerald-50 p-4"><p class="font-black text-emerald-700">CSRF</p><p class="text-sm font-bold text-emerald-700">เปิดใช้งานแล้ว</p></div>
+                <div class="rounded-2xl bg-emerald-50 p-4"><p class="font-black text-emerald-700">อัปโหลด</p><p class="text-sm font-bold text-emerald-700">ตรวจ MIME แล้ว</p></div>
                 <div class="rounded-2xl bg-amber-50 p-4"><p class="font-black text-amber-700">HTTPS</p><p class="text-sm font-bold text-amber-700">ใช้ ENFORCE_HTTPS=1</p></div>
             </div>
         </div>
@@ -153,7 +153,7 @@ include __DIR__ . '/../includes/header.php';
 
     <div class="mt-6 grid gap-6 xl:grid-cols-[.8fr_1.2fr]">
         <div class="stock-card rounded-[1.75rem] p-6">
-            <p class="section-kicker">District Chart</p>
+            <p class="section-kicker">กราฟอำเภอ</p>
             <h2 class="mt-1 text-2xl font-black text-neutral-950">ช่างภาพตามอำเภอ</h2>
             <div class="mt-5 grid gap-3">
                 <?php foreach ($districts as $district): ?>
@@ -168,7 +168,7 @@ include __DIR__ . '/../includes/header.php';
 
         <div class="stock-card rounded-[1.75rem] p-6">
             <div class="flex flex-wrap items-center justify-between gap-4">
-                <div><p class="section-kicker">Pending Approval</p><h2 class="mt-1 text-2xl font-black text-neutral-950">ช่างภาพรออนุมัติ</h2></div>
+                <div><p class="section-kicker">รออนุมัติ</p><h2 class="mt-1 text-2xl font-black text-neutral-950">ช่างภาพรออนุมัติ</h2></div>
                 <a href="/admin/photographers.php?status=pending" class="rounded-full border border-neutral-200 px-4 py-2 text-sm font-black hover:bg-neutral-950 hover:text-white"><i class="fa-solid fa-eye mr-2"></i>ดูทั้งหมด</a>
             </div>
             <div class="mt-5 grid gap-3">
@@ -190,7 +190,7 @@ include __DIR__ . '/../includes/header.php';
 
     <div class="mt-6 grid gap-6 xl:grid-cols-2">
         <div class="stock-card rounded-[1.75rem] p-6">
-            <div class="flex justify-between gap-4"><div><p class="section-kicker">Recent Bookings</p><h2 class="mt-1 text-2xl font-black">รายการจองล่าสุด</h2></div><a class="text-sm font-black text-red-600" href="/admin/bookings.php"><i class="fa-solid fa-eye mr-1"></i>ดูทั้งหมด</a></div>
+            <div class="flex justify-between gap-4"><div><p class="section-kicker">คำขอจองล่าสุด</p><h2 class="mt-1 text-2xl font-black">รายการจองล่าสุด</h2></div><a class="text-sm font-black text-red-600" href="/admin/bookings.php"><i class="fa-solid fa-eye mr-1"></i>ดูทั้งหมด</a></div>
             <div class="mt-4 overflow-x-auto">
                 <table class="w-full text-sm">
                     <tbody>
@@ -208,7 +208,7 @@ include __DIR__ . '/../includes/header.php';
         </div>
 
         <div class="stock-card rounded-[1.75rem] p-6">
-            <p class="section-kicker">Recent Reviews</p>
+            <p class="section-kicker">รีวิวล่าสุด</p>
             <h2 class="mt-1 text-2xl font-black text-neutral-950">รีวิวล่าสุด</h2>
             <div class="mt-4 grid gap-3">
                 <?php foreach ($recentReviews as $review): ?>
@@ -223,7 +223,7 @@ include __DIR__ . '/../includes/header.php';
 
     <div class="mt-6 grid gap-6 xl:grid-cols-3">
         <div class="stock-card rounded-[1.75rem] p-6">
-            <p class="section-kicker">Top Photographers</p>
+            <p class="section-kicker">ช่างภาพยอดนิยม</p>
             <h2 class="mt-1 text-xl font-black text-neutral-950">ช่างภาพเด่น</h2>
             <div class="mt-4 grid gap-3">
                 <?php foreach ($topPhotographers as $p): ?>
@@ -232,7 +232,7 @@ include __DIR__ . '/../includes/header.php';
             </div>
         </div>
         <div class="stock-card rounded-[1.75rem] p-6">
-            <p class="section-kicker">Top Categories</p>
+            <p class="section-kicker">หมวดหมู่ยอดนิยม</p>
             <h2 class="mt-1 text-xl font-black text-neutral-950">หมวดหมู่ยอดนิยม</h2>
             <div class="mt-4 grid gap-3">
                 <?php foreach ($topCategories as $category): ?>
@@ -241,7 +241,7 @@ include __DIR__ . '/../includes/header.php';
             </div>
         </div>
         <div class="stock-card rounded-[1.75rem] p-6">
-            <p class="section-kicker">Search Insight</p>
+            <p class="section-kicker">ข้อมูลการค้นหา</p>
             <h2 class="mt-1 text-xl font-black text-neutral-950">คำค้นยอดนิยม</h2>
             <div class="mt-4 grid gap-3">
                 <?php foreach ($popularKeywords as $keyword): ?>
@@ -253,19 +253,19 @@ include __DIR__ . '/../includes/header.php';
             </div>
         </div>
         <div class="stock-card rounded-[1.75rem] p-6">
-            <p class="section-kicker">Activity Logs</p>
-            <h2 class="mt-1 text-xl font-black text-neutral-950">Activity ล่าสุด</h2>
+            <p class="section-kicker">ประวัติการใช้งาน</p>
+            <h2 class="mt-1 text-xl font-black text-neutral-950">กิจกรรมล่าสุด</h2>
             <div class="mt-4 grid gap-2">
                 <?php foreach ($logs as $log): ?>
                     <?php
-                    $logName = 'System';
+                    $logName = 'ระบบ';
                     if (!empty($log['name'])) {
                         $logName = $log['name'];
                     }
                     ?>
                     <div class="rounded-2xl bg-neutral-50 p-3 text-sm">
                         <b><?= h($log['action']) ?></b>
-                        <p class="mt-1 text-xs font-bold text-neutral-500"><?= h($log['created_at']) ?> · <?= h($logName) ?></p>
+                        <p class="mt-1 text-xs font-bold text-neutral-500"><?= h(format_be_datetime($log['created_at'])) ?> · <?= h($logName) ?></p>
                     </div>
                 <?php endforeach; ?>
             </div>
@@ -274,7 +274,7 @@ include __DIR__ . '/../includes/header.php';
 
     <div class="mt-6 grid gap-6 xl:grid-cols-2">
         <div class="stock-card rounded-[1.75rem] p-6">
-            <p class="section-kicker">Search Districts</p>
+            <p class="section-kicker">อำเภอที่ค้นหา</p>
             <h2 class="mt-1 text-xl font-black text-neutral-950"><i class="fa-solid fa-map-location-dot mr-2 text-red-600"></i>อำเภอที่ถูกค้นหามากสุด</h2>
             <div class="mt-4 grid gap-3">
                 <?php foreach ($popularSearchDistricts as $district): ?>
@@ -283,7 +283,7 @@ include __DIR__ . '/../includes/header.php';
             </div>
         </div>
         <div class="stock-card rounded-[1.75rem] p-6">
-            <p class="section-kicker">Search Categories</p>
+            <p class="section-kicker">ประเภทงานที่ค้นหา</p>
             <h2 class="mt-1 text-xl font-black text-neutral-950"><i class="fa-solid fa-layer-group mr-2 text-red-600"></i>ประเภทงานที่ถูกค้นหามากสุด</h2>
             <div class="mt-4 grid gap-3">
                 <?php foreach ($popularSearchCategories as $category): ?>

@@ -36,7 +36,7 @@ include __DIR__ . '/../includes/header.php';
 
 <section class="px-4 py-8 sm:px-6 lg:px-8">
     <div>
-        <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">Photographer Studio</p>
+        <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">สตูดิโอช่างภาพ</p>
         <h1 class="mt-1 text-3xl font-black text-neutral-950">รีวิว</h1>
     </div>
 
@@ -62,7 +62,7 @@ include __DIR__ . '/../includes/header.php';
                     <span class="text-red-600"><?= str_repeat('★', (int)$review['rating_overall']) ?></span>
                 </div>
                 <p class="mt-2 text-neutral-700"><?= nl2br(h($review['comment'])) ?></p>
-                <p class="mt-2 text-xs text-neutral-500"><?= h($review['created_at']) ?></p>
+                <p class="mt-2 text-xs text-neutral-500"><?= h(format_be_datetime($review['created_at'])) ?></p>
             </article>
         <?php endforeach; ?>
     </div>

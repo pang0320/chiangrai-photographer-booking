@@ -11,7 +11,7 @@ include __DIR__ . '/includes/header.php';
 ?>
 <section class="relative overflow-hidden bg-neutral-950 text-white">
     <div class="absolute inset-0">
-        <img class="h-full w-full object-cover opacity-35" src="https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=1800&q=85" alt="">
+        <img class="h-full w-full object-cover opacity-35" src="/assets/uploads/seed/photo-1516035069371-29a1b244cc32.jpg" alt="">
         <div class="absolute inset-0 bg-gradient-to-r from-neutral-950 via-neutral-950/80 to-neutral-950/40"></div>
     </div>
     <div class="relative stock-shell px-4 py-20 sm:px-6 lg:px-8">

@@ -3,11 +3,36 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/app.php';
 
-define('DB_HOST', '127.0.0.1');
-define('DB_NAME', 'chiangrai_photographer_booking');
-define('DB_USER', 'root');
-define('DB_PASS', '');
-define('DB_CHARSET', 'utf8mb4');
+$dbHost = getenv('DB_HOST');
+if (!$dbHost) {
+    $dbHost = '127.0.0.1';
+}
+
+$dbName = getenv('DB_NAME');
+if (!$dbName) {
+    $dbName = 'chiangrai_photographer_booking';
+}
+
+$dbUser = getenv('DB_USER');
+if (!$dbUser) {
+    $dbUser = 'root';
+}
+
+$dbPass = getenv('DB_PASS');
+if ($dbPass === false) {
+    $dbPass = '';
+}
+
+$dbCharset = getenv('DB_CHARSET');
+if (!$dbCharset) {
+    $dbCharset = 'utf8mb4';
+}
+
+define('DB_HOST', $dbHost);
+define('DB_NAME', $dbName);
+define('DB_USER', $dbUser);
+define('DB_PASS', $dbPass);
+define('DB_CHARSET', $dbCharset);
 
 function db(): PDO
 {
@@ -25,4 +50,3 @@ function db(): PDO
 
     return $pdo;
 }
-

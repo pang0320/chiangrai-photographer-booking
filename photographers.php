@@ -14,7 +14,7 @@ if (isset($_GET['category_id'])) {
 }
 $availableDate = '';
 if (isset($_GET['available_date'])) {
-    $availableDate = trim((string)$_GET['available_date']);
+    $availableDate = parse_be_date_to_iso((string)$_GET['available_date']);
 }
 $minRating = 0;
 if (isset($_GET['min_rating'])) {
@@ -142,23 +142,23 @@ include __DIR__ . '/includes/header.php';
 ?>
 <section class="relative overflow-hidden bg-neutral-950 text-white">
     <div class="absolute inset-0">
-        <img class="h-full w-full object-cover opacity-42" src="https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?auto=format&fit=crop&w=2200&q=85" alt="">
+        <img class="h-full w-full object-cover opacity-42" src="/assets/uploads/seed/photo-1492691527719-9d1e07e534b4.jpg" alt="">
         <div class="absolute inset-0 bg-[radial-gradient(circle_at_12%_18%,rgba(226,27,45,.34),transparent_24rem),linear-gradient(110deg,rgba(0,0,0,.92),rgba(0,0,0,.56))]"></div>
     </div>
     <div class="relative stock-shell px-4 py-16 sm:px-6 lg:px-8">
         <div class="grid gap-8 lg:grid-cols-[1fr_420px] lg:items-end">
             <div>
-                <p class="text-sm font-black uppercase tracking-[0.24em] text-red-400">Browse photographers</p>
+                <p class="text-sm font-black uppercase tracking-[0.24em] text-red-400">ค้นหาช่างภาพ</p>
                 <h1 class="mt-3 text-4xl font-black tracking-tight sm:text-6xl">ค้นหาช่างภาพเชียงราย</h1>
                 <p class="mt-4 max-w-2xl text-lg font-semibold leading-8 text-white/70">ค้นหาจากอำเภอ ประเภทงาน วันที่ว่าง คะแนน รีวิว ชื่อ และราคาเริ่มต้น พร้อมแนะนำช่างภาพใกล้เคียงเมื่อพื้นที่ที่เลือกยังไม่มีผลลัพธ์</p>
                 <div class="mt-6 flex flex-wrap gap-2">
                     <span class="premium-chip"><i class="fa-solid fa-shield-halved text-red-600"></i> โปรไฟล์ผ่านอนุมัติ</span>
-                    <span class="premium-chip"><i class="fa-solid fa-location-crosshairs text-red-600"></i> Nearby matching</span>
+                    <span class="premium-chip"><i class="fa-solid fa-location-crosshairs text-red-600"></i> แนะนำพื้นที่ใกล้เคียง</span>
                     <span class="premium-chip"><i class="fa-solid fa-credit-card text-red-600"></i> ไม่มีรับชำระเงิน</span>
                 </div>
             </div>
             <div class="stock-card rounded-[2rem] bg-white/95 p-5 text-neutral-950">
-                <p class="text-sm font-black uppercase tracking-[0.2em] text-red-600">Search Summary</p>
+                <p class="text-sm font-black uppercase tracking-[0.2em] text-red-600">สรุปผลการค้นหา</p>
                 <h2 class="mt-2 text-3xl font-black">พบ <?= number_format($total) ?> คน</h2>
                 <p class="mt-2 text-sm font-bold leading-6 text-neutral-600">
                     <?php if ($selectedDistrictName !== ''): ?>
@@ -220,7 +220,7 @@ include __DIR__ . '/includes/header.php';
                             <option value="<?= (int)$category['id'] ?>" <?php if ($isSelectedCategory): ?>selected<?php endif; ?>><?= h($category['name']) ?></option>
                         <?php endforeach; ?>
                     </select>
-                    <label class="icon-input block"><i class="fa-solid fa-calendar"></i><input type="date" name="available_date" value="<?= h($availableDate) ?>" class="stock-input w-full rounded-[1.2rem] px-4 py-3 font-semibold"></label>
+                    <label class="icon-input block"><i class="fa-solid fa-calendar"></i><?= be_date_input('available_date', $availableDate, 'stock-input w-full rounded-[1.2rem] px-4 py-3 font-semibold', false, 'วันที่ว่าง พ.ศ.') ?></label>
                     <select name="min_rating" class="stock-input rounded-[1.2rem] px-4 py-3 font-semibold">
                         <option value="0">ทุกคะแนน</option>
                         <?php for ($i = 5; $i >= 1; $i--): ?>
@@ -251,12 +251,12 @@ include __DIR__ . '/includes/header.php';
             </form>
 
             <div class="stock-card mt-5 rounded-[2rem] p-5">
-                <h3 class="font-black text-neutral-950">Map Preview</h3>
+                <h3 class="font-black text-neutral-950">ตัวอย่างแผนที่</h3>
                 <div class="mt-4 grid h-56 place-items-center rounded-[1.5rem] bg-[radial-gradient(circle_at_30%_30%,rgba(226,27,45,.18),transparent_9rem),linear-gradient(135deg,#f8fafc,#e7edf4)] text-center">
                     <div>
                         <i class="fa-solid fa-map-location-dot text-4xl text-red-600"></i>
                         <p class="mt-3 text-sm font-black text-neutral-700">แสดงพื้นที่ให้บริการ</p>
-                        <p class="text-xs font-bold text-neutral-500">Placeholder สำหรับแผนที่ในอนาคต</p>
+                        <p class="text-xs font-bold text-neutral-500">พื้นที่สำหรับแผนที่ในอนาคต</p>
                     </div>
                 </div>
             </div>
@@ -265,7 +265,7 @@ include __DIR__ . '/includes/header.php';
         <div>
             <div class="flex flex-wrap items-center justify-between gap-4">
                 <div>
-                    <p class="section-kicker">Search result</p>
+                    <p class="section-kicker">ผลการค้นหา</p>
                     <h2 class="mt-1 text-3xl font-black text-neutral-950">
                         <?php if ($selectedDistrictName !== ''): ?>
                             พบช่างภาพ <?= number_format($total) ?> คนในอำเภอ<?= h($selectedDistrictName) ?>

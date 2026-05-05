@@ -69,7 +69,7 @@ include __DIR__ . '/../includes/header.php';
 
 <section class="px-4 py-8 sm:px-6 lg:px-8">
     <div>
-        <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">Admin</p>
+        <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">ผู้ดูแลระบบ</p>
         <h1 class="mt-1 text-3xl font-black text-neutral-950">จัดการรีวิว</h1>
     </div>
 
@@ -96,8 +96,8 @@ include __DIR__ . '/../includes/header.php';
                     <th>ช่างภาพ</th>
                     <th>คะแนน</th>
                     <th>คอมเมนต์</th>
-                    <th>Status</th>
-                    <th>Action</th>
+                    <th>สถานะ</th>
+                    <th>จัดการ</th>
                 </tr>
             </thead>
             <tbody>
@@ -112,9 +112,9 @@ include __DIR__ . '/../includes/header.php';
                             <form method="post" class="flex flex-wrap gap-2">
                                 <?= csrf_field() ?>
                                 <input type="hidden" name="id" value="<?= (int)$review['id'] ?>">
-                                <button name="action" value="show" class="rounded-full bg-emerald-50 px-3 py-1.5 font-black text-emerald-700"><i class="fa-solid fa-eye mr-1"></i>show</button>
-                                <button name="action" value="hide" class="rounded-full bg-amber-50 px-3 py-1.5 font-black text-amber-700"><i class="fa-solid fa-eye-slash mr-1"></i>hide</button>
-                                <button data-confirm="ลบรีวิวนี้?" name="action" value="delete" class="rounded-full bg-red-50 px-3 py-1.5 font-black text-red-700"><i class="fa-solid fa-trash mr-1"></i>delete</button>
+                                <button name="action" value="show" class="rounded-full bg-emerald-50 px-3 py-1.5 font-black text-emerald-700"><i class="fa-solid fa-eye mr-1"></i>แสดง</button>
+                                <button name="action" value="hide" class="rounded-full bg-amber-50 px-3 py-1.5 font-black text-amber-700"><i class="fa-solid fa-eye-slash mr-1"></i>ซ่อน</button>
+                                <button data-confirm="ลบรีวิวนี้?" name="action" value="delete" class="rounded-full bg-red-50 px-3 py-1.5 font-black text-red-700"><i class="fa-solid fa-trash mr-1"></i>ลบ</button>
                             </form>
                         </td>
                     </tr>

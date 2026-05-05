@@ -24,7 +24,7 @@ if (is_post()) {
         $stmt = db()->prepare('DELETE FROM faqs WHERE id = ?');
         $stmt->execute([$id]);
         log_activity('delete_faq', 'faqs', $id);
-        flash('success', 'ลบ FAQ แล้ว');
+        flash('success', 'ลบคำถามแล้ว');
         redirect('/admin/faqs.php');
     }
 
@@ -38,7 +38,7 @@ if (is_post()) {
     }
 
     if ($category === '' || $question === '' || $answer === '') {
-        flash('error', 'กรุณากรอกข้อมูล FAQ ให้ครบ');
+        flash('error', 'กรุณากรอกข้อมูลคำถามให้ครบ');
         redirect('/admin/faqs.php');
     }
 
@@ -52,7 +52,7 @@ if (is_post()) {
         log_activity('create_faq', 'faqs', (int)db()->lastInsertId());
     }
 
-    flash('success', 'บันทึก FAQ แล้ว');
+    flash('success', 'บันทึกคำถามแล้ว');
     redirect('/admin/faqs.php');
 }
 
@@ -65,17 +65,17 @@ if ($editId > 0) {
 
 $items = db_fetch_all('SELECT * FROM faqs ORDER BY category, sort_order, id DESC');
 
-$pageTitle = 'จัดการ FAQ';
+$pageTitle = 'จัดการคำถามที่พบบ่อย';
 include __DIR__ . '/../includes/header.php';
 ?>
 
 <section class="px-4 py-8 sm:px-6 lg:px-8">
     <div class="flex flex-wrap items-end justify-between gap-4">
         <div>
-            <p class="section-kicker">FAQ Management</p>
+            <p class="section-kicker">จัดการคำถามที่พบบ่อย</p>
             <h1 class="mt-1 text-3xl font-black text-neutral-950"><i class="fa-solid fa-circle-question mr-2 text-red-600"></i>จัดการคำถามที่พบบ่อย</h1>
         </div>
-        <a href="/faq.php" target="_blank" class="rounded-full border border-neutral-200 px-5 py-3 text-sm font-black hover:bg-neutral-950 hover:text-white"><i class="fa-solid fa-eye mr-2"></i>ดูหน้า FAQ</a>
+        <a href="/faq.php" target="_blank" class="rounded-full border border-neutral-200 px-5 py-3 text-sm font-black hover:bg-neutral-950 hover:text-white"><i class="fa-solid fa-eye mr-2"></i>ดูหน้าคำถาม</a>
     </div>
 
     <form method="post" class="stock-card mt-6 grid gap-4 rounded-[1.75rem] p-6 lg:grid-cols-6">
@@ -101,7 +101,7 @@ include __DIR__ . '/../includes/header.php';
             <input type="checkbox" name="is_active" <?php if (!$editFaq || (int)$editFaq['is_active'] === 1): ?>checked<?php endif; ?>>
             <i class="fa-solid fa-toggle-on text-red-600"></i>เปิดแสดงผล
         </label>
-        <button class="stock-button rounded-2xl px-5 py-3 font-black lg:col-span-5"><i class="fa-solid fa-floppy-disk mr-2"></i>บันทึก FAQ</button>
+        <button class="stock-button rounded-2xl px-5 py-3 font-black lg:col-span-5"><i class="fa-solid fa-floppy-disk mr-2"></i>บันทึกคำถาม</button>
     </form>
 
     <div class="stock-card mt-6 overflow-x-auto rounded-[1.75rem] p-5">
@@ -112,7 +112,7 @@ include __DIR__ . '/../includes/header.php';
                     <th>คำถาม</th>
                     <th>สถานะ</th>
                     <th>ลำดับ</th>
-                    <th>Action</th>
+                    <th>จัดการ</th>
                 </tr>
             </thead>
             <tbody>
@@ -135,7 +135,7 @@ include __DIR__ . '/../includes/header.php';
                                     <?= csrf_field() ?>
                                     <input type="hidden" name="action" value="delete">
                                     <input type="hidden" name="id" value="<?= (int)$item['id'] ?>">
-                                    <button data-confirm="ลบ FAQ นี้?" class="rounded-full bg-red-50 px-3 py-1.5 font-black text-red-700"><i class="fa-solid fa-trash mr-1"></i>ลบ</button>
+                                    <button data-confirm="ลบคำถามนี้?" class="rounded-full bg-red-50 px-3 py-1.5 font-black text-red-700"><i class="fa-solid fa-trash mr-1"></i>ลบ</button>
                                 </form>
                             </div>
                         </td>

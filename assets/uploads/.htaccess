@@ -1,6 +1,17 @@
 Options -Indexes
-php_flag engine off
+<IfModule mod_php.c>
+    php_flag engine off
+</IfModule>
+<IfModule mod_php7.c>
+    php_flag engine off
+</IfModule>
+<IfModule mod_php8.c>
+    php_flag engine off
+</IfModule>
+RemoveHandler .php .phtml .phar .php3 .php4 .php5 .php7 .php8
+RemoveType .php .phtml .phar .php3 .php4 .php5 .php7 .php8
+AddType text/plain .php .phtml .phar .php3 .php4 .php5 .php7 .php8
 
-<FilesMatch "\.(php|phtml|phar|cgi|pl|asp|aspx|jsp|js|html|htm|exe|sh)$">
+<FilesMatch "\.(php|phtml|phar|php3|php4|php5|php7|php8|cgi|pl|asp|aspx|jsp|js|html|htm|svg|exe|sh|bat|cmd|com|scr)$">
     Require all denied
 </FilesMatch>

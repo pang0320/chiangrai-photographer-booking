@@ -52,14 +52,14 @@ $stmt = db()->prepare('SELECT * FROM photographer_portfolios WHERE photographer_
 $stmt->execute([$pid]);
 $items = $stmt->fetchAll();
 
-$pageTitle = 'Portfolio';
+$pageTitle = 'ผลงาน';
 include __DIR__ . '/../includes/header.php';
 ?>
 
 <section class="px-4 py-8 sm:px-6 lg:px-8">
     <div>
-        <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">Photographer Studio</p>
-        <h1 class="mt-1 text-3xl font-black text-neutral-950">Portfolio</h1>
+        <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">สตูดิโอช่างภาพ</p>
+        <h1 class="mt-1 text-3xl font-black text-neutral-950">ผลงาน</h1>
     </div>
 
     <form method="post" enctype="multipart/form-data" class="stock-card mt-6 grid gap-4 rounded-[1.5rem] p-5 md:grid-cols-2">
@@ -70,7 +70,7 @@ include __DIR__ . '/../includes/header.php';
         <input type="file" name="image" required accept="image/jpeg,image/png,image/webp" class="stock-input rounded-2xl px-4 py-3 font-semibold">
         <label class="rounded-2xl bg-neutral-50 px-4 py-3 font-bold">
             <input type="checkbox" name="is_featured">
-            Featured
+            ตั้งเป็นรูปเด่น
         </label>
         <button class="stock-button rounded-2xl px-5 py-3 font-black md:col-span-2"><i class="fa-solid fa-plus mr-2"></i>เพิ่มรูป</button>
     </form>
@@ -78,7 +78,7 @@ include __DIR__ . '/../includes/header.php';
     <div class="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         <?php foreach ($items as $item): ?>
             <article class="stock-card overflow-hidden rounded-[1.5rem]">
-                <img class="h-56 w-full object-cover" src="<?= h(public_image($item['image_path'], 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=900&q=80')) ?>" alt="">
+                <img class="h-56 w-full object-cover" src="<?= h(public_image($item['image_path'], '/assets/uploads/seed/photo-1516035069371-29a1b244cc32.jpg')) ?>" alt="">
                 <div class="p-4">
                     <b><?= h($item['title']) ?></b>
                     <p class="text-sm text-neutral-600"><?= h($item['description']) ?></p>

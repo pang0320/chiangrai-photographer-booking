@@ -1,0 +1,110 @@
+# Chiang Rai Photographer Booking
+#
+# คำสั่งเดียวสำหรับรันทั้งระบบ:
+# docker compose -f docker.yml up -d --remove-orphans
+#
+# เว็บหลัก:      http://localhost:8000
+# phpMyAdmin:    http://localhost:8081
+# MariaDB host:  localhost:3307
+# Database:      chiangrai_photographer_booking
+# DB user/pass:  root / root
+#
+# ข้อมูล MariaDB จะอยู่ใน named volume: cr-photo-db-data
+# ลบ/สร้าง container ใหม่ได้ ข้อมูลไม่หาย ตราบใดที่ไม่ลบ volume นี้
+
+name: cr-photo
+
+services:
+  db:
+    image: mariadb:10.6
+    container_name: cr-photo-db
+    restart: unless-stopped
+    ports:
+      - "3307:3306"
+    environment:
+      MARIADB_ROOT_PASSWORD: root
+      MARIADB_DATABASE: chiangrai_photographer_booking
+      MARIADB_CHARACTER_SET_SERVER: utf8mb4
+      MARIADB_COLLATION_SERVER: utf8mb4_unicode_ci
+      TZ: Asia/Bangkok
+    volumes:
+      - cr-photo-db-data:/var/lib/mysql
+      - ./database.sql:/docker-entrypoint-initdb.d/001_database.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mariadb-admin ping -h 127.0.0.1 -uroot -proot || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - cr-photo-net
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: cr-photo-php74:latest
+    pull_policy: build
+    container_name: cr-photo-web
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    working_dir: /app
+    environment:
+      APP_URL: http://localhost:8000
+      DB_HOST: db
+      DB_NAME: chiangrai_photographer_booking
+      DB_USER: root
+      DB_PASS: root
+      DB_CHARSET: utf8mb4
+      ENFORCE_HTTPS: "0"
+      TZ: Asia/Bangkok
+    volumes:
+      - ./:/app
+    command: >
+      bash -lc "
+      mkdir -p
+      assets/uploads/avatars
+      assets/uploads/covers
+      assets/uploads/portfolios
+      assets/uploads/reviews
+      assets/uploads/articles
+      assets/uploads/banners
+      assets/uploads/seed
+      &&
+      chmod -R 775 assets/uploads || true;
+      php -S 0.0.0.0:8000 -t /app
+      "
+    networks:
+      - cr-photo-net
+
+  phpmyadmin:
+    image: phpmyadmin:5
+    container_name: cr-photo-pma
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_USER: root
+      PMA_PASSWORD: root
+      UPLOAD_LIMIT: 128M
+      TZ: Asia/Bangkok
+    networks:
+      - cr-photo-net
+
+volumes:
+  cr-photo-db-data:
+    name: cr-photo-db-data
+
+networks:
+  cr-photo-net:
+    name: cr-photo-net
+    driver: bridge

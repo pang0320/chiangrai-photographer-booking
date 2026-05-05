@@ -2,6 +2,54 @@
 วิธีรัน Chiang Rai Photographer Booking ด้วย Docker
 ==================================================
 
+==================================================
+Quick Start แบบคำสั่งเดียว แนะนำให้ใช้วิธีนี้
+==================================================
+
+เข้าโฟลเดอร์โปรเจกต์:
+
+cd /Users/boonraksa/Documents/GitHub/chiangrai-photographer-booking
+
+รันระบบทั้งหมดด้วยคำสั่งเดียว:
+
+docker compose -f docker.yml up -d --remove-orphans
+
+คำสั่งนี้จะรัน:
+- cr-photo-db    MariaDB 10.6   port 3307
+- cr-photo-web   PHP 7.4        port 8000
+- cr-photo-pma   phpMyAdmin     port 8081
+
+หมายเหตุ:
+- ครั้งแรกหลัง git clone Docker จะ build image PHP 7.4 จาก Dockerfile ให้อัตโนมัติ
+- image นี้ติดตั้ง pdo_mysql ไว้แล้ว จึงต่อ MariaDB ได้ทันที
+- ไม่ต้อง import database เอง เพราะ MariaDB จะอ่าน database.sql ให้อัตโนมัติเมื่อ volume ยังว่าง
+
+เปิดใช้งาน:
+- เว็บหลัก: http://localhost:8000
+- phpMyAdmin: http://localhost:8081
+- MariaDB host จากเครื่อง: localhost:3307
+- MariaDB host จาก container: db
+- Database: chiangrai_photographer_booking
+- Username: root
+- Password: root
+
+ถ้ารันซ้ำหลังแก้โค้ด ให้ใช้คำสั่งเดิม:
+
+docker compose -f docker.yml up -d --remove-orphans
+
+โค้ดในโปรเจกต์ถูก mount เข้า container โดยตรง จึงใช้โค้ดล่าสุดทันที
+
+ข้อมูลฐานข้อมูลจะอยู่ใน Docker named volume:
+
+cr-photo-db-data
+
+ข้อมูลจะไม่หายเมื่อ stop/rm container ตราบใดที่ไม่ลบ volume นี้
+
+ห้ามใช้ถ้าไม่ต้องการลบข้อมูล:
+
+docker volume rm cr-photo-db-data
+
+
 ไฟล์นี้รวมคำสั่งสำหรับรันระบบทั้งหมด:
 - Web PHP 7.4: http://localhost:8000
 - MariaDB 10.6: localhost:3307

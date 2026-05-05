@@ -1,0 +1,22 @@
+ชื่อมกับ MariaDB container เดิม:
+
+Host: cr-photo-db
+Port: 3306
+User: root
+Password: root
+Database: chiangrai_photographer_booking
+ตอนนี้ container ที่รันอยู่:
+
+cr-photo-web → 
+http://localhost:8000
+cr-photo-db → MariaDB 10.6, port local 3307
+cr-photo-pma → phpMyAdmin, port local 8081
+
+
+
+ผลทดสอบ:
+
+admin@example.com / password → /admin/dashboard.php
+customer@example.com / password → /customer/dashboard.php
+northstudio@example.com / password → /photographer/onboarding.php
+ลองใหม่ได้เลยครับ ตอนนี้ใช้ password ได้แล้ว.

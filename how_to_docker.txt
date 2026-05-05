@@ -1,0 +1,407 @@
+==================================================
+วิธีรัน Chiang Rai Photographer Booking ด้วย Docker
+==================================================
+
+ไฟล์นี้รวมคำสั่งสำหรับรันระบบทั้งหมด:
+- Web PHP 7.4: http://localhost:8000
+- MariaDB 10.6: localhost:3307
+- phpMyAdmin: http://localhost:8081
+- Database: chiangrai_photographer_booking
+- DB User: root
+- DB Password: root
+
+สำคัญมาก:
+- ฐานข้อมูลต้องใช้ Docker named volume: cr-photo-db-data
+- ถ้าลบ container แล้วสร้างใหม่ ข้อมูลจะไม่หาย ตราบใดที่ไม่ลบ volume นี้
+- ห้ามใช้คำสั่ง docker rm -v กับ cr-photo-db ถ้าไม่อยากให้ข้อมูลหาย
+- ห้ามใช้ docker volume rm cr-photo-db-data ถ้าไม่อยากลบฐานข้อมูลจริง
+
+==================================================
+0) เข้าโฟลเดอร์โปรเจกต์
+==================================================
+
+cd /Users/boonraksa/Documents/GitHub/chiangrai-photographer-booking
+
+
+==================================================
+1) ตรวจสอบ container/port ที่ใช้อยู่
+==================================================
+
+docker ps
+
+docker ps --format "table {{.Names}}\t{{.Image}}\t{{.Ports}}\t{{.Status}}"
+
+ระบบนี้ใช้ container ตามนี้:
+- cr-photo-db  -> mariadb:10.6   -> port 3307:3306
+- cr-photo-web -> php:7.4-cli    -> port 8000:8000
+- cr-photo-pma -> phpmyadmin:5   -> port 8081:80
+
+
+==================================================
+2) สร้าง Docker network และ volume ถาวร
+==================================================
+
+docker network create cr-photo-net
+
+ถ้าขึ้นว่า network already exists ไม่เป็นไร ใช้ต่อได้
+
+docker volume create cr-photo-db-data
+
+ตรวจสอบ volume:
+
+docker volume ls | grep cr-photo-db-data
+
+
+==================================================
+3) Backup ฐานข้อมูลเดิมก่อนรันใหม่
+==================================================
+
+ถ้ามี container cr-photo-db รันอยู่ ให้ backup ก่อนเสมอ:
+
+mkdir -p docker-backups
+
+docker exec cr-photo-db mariadb-dump -uroot -proot --single-transaction --routines --triggers chiangrai_photographer_booking > docker-backups/chiangrai_photographer_booking_backup.sql
+
+ตรวจสอบไฟล์ backup:
+
+ls -lh docker-backups/chiangrai_photographer_booking_backup.sql
+
+
+==================================================
+4) หยุดและลบ container เดิมแบบไม่ลบข้อมูล
+==================================================
+
+คำสั่งนี้ลบเฉพาะ container ไม่ลบ volume:
+
+docker stop cr-photo-web cr-photo-pma cr-photo-db
+
+docker rm cr-photo-web cr-photo-pma cr-photo-db
+
+ถ้าบาง container ไม่มีอยู่แล้ว แล้วขึ้น error ว่า No such container ไม่เป็นไร
+
+ห้ามใช้:
+
+docker rm -v cr-photo-db
+
+เพราะ -v อาจลบ volume ที่ผูกกับ database ได้
+
+
+==================================================
+5) รัน MariaDB 10.6 แบบข้อมูลไม่หาย
+==================================================
+
+docker run -d \
+  --name cr-photo-db \
+  --network cr-photo-net \
+  -p 3307:3306 \
+  -e MARIADB_ROOT_PASSWORD=root \
+  -e MARIADB_DATABASE=chiangrai_photographer_booking \
+  -v cr-photo-db-data:/var/lib/mysql \
+  --restart unless-stopped \
+  mariadb:10.6
+
+รอให้ MariaDB พร้อมใช้งาน:
+
+docker exec cr-photo-db mariadb-admin ping -uroot -proot
+
+ถ้ายังไม่พร้อม ให้รอ 5-10 วินาที แล้วลองอีกครั้ง:
+
+docker logs cr-photo-db --tail=50
+
+
+==================================================
+6) Import database ครั้งแรก หรือ Restore จาก backup
+==================================================
+
+กรณีรันครั้งแรก และยังไม่มีข้อมูลใน volume:
+
+docker exec -i cr-photo-db mariadb -uroot -proot chiangrai_photographer_booking < database.sql
+
+กรณีมี backup จากข้อ 3 และต้องการกู้ข้อมูลเดิมกลับมา:
+
+docker exec -i cr-photo-db mariadb -uroot -proot chiangrai_photographer_booking < docker-backups/chiangrai_photographer_booking_backup.sql
+
+ตรวจสอบว่ามีข้อมูลแล้ว:
+
+docker exec cr-photo-db mariadb -uroot -proot chiangrai_photographer_booking -e "SHOW TABLES;"
+
+docker exec cr-photo-db mariadb -uroot -proot chiangrai_photographer_booking -e "SELECT COUNT(*) AS users_count FROM users;"
+
+
+==================================================
+7) เตรียมโฟลเดอร์ uploads
+==================================================
+
+mkdir -p assets/uploads/avatars
+mkdir -p assets/uploads/covers
+mkdir -p assets/uploads/portfolios
+mkdir -p assets/uploads/reviews
+mkdir -p assets/uploads/articles
+mkdir -p assets/uploads/banners
+mkdir -p assets/uploads/seed
+
+chmod -R 775 assets/uploads
+
+
+==================================================
+8) รัน PHP 7.4 Web Server
+==================================================
+
+ระบบใช้ PHP 7.4 CLI และเปิดเว็บที่ port 8000
+
+docker run -d \
+  --name cr-photo-web \
+  --network cr-photo-net \
+  -p 8000:8000 \
+  -v "$PWD":/app \
+  -w /app \
+  -e APP_URL=http://localhost:8000 \
+  -e DB_HOST=cr-photo-db \
+  -e DB_NAME=chiangrai_photographer_booking \
+  -e DB_USER=root \
+  -e DB_PASS=root \
+  --restart unless-stopped \
+  php:7.4-cli \
+  bash -lc "docker-php-ext-install pdo_mysql >/tmp/pdo_mysql_install.log 2>&1 || true; php -S 0.0.0.0:8000 -t /app"
+
+ตรวจสอบ PHP extension:
+
+docker exec cr-photo-web php -m | grep -E "PDO|pdo_mysql|fileinfo|mbstring"
+
+ตรวจสอบ log เว็บ:
+
+docker logs cr-photo-web --tail=80
+
+เปิดเว็บ:
+
+open http://localhost:8000
+
+
+==================================================
+9) รัน phpMyAdmin
+==================================================
+
+docker run -d \
+  --name cr-photo-pma \
+  --network cr-photo-net \
+  -p 8081:80 \
+  -e PMA_HOST=cr-photo-db \
+  -e PMA_PORT=3306 \
+  -e PMA_USER=root \
+  -e PMA_PASSWORD=root \
+  -e UPLOAD_LIMIT=128M \
+  --restart unless-stopped \
+  phpmyadmin:5
+
+เปิด phpMyAdmin:
+
+open http://localhost:8081
+
+ข้อมูล login phpMyAdmin:
+- Server: cr-photo-db
+- Username: root
+- Password: root
+- Database: chiangrai_photographer_booking
+
+
+==================================================
+10) ตรวจสอบระบบทั้งหมด
+==================================================
+
+ดู container:
+
+docker ps --format "table {{.Names}}\t{{.Image}}\t{{.Ports}}\t{{.Status}}"
+
+ตรวจสอบเว็บ:
+
+curl -I http://localhost:8000
+
+ตรวจสอบ phpMyAdmin:
+
+curl -I http://localhost:8081
+
+ตรวจสอบฐานข้อมูล:
+
+docker exec cr-photo-db mariadb -uroot -proot chiangrai_photographer_booking -e "SELECT id, name, email FROM users LIMIT 10;"
+
+
+==================================================
+11) บัญชี Demo
+==================================================
+
+Admin:
+admin@example.com
+password
+
+Customer:
+customer@example.com
+password
+
+Photographer:
+northstudio@example.com
+password
+
+
+==================================================
+12) คำสั่งหยุด/เริ่มระบบ
+==================================================
+
+หยุดทุก container:
+
+docker stop cr-photo-web cr-photo-pma cr-photo-db
+
+เริ่มกลับมาใหม่:
+
+docker start cr-photo-db
+docker start cr-photo-web
+docker start cr-photo-pma
+
+หรือเริ่มพร้อมกัน:
+
+docker start cr-photo-db cr-photo-web cr-photo-pma
+
+ดู log:
+
+docker logs -f cr-photo-web
+
+docker logs -f cr-photo-db
+
+docker logs -f cr-photo-pma
+
+
+==================================================
+13) Re-run ใหม่โดยข้อมูลไม่หาย
+==================================================
+
+ถ้าต้องการลบ container แล้วสร้างใหม่ แต่เก็บข้อมูลเดิม:
+
+docker stop cr-photo-web cr-photo-pma cr-photo-db
+
+docker rm cr-photo-web cr-photo-pma cr-photo-db
+
+ห้ามลบ volume cr-photo-db-data
+
+จากนั้นรันใหม่ตามข้อ 5, 8, 9
+
+ไม่ต้อง import database.sql ใหม่ ถ้า volume cr-photo-db-data มีข้อมูลอยู่แล้ว
+
+ตรวจสอบข้อมูลยังอยู่:
+
+docker exec cr-photo-db mariadb -uroot -proot chiangrai_photographer_booking -e "SELECT COUNT(*) AS users_count FROM users;"
+
+
+==================================================
+14) Backup ฐานข้อมูล
+==================================================
+
+Backup เป็นไฟล์ SQL:
+
+mkdir -p docker-backups
+
+docker exec cr-photo-db mariadb-dump -uroot -proot --single-transaction --routines --triggers chiangrai_photographer_booking > docker-backups/chiangrai_photographer_booking_$(date +%Y%m%d_%H%M%S).sql
+
+ดูไฟล์ backup:
+
+ls -lh docker-backups
+
+
+==================================================
+15) Restore ฐานข้อมูลจาก backup
+==================================================
+
+ตัวอย่าง restore:
+
+docker exec -i cr-photo-db mariadb -uroot -proot chiangrai_photographer_booking < docker-backups/chiangrai_photographer_booking_backup.sql
+
+หรือ restore จากไฟล์ที่มี timestamp:
+
+docker exec -i cr-photo-db mariadb -uroot -proot chiangrai_photographer_booking < docker-backups/ชื่อไฟล์-backup.sql
+
+
+==================================================
+16) ล้างข้อมูลทั้งหมดแบบตั้งใจเท่านั้น
+==================================================
+
+ใช้เฉพาะตอนต้องการลบ database ทิ้งจริง ๆ:
+
+docker stop cr-photo-web cr-photo-pma cr-photo-db
+
+docker rm cr-photo-web cr-photo-pma cr-photo-db
+
+docker volume rm cr-photo-db-data
+
+หลังจากนี้ข้อมูล MariaDB จะหายจริง ต้อง import database.sql ใหม่
+
+
+==================================================
+17) สรุป Port ที่ใช้งาน
+==================================================
+
+Web PHP:
+http://localhost:8000
+Container: cr-photo-web
+Image: php:7.4-cli
+Container port: 8000
+Host port: 8000
+
+MariaDB:
+Host: localhost
+Port: 3307
+Container: cr-photo-db
+Image: mariadb:10.6
+Container port: 3306
+Host port: 3307
+Database: chiangrai_photographer_booking
+User: root
+Password: root
+Volume: cr-photo-db-data:/var/lib/mysql
+
+phpMyAdmin:
+http://localhost:8081
+Container: cr-photo-pma
+Image: phpmyadmin:5
+Container port: 80
+Host port: 8081
+PMA_HOST: cr-photo-db
+PMA_PORT: 3306
+PMA_USER: root
+PMA_PASSWORD: root
+
+
+==================================================
+18) คำสั่งแก้ปัญหาที่ใช้บ่อย
+==================================================
+
+ดูว่า port ถูกใช้หรือไม่:
+
+lsof -i :8000
+lsof -i :8081
+lsof -i :3307
+
+ดู network:
+
+docker network inspect cr-photo-net
+
+เข้า shell container web:
+
+docker exec -it cr-photo-web bash
+
+เข้า MariaDB shell:
+
+docker exec -it cr-photo-db mariadb -uroot -proot chiangrai_photographer_booking
+
+ดู config env ของ web:
+
+docker exec cr-photo-web env | grep -E "APP_URL|DB_"
+
+เช็กว่า PHP ต่อ database ได้ไหม:
+
+docker exec cr-photo-web php -r 'require "/app/config/database.php"; echo db()->query("SELECT DATABASE()")->fetchColumn(), PHP_EOL;'
+
+ถ้าเว็บเข้าไม่ได้ ให้ดู log:
+
+docker logs cr-photo-web --tail=120
+
+ถ้า database ยังไม่พร้อม ให้ดู log:
+
+docker logs cr-photo-db --tail=120

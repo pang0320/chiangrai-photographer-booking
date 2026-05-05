@@ -405,3 +405,5 @@ docker logs cr-photo-web --tail=120
 ถ้า database ยังไม่พร้อม ให้ดู log:
 
 docker logs cr-photo-db --tail=120
+
+เจ๋งหรรมเล็ก

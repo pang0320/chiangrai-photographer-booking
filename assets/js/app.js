@@ -31,7 +31,25 @@ document.addEventListener('click', function (event) {
 
 document.addEventListener('DOMContentLoaded', function () {
   if (window.jQuery && jQuery.fn.DataTable) {
-    jQuery('.datatable').DataTable({ pageLength: 25, order: [] });
+    jQuery('.datatable').DataTable({
+      pageLength: 10,
+      lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
+      order: [],
+      language: {
+        search: 'ค้นหา:',
+        lengthMenu: 'แสดง _MENU_ รายการ',
+        info: 'แสดง _START_ ถึง _END_ จาก _TOTAL_ รายการ',
+        infoEmpty: 'ไม่มีข้อมูล',
+        infoFiltered: '(กรองจากทั้งหมด _MAX_ รายการ)',
+        zeroRecords: 'ไม่พบข้อมูล',
+        paginate: {
+          first: 'แรก',
+          last: 'สุดท้าย',
+          next: 'ถัดไป',
+          previous: 'ก่อนหน้า'
+        }
+      }
+    });
   }
 
   document.querySelectorAll('[data-be-date-visible]').forEach(function (input) {

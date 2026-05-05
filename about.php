@@ -45,5 +45,45 @@ include __DIR__ . '/includes/header.php';
             </article>
         <?php endforeach; ?>
     </div>
+
+    <div class="mt-10 grid gap-6 lg:grid-cols-[1fr_1.25fr] lg:items-stretch">
+        <div class="dashboard-hero rounded-[2rem] p-8 text-white">
+            <p class="section-kicker text-red-300">Developer</p>
+            <h2 class="mt-4 text-3xl font-black">ผู้พัฒนาระบบ</h2>
+            <p class="mt-4 text-lg font-bold leading-8 text-white/72">Hello, my name is Creepygame or Game.</p>
+            <p class="mt-2 leading-8 text-white/68">Photographer from Chiang Rai, Thailand และเป็นผู้พัฒนาแพลตฟอร์มนี้เพื่อช่วยให้ลูกค้าและช่างภาพท้องถิ่นติดต่อกันได้ง่ายขึ้น</p>
+            <div class="mt-6 flex flex-wrap gap-3">
+                <a href="tel:0994344335" class="rounded-full bg-white px-5 py-3 font-black text-neutral-950 transition hover:bg-red-600 hover:text-white"><i class="fa-solid fa-phone mr-2"></i>099-4344335</a>
+                <a href="/contact.php" class="rounded-full bg-white/12 px-5 py-3 font-black text-white transition hover:bg-white hover:text-neutral-950"><i class="fa-solid fa-envelope mr-2"></i>ติดต่อผู้พัฒนา</a>
+            </div>
+        </div>
+
+        <div class="stock-card rounded-[2rem] p-8">
+            <div class="flex flex-wrap items-start gap-4">
+                <div class="grid h-16 w-16 place-items-center rounded-2xl bg-red-600 text-2xl text-white shadow-lg shadow-red-600/20">
+                    <i class="fa-solid fa-camera-retro"></i>
+                </div>
+                <div class="min-w-0 flex-1">
+                    <p class="section-kicker">Creepygame / Game</p>
+                    <h3 class="mt-2 text-2xl font-black text-neutral-950">Photographer from Chiang Rai / Thailand</h3>
+                    <p class="mt-3 leading-8 text-neutral-600">สนใจติดต่องาน สามารถทัก IB หรือโทรเบอร์ 099-4344335 ได้เลยครับ</p>
+                </div>
+            </div>
+            <div class="mt-6 grid gap-3 sm:grid-cols-3">
+                <div class="rounded-2xl bg-neutral-50 p-4">
+                    <p class="text-sm font-black text-neutral-500"><i class="fa-solid fa-user mr-2 text-red-600"></i>ชื่อ</p>
+                    <p class="mt-1 font-black text-neutral-950">Creepygame / Game</p>
+                </div>
+                <div class="rounded-2xl bg-neutral-50 p-4">
+                    <p class="text-sm font-black text-neutral-500"><i class="fa-solid fa-location-dot mr-2 text-red-600"></i>พื้นที่</p>
+                    <p class="mt-1 font-black text-neutral-950">Chiang Rai, Thailand</p>
+                </div>
+                <div class="rounded-2xl bg-neutral-50 p-4">
+                    <p class="text-sm font-black text-neutral-500"><i class="fa-solid fa-phone mr-2 text-red-600"></i>โทร</p>
+                    <a href="tel:0994344335" class="mt-1 block font-black text-red-600">099-4344335</a>
+                </div>
+            </div>
+        </div>
+    </div>
 </section>
 <?php include __DIR__ . '/includes/footer.php'; ?>

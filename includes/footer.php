@@ -9,6 +9,7 @@ if (!$footerPath) {
     $footerPath = '/';
 }
 $footerIsWorkspacePage = preg_match('#^/(admin|customer|photographer)/#', $footerPath) === 1;
+$footerIsContactPage = $footerPath === '/contact.php';
 ?>
 </main>
 <?php if ($footerIsWorkspacePage): ?>
@@ -75,10 +76,12 @@ $footerDistricts = db_fetch_all('SELECT district_name FROM districts WHERE is_ac
                         <span class="rounded-full bg-white/8 px-3 py-1.5"><i class="fa-solid fa-location-dot mr-1 text-red-400"></i><?= h($district['district_name']) ?></span>
                     <?php endforeach; ?>
                 </div>
-                <div class="mt-5 text-sm leading-7 text-white/62">
-                    <p><i class="fa-solid fa-envelope mr-2 text-red-400"></i><?= h(setting('admin_email', 'admin@example.com')) ?></p>
-                    <p><i class="fa-solid fa-phone mr-2 text-red-400"></i><?= h(setting('admin_phone', '')) ?></p>
-                </div>
+                <?php if (!$footerIsContactPage): ?>
+                    <div class="mt-5 text-sm leading-7 text-white/62">
+                        <p><i class="fa-solid fa-code mr-2 text-red-400"></i>Creepygame / Game</p>
+                        <p><i class="fa-solid fa-phone mr-2 text-red-400"></i>099-4344335</p>
+                    </div>
+                <?php endif; ?>
             </div>
         </div>
         <div class="mt-10 flex flex-wrap justify-between gap-4 border-t border-white/10 pt-6 text-xs font-bold text-white/42">
@@ -89,6 +92,12 @@ $footerDistricts = db_fetch_all('SELECT district_name FROM districts WHERE is_ac
                 <a href="/sitemap.php" class="hover:text-red-400"><i class="fa-solid fa-sitemap mr-1"></i>แผนผังเว็บไซต์</a>
             </span>
         </div>
+        <?php if (!$footerIsContactPage): ?>
+            <div class="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-white/5 px-4 py-3 text-xs font-bold text-white/50">
+                <span><i class="fa-solid fa-code mr-2 text-red-400"></i>Developer: Creepygame / Game</span>
+                <span><i class="fa-solid fa-camera-retro mr-1 text-red-400"></i>Photographer from Chiang Rai, Thailand</span>
+            </div>
+        <?php endif; ?>
     </div>
 </footer>
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>

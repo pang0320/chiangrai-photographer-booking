@@ -12,6 +12,7 @@ if (!$currentPath) {
     $currentPath = '/';
 }
 $isWorkspacePage = preg_match('#^/(admin|customer|photographer)/#', $currentPath) === 1;
+$shouldShowAdminOverview = preg_match('#^/admin/#', $currentPath) === 1 && $currentPath !== '/admin/dashboard.php';
 ?>
 <!doctype html>
 <html lang="th">
@@ -37,3 +38,6 @@ $isWorkspacePage = preg_match('#^/(admin|customer|photographer)/#', $currentPath
         <main>
 <?php endif; ?>
 <?php include __DIR__ . '/breadcrumb.php'; ?>
+<?php if ($shouldShowAdminOverview): ?>
+    <?php include __DIR__ . '/admin_overview.php'; ?>
+<?php endif; ?>

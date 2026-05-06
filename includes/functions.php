@@ -18,6 +18,146 @@ function redirect(string $path): void
     exit;
 }
 
+function clean_context_path(?string $path = null): string
+{
+    if ($path === null) {
+        $path = (string)($_SERVER['REQUEST_URI'] ?? '/');
+    }
+
+    $parsedPath = parse_url($path, PHP_URL_PATH);
+    if (!$parsedPath) {
+        $parsedPath = '/';
+    }
+
+    if ($parsedPath[0] !== '/') {
+        $parsedPath = '/' . $parsedPath;
+    }
+
+    return $parsedPath;
+}
+
+function clean_context_set(string $path, array $params): void
+{
+    $path = clean_context_path($path);
+    $cleanParams = [];
+
+    foreach ($params as $key => $value) {
+        if (!is_string($key) || $key === '') {
+            continue;
+        }
+
+        if (is_array($value)) {
+            $cleanParams[$key] = array_values(array_map('strval', $value));
+            continue;
+        }
+
+        $cleanParams[$key] = (string)$value;
+    }
+
+    if (!isset($_SESSION['clean_page_context']) || !is_array($_SESSION['clean_page_context'])) {
+        $_SESSION['clean_page_context'] = [];
+    }
+
+    $_SESSION['clean_page_context'][$path] = $cleanParams;
+}
+
+function clean_context_get(?string $path = null): array
+{
+    $path = clean_context_path($path);
+    if (isset($_SESSION['clean_page_context'][$path]) && is_array($_SESSION['clean_page_context'][$path])) {
+        return $_SESSION['clean_page_context'][$path];
+    }
+
+    return [];
+}
+
+function clean_context_init(array $allowedKeys, ?string $path = null): array
+{
+    $path = clean_context_path($path);
+    $incoming = [];
+
+    if (is_post() && isset($_POST['__context_nav'])) {
+        verify_csrf();
+        foreach ($allowedKeys as $key) {
+            if (isset($_POST[$key])) {
+                $incoming[$key] = $_POST[$key];
+            }
+        }
+        clean_context_set($path, $incoming);
+        redirect($path);
+    }
+
+    if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET') {
+        foreach ($allowedKeys as $key) {
+            if (isset($_GET[$key])) {
+                $incoming[$key] = $_GET[$key];
+            }
+        }
+
+        if ($incoming) {
+            clean_context_set($path, $incoming);
+            redirect($path);
+        }
+    }
+
+    return clean_context_get($path);
+}
+
+function clean_context_value(array $context, string $key, $default = '')
+{
+    if (array_key_exists($key, $context)) {
+        return $context[$key];
+    }
+
+    return $default;
+}
+
+function clean_redirect(string $path, array $params = []): void
+{
+    clean_context_set($path, $params);
+    redirect(clean_context_path($path));
+}
+
+function clean_context_inputs(array $params): string
+{
+    $html = '<input type="hidden" name="__context_nav" value="1">';
+    $html .= csrf_field();
+
+    foreach ($params as $key => $value) {
+        if (is_array($value)) {
+            foreach ($value as $item) {
+                $html .= '<input type="hidden" name="' . h($key) . '[]" value="' . h($item) . '">';
+            }
+            continue;
+        }
+
+        $html .= '<input type="hidden" name="' . h($key) . '" value="' . h($value) . '">';
+    }
+
+    return $html;
+}
+
+function clean_context_button(string $path, array $params, string $content, string $buttonClass = '', string $formClass = 'inline', string $formAttrs = ''): string
+{
+    return '<form method="post" action="' . h(clean_context_path($path)) . '" class="' . h($formClass) . '" ' . $formAttrs . '>'
+        . clean_context_inputs($params)
+        . '<button type="submit" class="' . h($buttonClass) . '">' . $content . '</button>'
+        . '</form>';
+}
+
+function clean_context_button_from_url(string $url, string $content, string $buttonClass = '', string $formClass = 'inline', string $formAttrs = ''): string
+{
+    $path = clean_context_path($url);
+    $params = [];
+    $query = parse_url($url, PHP_URL_QUERY);
+
+    if ($query) {
+        parse_str($query, $params);
+    }
+
+    return clean_context_button($path, $params, $content, $buttonClass, $formClass, $formAttrs);
+}
+
 function client_ip(): string
 {
     return substr((string)($_SERVER['REMOTE_ADDR'] ?? '0.0.0.0'), 0, 64);
@@ -86,7 +226,7 @@ function requireLogin(): void
     if (auth_session_expired()) {
         clear_auth_session(true);
         flash('warning', 'ไม่ได้ใช้งานเกิน 20 นาที กรุณาเข้าสู่ระบบใหม่');
-        redirect('/login.php?timeout=1');
+        redirect('/login.php');
     }
 
     $user = current_user();
@@ -649,6 +789,24 @@ function paginate(int $total, int $page, int $perPage, string $baseUrl): string
         $class = $i === $page ? 'bg-red-600 text-white' : 'bg-white text-slate-700 hover:bg-slate-50';
         $html .= '<a class="rounded-xl border px-4 py-2 text-sm font-semibold ' . $class . '" href="' . h($url) . '"><i class="fa-solid fa-file-lines mr-1"></i>' . $i . '</a>';
     }
+    return $html . '</div>';
+}
+
+function paginate_clean(int $total, int $page, int $perPage, string $path, array $baseParams = []): string
+{
+    $pages = (int)ceil($total / $perPage);
+    if ($pages <= 1) {
+        return '';
+    }
+
+    $html = '<div class="mt-8 flex flex-wrap gap-2">';
+    for ($i = 1; $i <= $pages; $i++) {
+        $params = $baseParams;
+        $params['page'] = $i;
+        $class = $i === $page ? 'bg-red-600 text-white' : 'bg-white text-slate-700 hover:bg-slate-50';
+        $html .= clean_context_button($path, $params, '<i class="fa-solid fa-file-lines mr-1"></i>' . $i, 'rounded-xl border px-4 py-2 text-sm font-semibold ' . $class);
+    }
+
     return $html . '</div>';
 }
 

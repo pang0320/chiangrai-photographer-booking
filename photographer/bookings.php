@@ -5,6 +5,7 @@ requireRole('photographer');
 $profile = photographer_profile_by_user((int)current_user()['id']);
 $pid = (int)$profile['id'];
 $allowedStatuses = ['pending', 'accepted', 'confirmed', 'completed', 'rejected', 'cancelled'];
+$cleanContext = clean_context_init(['status']);
 
 if (is_post()) {
     verify_csrf();
@@ -43,7 +44,7 @@ if (is_post()) {
     redirect('/photographer/bookings.php');
 }
 
-$status = (string)($_GET['status'] ?? '');
+$status = (string)clean_context_value($cleanContext, 'status', '');
 $where = 'b.photographer_id = ? AND b.deleted_at IS NULL';
 $params = [$pid];
 
@@ -74,7 +75,8 @@ include __DIR__ . '/../includes/header.php';
             <h1 class="mt-1 text-3xl font-black text-neutral-950">คำขอจอง</h1>
         </div>
 
-        <form>
+        <form method="post" action="/photographer/bookings.php">
+            <?= clean_context_inputs([]) ?>
             <select name="status" class="stock-input rounded-2xl px-4 py-3 font-semibold" onchange="this.form.submit()">
                 <option value="">ทุกสถานะ</option>
                 <?php foreach ($allowedStatuses as $statusOption): ?>
@@ -102,9 +104,7 @@ include __DIR__ . '/../includes/header.php';
                 <?php foreach ($bookings as $booking): ?>
                     <tr class="border-t align-top">
                         <td class="py-3 font-black">
-                            <a class="text-red-600" href="/photographer/booking_detail.php?id=<?= (int)$booking['id'] ?>">
-                                <?= h($booking['booking_code']) ?>
-                            </a>
+                            <?= clean_context_button('/photographer/booking_detail.php', ['id' => (int)$booking['id']], h($booking['booking_code']), 'text-red-600') ?>
                         </td>
                         <td><?= h($booking['customer_name']) ?></td>
                         <td><?= h($booking['category_name']) ?></td>

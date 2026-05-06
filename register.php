@@ -4,8 +4,9 @@ require_once __DIR__ . '/includes/functions.php';
 $districts = db_fetch_all('SELECT * FROM districts WHERE is_active = 1 ORDER BY district_name');
 $categories = db_fetch_all('SELECT * FROM service_categories WHERE is_active = 1 ORDER BY sort_order');
 $allowPhotographer = setting('allow_photographer_registration', '1') === '1';
+$cleanContext = clean_context_init(['role']);
 $selectedAccountType = 'customer';
-if (isset($_GET['role']) && $_GET['role'] === 'photographer' && $allowPhotographer) {
+if (isset($cleanContext['role']) && $cleanContext['role'] === 'photographer' && $allowPhotographer) {
     $selectedAccountType = 'photographer';
 }
 
@@ -72,7 +73,7 @@ if (is_post()) {
 
         if ($display === '' || $districtId <= 0 || count($categoryIds) === 0) {
             flash('error', 'กรุณากรอกข้อมูลช่างภาพให้ครบ เลือกอำเภอหลักและประเภทงานอย่างน้อย 1 รายการ');
-            redirect('/register.php?role=photographer');
+            clean_redirect('/register.php', ['role' => 'photographer']);
         }
     }
 

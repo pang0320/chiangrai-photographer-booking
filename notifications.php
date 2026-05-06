@@ -8,6 +8,7 @@ if (defined('CUSTOMER_NOTIFICATIONS_PAGE')) {
     requireRole('customer');
     $notificationsPath = '/customer/notifications.php';
 }
+$cleanContext = clean_context_init(['filter'], $notificationsPath);
 
 if (is_post()) {
     verify_csrf();
@@ -25,8 +26,8 @@ if (is_post()) {
 }
 
 $filter = 'all';
-if (isset($_GET['filter'])) {
-    $filter = (string)$_GET['filter'];
+if (isset($cleanContext['filter'])) {
+    $filter = (string)$cleanContext['filter'];
 }
 if (!in_array($filter, ['all', 'read', 'unread'], true)) {
     $filter = 'all';
@@ -63,9 +64,9 @@ include __DIR__ . '/includes/header.php';
     </div>
 
     <div class="mt-6 flex flex-wrap gap-2">
-        <a href="<?= h($notificationsPath) ?>?filter=all" class="rounded-full px-4 py-2 text-sm font-black <?php if ($filter === 'all'): ?>bg-neutral-950 text-white<?php else: ?>bg-white text-neutral-700<?php endif; ?>"><i class="fa-solid fa-list mr-1"></i>ทั้งหมด</a>
-        <a href="<?= h($notificationsPath) ?>?filter=unread" class="rounded-full px-4 py-2 text-sm font-black <?php if ($filter === 'unread'): ?>bg-neutral-950 text-white<?php else: ?>bg-white text-neutral-700<?php endif; ?>"><i class="fa-solid fa-bell mr-1"></i>ยังไม่อ่าน</a>
-        <a href="<?= h($notificationsPath) ?>?filter=read" class="rounded-full px-4 py-2 text-sm font-black <?php if ($filter === 'read'): ?>bg-neutral-950 text-white<?php else: ?>bg-white text-neutral-700<?php endif; ?>"><i class="fa-solid fa-circle-check mr-1"></i>อ่านแล้ว</a>
+        <?= clean_context_button($notificationsPath, ['filter' => 'all'], '<i class="fa-solid fa-list mr-1"></i>ทั้งหมด', 'rounded-full px-4 py-2 text-sm font-black ' . ($filter === 'all' ? 'bg-neutral-950 text-white' : 'bg-white text-neutral-700')) ?>
+        <?= clean_context_button($notificationsPath, ['filter' => 'unread'], '<i class="fa-solid fa-bell mr-1"></i>ยังไม่อ่าน', 'rounded-full px-4 py-2 text-sm font-black ' . ($filter === 'unread' ? 'bg-neutral-950 text-white' : 'bg-white text-neutral-700')) ?>
+        <?= clean_context_button($notificationsPath, ['filter' => 'read'], '<i class="fa-solid fa-circle-check mr-1"></i>อ่านแล้ว', 'rounded-full px-4 py-2 text-sm font-black ' . ($filter === 'read' ? 'bg-neutral-950 text-white' : 'bg-white text-neutral-700')) ?>
     </div>
 
     <?php if (!$notifications): ?>

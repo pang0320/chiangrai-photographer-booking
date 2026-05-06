@@ -48,15 +48,11 @@ include __DIR__ . '/../includes/header.php';
                         <td><?= h($booking['district_name']) ?></td>
                         <td><?= status_badge($booking['status']) ?></td>
                         <td class="whitespace-nowrap">
-                            <a class="font-black text-red-600" href="/customer/booking_detail.php?id=<?= (int)$booking['id'] ?>">
-                                รายละเอียด
-                            </a>
+                            <?= clean_context_button('/customer/booking_detail.php', ['id' => (int)$booking['id']], 'รายละเอียด', 'font-black text-red-600') ?>
 
                             <?php if ($booking['status'] === 'completed' && !$booking['review_id']): ?>
                                 <span class="text-neutral-300"> · </span>
-                                <a class="font-black text-emerald-600" href="/customer/review.php?booking_id=<?= (int)$booking['id'] ?>">
-                                    รีวิว
-                                </a>
+                                <?= clean_context_button('/customer/review.php', ['booking_id' => (int)$booking['id']], 'รีวิว', 'font-black text-emerald-600') ?>
                             <?php endif; ?>
                         </td>
                     </tr>

@@ -2,6 +2,8 @@
 require_once __DIR__ . '/../includes/functions.php';
 requireRole('admin');
 
+$cleanContext = clean_context_init(['role', 'role_id', 'status', 'q']);
+
 if (is_post()) {
     verify_csrf();
 
@@ -64,9 +66,21 @@ if (is_post()) {
     redirect('/admin/users.php');
 }
 
-$role = (string)($_GET['role'] ?? '');
-$status = (string)($_GET['status'] ?? '');
-$q = trim((string)($_GET['q'] ?? ''));
+$role = (string)clean_context_value($cleanContext, 'role', '');
+if ($role === '' && isset($cleanContext['role_id'])) {
+    $roleIdFilter = (int)$cleanContext['role_id'];
+    if ($roleIdFilter === 1) {
+        $role = 'customer';
+    }
+    if ($roleIdFilter === 2) {
+        $role = 'photographer';
+    }
+    if ($roleIdFilter === 3) {
+        $role = 'admin';
+    }
+}
+$status = (string)clean_context_value($cleanContext, 'status', '');
+$q = trim((string)clean_context_value($cleanContext, 'q', ''));
 $where = ['u.deleted_at IS NULL'];
 $params = [];
 
@@ -110,7 +124,8 @@ include __DIR__ . '/../includes/header.php';
         </a>
     </div>
 
-    <form class="stock-card mt-6 grid gap-3 rounded-[1.5rem] p-5 md:grid-cols-4">
+    <form method="post" action="/admin/users.php" class="stock-card mt-6 grid gap-3 rounded-[1.5rem] p-5 md:grid-cols-4">
+        <?= clean_context_inputs([]) ?>
         <input name="q" value="<?= h($q) ?>" placeholder="ค้นหา" class="stock-input rounded-2xl px-4 py-3 font-semibold">
 
         <select name="role" class="stock-input rounded-2xl px-4 py-3 font-semibold">

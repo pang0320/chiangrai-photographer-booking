@@ -261,7 +261,7 @@ $adminDescription = $adminOverview['description'];
             </div>
             <div class="flex flex-wrap gap-2">
                 <a href="/admin/dashboard.php" class="rounded-full bg-white px-4 py-2.5 text-sm font-black text-neutral-950 transition hover:bg-red-600 hover:text-white"><i class="fa-solid fa-gauge mr-2"></i>แดชบอร์ดหลัก</a>
-                <a href="/admin/photographers.php?status=pending" class="rounded-full bg-white/12 px-4 py-2.5 text-sm font-black text-white transition hover:bg-white hover:text-neutral-950"><i class="fa-solid fa-camera-retro mr-2"></i>อนุมัติช่างภาพ</a>
+                <?= clean_context_button('/admin/photographers.php', ['status' => 'pending'], '<i class="fa-solid fa-camera-retro mr-2"></i>อนุมัติช่างภาพ', 'rounded-full bg-white/12 px-4 py-2.5 text-sm font-black text-white transition hover:bg-white hover:text-neutral-950') ?>
                 <a href="/admin/reports_moderation.php" class="rounded-full bg-white/12 px-4 py-2.5 text-sm font-black text-white transition hover:bg-white hover:text-neutral-950"><i class="fa-solid fa-shield-halved mr-2"></i>ตรวจรายงาน</a>
             </div>
         </div>
@@ -277,14 +277,7 @@ $adminDescription = $adminOverview['description'];
             $statHint = $stat[4];
             $statHref = $stat[5] ?? '/admin/dashboard.php';
             ?>
-            <a href="<?= h($statHref) ?>" class="metric-card rounded-[1.5rem] p-5 transition hover:-translate-y-1 hover:shadow-2xl">
-                <div class="flex items-center justify-between gap-4">
-                    <p class="text-sm font-bold text-neutral-500"><?= h($statLabel) ?></p>
-                    <span class="grid h-11 w-11 place-items-center rounded-2xl bg-white shadow-sm"><i class="fa-solid <?= h($statIcon) ?> <?= h($statTone) ?>"></i></span>
-                </div>
-                <p class="mt-3 text-3xl font-black text-neutral-950"><?= number_format($statValue) ?></p>
-                <p class="mt-1 text-xs font-black text-neutral-400"><?= h($statHint) ?></p>
-            </a>
+            <?= clean_context_button_from_url($statHref, '<div class="flex items-center justify-between gap-4"><p class="text-sm font-bold text-neutral-500">' . h($statLabel) . '</p><span class="grid h-11 w-11 place-items-center rounded-2xl bg-white shadow-sm"><i class="fa-solid ' . h($statIcon) . ' ' . h($statTone) . '"></i></span></div><p class="mt-3 text-3xl font-black text-neutral-950">' . number_format($statValue) . '</p><p class="mt-1 text-xs font-black text-neutral-400">' . h($statHint) . '</p>', 'metric-card w-full rounded-[1.5rem] p-5 text-left transition hover:-translate-y-1 hover:shadow-2xl', 'contents') ?>
         <?php endforeach; ?>
     </div>
 
@@ -294,7 +287,7 @@ $adminDescription = $adminOverview['description'];
                 <p class="section-kicker"><?= h($card[0]) ?></p>
                 <h2 class="mt-2 text-xl font-black text-neutral-950"><i class="fa-solid <?= h($card[5]) ?> mr-2 text-red-600"></i><?= h($card[1]) ?></h2>
                 <p class="mt-2 text-sm font-bold leading-7 text-neutral-500"><?= h($card[2]) ?></p>
-                <a href="<?= h($card[3]) ?>" class="mt-3 inline-flex rounded-full bg-red-50 px-4 py-2 text-sm font-black text-red-700 hover:bg-red-600 hover:text-white"><i class="fa-solid fa-arrow-up-right-from-square mr-2"></i><?= h($card[4]) ?></a>
+                <?= clean_context_button_from_url((string)$card[3], '<i class="fa-solid fa-arrow-up-right-from-square mr-2"></i>' . h($card[4]), 'mt-3 inline-flex rounded-full bg-red-50 px-4 py-2 text-sm font-black text-red-700 hover:bg-red-600 hover:text-white') ?>
             </div>
         <?php endforeach; ?>
     </div>

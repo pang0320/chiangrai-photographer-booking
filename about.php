@@ -20,7 +20,7 @@ include __DIR__ . '/includes/header.php';
         <p class="mt-5 max-w-2xl text-lg leading-8 text-white/70"><?= h(PAYMENT_DISCLAIMER) ?></p>
         <div class="mt-8 flex flex-wrap gap-3">
             <a href="/photographers.php" class="rounded-full bg-white px-5 py-3 font-black text-neutral-950 hover:bg-red-600 hover:text-white"><i class="fa-solid fa-magnifying-glass mr-2"></i>ค้นหาช่างภาพ</a>
-            <a href="/register.php?role=photographer" class="rounded-full bg-white/12 px-5 py-3 font-black text-white hover:bg-white hover:text-neutral-950"><i class="fa-solid fa-user-plus mr-2"></i>สมัครเป็นช่างภาพ</a>
+            <?= clean_context_button('/register.php', ['role' => 'photographer'], '<i class="fa-solid fa-user-plus mr-2"></i>สมัครเป็นช่างภาพ', 'rounded-full bg-white/12 px-5 py-3 font-black text-white hover:bg-white hover:text-neutral-950') ?>
         </div>
     </div>
 </section>

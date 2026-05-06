@@ -2,9 +2,10 @@
 require_once __DIR__ . '/../includes/functions.php';
 requireRole('customer');
 $user = current_user();
+$cleanContext = clean_context_init(['id']);
 $id = 0;
-if (isset($_GET['id'])) {
-    $id = (int)$_GET['id'];
+if (isset($cleanContext['id'])) {
+    $id = (int)$cleanContext['id'];
 }
 
 $stmt = db()->prepare('SELECT b.*, p.display_name, p.phone_public, p.line_id, p.facebook_url, p.instagram_url, sc.name category_name, d.district_name FROM bookings b JOIN photographer_profiles p ON p.id=b.photographer_id JOIN service_categories sc ON sc.id=b.category_id JOIN districts d ON d.id=b.district_id WHERE b.id=? AND b.customer_id=? AND b.deleted_at IS NULL LIMIT 1');
@@ -27,7 +28,7 @@ if (is_post() && $postedAction === 'cancel') {
         log_activity('cancel_booking', 'bookings', $id);
         flash('success', 'ยกเลิกคำขอจองแล้ว');
     }
-    redirect('/customer/booking_detail.php?id=' . $id);
+    clean_redirect('/customer/booking_detail.php', ['id' => $id]);
 }
 
 $logs = db()->prepare('SELECT l.*, u.name FROM booking_status_logs l LEFT JOIN users u ON u.id=l.changed_by WHERE l.booking_id=? ORDER BY l.created_at');
@@ -58,9 +59,7 @@ include __DIR__ . '/../includes/header.php';
             <?php endif; ?>
 
             <?php if ($booking['status'] === 'completed' && !$hasReview): ?>
-                <a class="rounded-2xl bg-emerald-600 px-5 py-3 font-bold text-white" href="/customer/review.php?booking_id=<?= $id ?>">
-                    <i class="fa-solid fa-star mr-2"></i>รีวิวช่างภาพ
-                </a>
+                <?= clean_context_button('/customer/review.php', ['booking_id' => $id], '<i class="fa-solid fa-star mr-2"></i>รีวิวช่างภาพ', 'rounded-2xl bg-emerald-600 px-5 py-3 font-bold text-white') ?>
             <?php endif; ?>
         </div>
     </div>

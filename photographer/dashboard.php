@@ -313,7 +313,7 @@ include __DIR__ . '/../includes/header.php';
                 </div>
                 <p class="mt-4 max-w-3xl leading-8 text-white/70">สรุปคำขอจอง คะแนน รีวิว วันว่าง และความพร้อมของโปรไฟล์ในหน้าจอเดียว เว็บไซต์เป็นเพียงตัวกลางค้นหา จอง และติดต่อช่างภาพโดยตรง ไม่มีระบบชำระเงิน</p>
                 <div class="mt-6 flex flex-wrap gap-3">
-                    <a href="/photographer/bookings.php?status=pending" class="rounded-full bg-white px-5 py-3 font-black text-neutral-950 transition hover:bg-red-600 hover:text-white"><i class="fa-solid fa-bell mr-2"></i>ดูคำขอใหม่</a>
+                    <?= clean_context_button('/photographer/bookings.php', ['status' => 'pending'], '<i class="fa-solid fa-bell mr-2"></i>ดูคำขอใหม่', 'rounded-full bg-white px-5 py-3 font-black text-neutral-950 transition hover:bg-red-600 hover:text-white') ?>
                     <a href="/photographer/availability.php" class="rounded-full bg-white/12 px-5 py-3 font-black text-white transition hover:bg-white hover:text-neutral-950"><i class="fa-solid fa-calendar-plus mr-2"></i>เพิ่มวันว่าง</a>
                     <a href="/photographer/portfolio.php" class="rounded-full bg-white/12 px-5 py-3 font-black text-white transition hover:bg-white hover:text-neutral-950"><i class="fa-solid fa-images mr-2"></i>เพิ่มผลงาน</a>
                     <a href="/photographer/profile.php" class="rounded-full bg-white/12 px-5 py-3 font-black text-white transition hover:bg-white hover:text-neutral-950"><i class="fa-solid fa-user-pen mr-2"></i>แก้ไขโปรไฟล์</a>
@@ -445,7 +445,7 @@ include __DIR__ . '/../includes/header.php';
                 </div>
                 <a class="rounded-full border border-neutral-200 px-4 py-2 text-sm font-black transition hover:bg-neutral-950 hover:text-white" href="/photographer/bookings.php"><i class="fa-solid fa-eye mr-2"></i>ดูทั้งหมด</a>
             </div>
-            <div class="mt-5 grid gap-3">
+            <div class="mt-5 grid gap-3" data-block-paginate="5">
                 <?php if ($upcomingBookings): ?>
                     <?php foreach ($upcomingBookings as $booking): ?>
                         <div class="grid gap-4 rounded-[1.5rem] border border-neutral-100 bg-neutral-50 p-4 transition hover:-translate-y-0.5 hover:bg-white hover:shadow-lg md:grid-cols-[1fr_auto] md:items-center">
@@ -463,7 +463,7 @@ include __DIR__ . '/../includes/header.php';
                                 </p>
                                 <p class="mt-1 text-sm font-black text-neutral-900"><i class="fa-solid fa-clock mr-1 text-red-600"></i><?= h(format_be_date($booking['booking_date'])) ?> · <?= h(time_slot_label($booking['time_slot'])) ?></p>
                             </div>
-                            <a class="inline-flex items-center justify-center rounded-full bg-red-600 px-4 py-2 text-sm font-black text-white transition hover:bg-neutral-950" href="/photographer/booking_detail.php?id=<?= (int)$booking['id'] ?>"><i class="fa-solid fa-eye mr-2"></i>จัดการ</a>
+                            <?= clean_context_button('/photographer/booking_detail.php', ['id' => (int)$booking['id']], '<i class="fa-solid fa-eye mr-2"></i>จัดการ', 'inline-flex items-center justify-center rounded-full bg-red-600 px-4 py-2 text-sm font-black text-white transition hover:bg-neutral-950') ?>
                         </div>
                     <?php endforeach; ?>
                 <?php else: ?>
@@ -505,7 +505,7 @@ include __DIR__ . '/../includes/header.php';
         <div class="stock-card rounded-[1.75rem] p-6">
             <p class="section-kicker">Category</p>
             <h2 class="mt-1 text-xl font-black text-neutral-950"><i class="fa-solid fa-layer-group mr-2 text-red-600"></i>งานตามหมวดหมู่</h2>
-            <div class="mt-5 grid gap-3">
+            <div class="mt-5 grid gap-3" data-block-paginate="5">
                 <?php if ($categoryRows): ?>
                     <?php foreach ($categoryRows as $category): ?>
                         <?php
@@ -595,7 +595,7 @@ include __DIR__ . '/../includes/header.php';
                                 <th></th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody data-block-paginate="5">
                             <?php foreach ($bookings as $booking): ?>
                                 <tr class="border-t border-neutral-100">
                                     <td class="py-4 font-black text-neutral-950"><?= h($booking['booking_code']) ?></td>
@@ -603,7 +603,7 @@ include __DIR__ . '/../includes/header.php';
                                     <td><?= h($booking['category_name']) ?></td>
                                     <td><?= h(format_be_date($booking['booking_date'])) ?> · <?= h(time_slot_label($booking['time_slot'])) ?></td>
                                     <td><?= status_badge($booking['status']) ?></td>
-                                    <td><a class="inline-flex items-center rounded-full bg-red-50 px-3 py-1.5 text-xs font-black text-red-700 hover:bg-red-600 hover:text-white" href="/photographer/booking_detail.php?id=<?= (int)$booking['id'] ?>"><i class="fa-solid fa-eye mr-1"></i>ดู</a></td>
+                                    <td><?= clean_context_button('/photographer/booking_detail.php', ['id' => (int)$booking['id']], '<i class="fa-solid fa-eye mr-1"></i>ดู', 'inline-flex items-center rounded-full bg-red-50 px-3 py-1.5 text-xs font-black text-red-700 hover:bg-red-600 hover:text-white') ?></td>
                                 </tr>
                             <?php endforeach; ?>
                         </tbody>
@@ -622,7 +622,7 @@ include __DIR__ . '/../includes/header.php';
             <div class="stock-card rounded-[1.75rem] p-6">
                 <p class="section-kicker">Calendar Preview</p>
                 <h2 class="mt-1 text-xl font-black text-neutral-950"><i class="fa-solid fa-calendar-days mr-2 text-red-600"></i>วันว่างล่าสุด</h2>
-                <div class="mt-4 grid gap-2">
+                <div class="mt-4 grid gap-2" data-block-paginate="5">
                     <?php foreach ($availability as $slot): ?>
                         <div class="flex items-center justify-between rounded-2xl bg-neutral-50 px-4 py-3 text-sm">
                             <span class="font-black"><i class="fa-solid fa-calendar mr-2 text-red-600"></i><?= h(format_be_date($slot['available_date'])) ?></span>
@@ -640,7 +640,7 @@ include __DIR__ . '/../includes/header.php';
             <div class="stock-card rounded-[1.75rem] p-6">
                 <p class="section-kicker">Status Timeline</p>
                 <h2 class="mt-1 text-xl font-black text-neutral-950"><i class="fa-solid fa-clock-rotate-left mr-2 text-red-600"></i>ประวัติสถานะล่าสุด</h2>
-                <div class="mt-4 grid gap-3">
+                <div class="mt-4 grid gap-3" data-block-paginate="5">
                     <?php foreach ($latestLogs as $log): ?>
                         <div class="rounded-2xl bg-neutral-50 p-4 text-sm">
                             <div class="font-black text-neutral-950"><?= status_badge((string)$log['new_status']) ?></div>
@@ -659,7 +659,7 @@ include __DIR__ . '/../includes/header.php';
         <div class="stock-card rounded-[1.75rem] p-6">
             <p class="section-kicker">Latest Reviews</p>
             <h2 class="mt-1 text-2xl font-black text-neutral-950"><i class="fa-solid fa-comments mr-2 text-red-600"></i>รีวิวล่าสุดจากลูกค้า</h2>
-            <div class="mt-5 grid gap-4 md:grid-cols-2">
+            <div class="mt-5 grid gap-4 md:grid-cols-2" data-block-paginate="5">
                 <?php foreach ($latestReviews as $review): ?>
                     <article class="rounded-[1.5rem] bg-neutral-50 p-5 transition hover:-translate-y-1 hover:bg-white hover:shadow-lg">
                         <div class="flex items-center justify-between gap-4"><b><i class="fa-solid fa-user mr-2 text-red-600"></i><?= h($review['customer_name']) ?></b><span class="text-red-600"><?= str_repeat('★', (int)$review['rating_overall']) ?></span></div>

@@ -1,8 +1,9 @@
 <?php
 require_once __DIR__ . '/includes/functions.php';
+$cleanContext = clean_context_init(['ids']);
 $ids = [];
-if (isset($_GET['ids'])) {
-    foreach (explode(',', (string)$_GET['ids']) as $id) {
+if (isset($cleanContext['ids'])) {
+    foreach (explode(',', (string)$cleanContext['ids']) as $id) {
         $id = (int)$id;
         if ($id > 0 && count($ids) < 3) {
             $ids[] = $id;
@@ -27,9 +28,10 @@ include __DIR__ . '/includes/header.php';
     <div class="flex flex-wrap items-end justify-between gap-4">
         <div><p class="section-kicker">Compare</p><h1 class="mt-2 text-4xl font-black">เปรียบเทียบช่างภาพ</h1></div>
     </div>
-    <form class="stock-card mt-6 grid gap-3 rounded-[1.75rem] p-5 md:grid-cols-4">
+    <form method="post" action="/compare.php" class="stock-card mt-6 grid gap-3 rounded-[1.75rem] p-5 md:grid-cols-4">
+        <?= clean_context_inputs(['ids' => implode(',', $ids)]) ?>
         <?php for ($i = 0; $i < 3; $i++): ?>
-            <select name="select_<?= $i ?>" class="stock-input rounded-2xl px-4 py-3 font-semibold" onchange="const s=[...this.form.querySelectorAll('select')].map(x=>x.value).filter(Boolean); location.href='/compare.php?ids='+s.join(',')">
+            <select name="select_<?= $i ?>" class="stock-input rounded-2xl px-4 py-3 font-semibold" onchange="const s=[...this.form.querySelectorAll('select[name^=select_]')].map(x=>x.value).filter(Boolean); this.form.querySelector('input[name=ids]').value=s.join(','); this.form.submit();">
                 <option value="">เลือกช่างภาพ</option>
                 <?php foreach ($all as $p): ?>
                     <option value="<?= (int)$p['id'] ?>" <?php if (isset($ids[$i]) && $ids[$i] === (int)$p['id']): ?>selected<?php endif; ?>><?= h($p['display_name']) ?></option>

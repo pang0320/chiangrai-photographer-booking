@@ -59,7 +59,7 @@ $footerDistricts = db_fetch_all('SELECT district_name FROM districts WHERE is_ac
                     <a href="/blog.php" class="hover:text-red-400"><i class="fa-solid fa-newspaper mr-2"></i>บทความ</a>
                     <a href="/faq.php" class="hover:text-red-400"><i class="fa-solid fa-circle-question mr-2"></i>คำถามที่พบบ่อย</a>
                     <a href="/contact.php" class="hover:text-red-400"><i class="fa-solid fa-envelope mr-2"></i>ติดต่อเรา</a>
-                    <a href="/register.php?role=photographer" class="hover:text-red-400"><i class="fa-solid fa-user-plus mr-2"></i>สมัครเป็นช่างภาพ</a>
+                    <?= clean_context_button('/register.php', ['role' => 'photographer'], '<i class="fa-solid fa-user-plus mr-2"></i>สมัครเป็นช่างภาพ', 'text-left hover:text-red-400') ?>
                     <a href="/login.php" class="hover:text-red-400"><i class="fa-solid fa-right-to-bracket mr-2"></i>เข้าสู่ระบบ</a>
                 </div>
             </div>
@@ -68,7 +68,7 @@ $footerDistricts = db_fetch_all('SELECT district_name FROM districts WHERE is_ac
                 <div class="font-black text-white">หมวดหมู่ยอดนิยม</div>
                 <div class="mt-4 grid gap-2 text-sm text-white/62">
                     <?php foreach ($footerCategories as $category): ?>
-                        <a href="/photographers.php?category_id=<?= (int)$category['id'] ?>" class="hover:text-red-400"><i class="fa-solid fa-layer-group mr-2"></i><?= h($category['name']) ?></a>
+                        <?= clean_context_button('/photographers.php', ['category_id' => (int)$category['id']], '<i class="fa-solid fa-layer-group mr-2"></i>' . h($category['name']), 'text-left hover:text-red-400') ?>
                     <?php endforeach; ?>
                 </div>
             </div>
@@ -186,7 +186,7 @@ setTimeout(function () {
         allowOutsideClick: false,
         allowEscapeKey: false
     }).then(function () {
-        window.location.href = '/login.php?timeout=1';
+        window.location.href = '/login.php';
     });
 }, <?= (int)$sessionRemainingSeconds ?> * 1000);
 </script>

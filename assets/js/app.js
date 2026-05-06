@@ -5,9 +5,12 @@ document.addEventListener('click', function (event) {
   Swal.fire({
     icon: 'warning',
     title: button.dataset.confirm || 'ยืนยันการทำรายการ?',
+    text: button.dataset.confirmText || '',
     showCancelButton: true,
-    confirmButtonText: 'ยืนยัน',
-    cancelButtonText: 'ยกเลิก'
+    confirmButtonText: button.dataset.confirmButton || 'ยืนยัน',
+    cancelButtonText: button.dataset.cancelButton || 'ยกเลิก',
+    confirmButtonColor: '#e21b2d',
+    cancelButtonColor: '#334155'
   }).then((result) => {
     if (result.isConfirmed) {
       if (button.tagName === 'BUTTON' && button.form) {
@@ -68,10 +71,12 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 
+  initBlockPagination();
+
   if (window.jQuery && jQuery.fn.DataTable) {
     jQuery('.datatable').DataTable({
-      pageLength: 10,
-      lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
+      pageLength: 5,
+      lengthMenu: [[5, 10, 25, 50, 100], [5, 10, 25, 50, 100]],
       order: [],
       language: {
         search: 'ค้นหา:',
@@ -116,6 +121,100 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 });
+
+function initBlockPagination() {
+  document.querySelectorAll('[data-block-paginate]').forEach(function (block) {
+    const perPage = Math.max(1, parseInt(block.dataset.blockPaginate || '5', 10));
+    const itemSelector = block.dataset.blockItemSelector || '';
+    const items = itemSelector ? Array.from(block.querySelectorAll(itemSelector)) : Array.from(block.children);
+
+    if (items.length <= perPage) {
+      return;
+    }
+
+    let currentPage = 1;
+    const totalPages = Math.ceil(items.length / perPage);
+    const control = document.createElement('div');
+    control.className = 'mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-neutral-100 pt-4';
+
+    const summary = document.createElement('div');
+    summary.className = 'text-xs font-black text-neutral-500';
+
+    const buttons = document.createElement('div');
+    buttons.className = 'flex flex-wrap gap-2';
+
+    control.appendChild(summary);
+    control.appendChild(buttons);
+
+    const insertAfter = block.tagName === 'TBODY' && block.closest('table') ? block.closest('table') : block;
+    insertAfter.insertAdjacentElement('afterend', control);
+
+    function itemDisplayValue(item) {
+      if (item.tagName === 'TR') {
+        return 'table-row';
+      }
+
+      if (item.tagName === 'LI') {
+        return 'list-item';
+      }
+
+      return '';
+    }
+
+    function buildPageButton(page, label, iconClass, isActive, isDisabled) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = isActive
+        ? 'rounded-full bg-neutral-950 px-3 py-2 text-xs font-black text-white shadow-sm'
+        : 'rounded-full border border-neutral-200 bg-white px-3 py-2 text-xs font-black text-neutral-700 transition hover:bg-red-600 hover:text-white';
+
+      if (isDisabled) {
+        button.disabled = true;
+        button.className = 'rounded-full border border-neutral-100 bg-neutral-50 px-3 py-2 text-xs font-black text-neutral-300';
+      }
+
+      if (iconClass) {
+        button.innerHTML = '<i class="fa-solid ' + iconClass + '"></i>';
+        button.setAttribute('aria-label', label);
+      } else {
+        button.textContent = label;
+      }
+
+      button.addEventListener('click', function () {
+        if (isDisabled) return;
+        currentPage = page;
+        render();
+      });
+
+      return button;
+    }
+
+    function render() {
+      const startIndex = (currentPage - 1) * perPage;
+      const endIndex = startIndex + perPage;
+
+      items.forEach(function (item, index) {
+        if (index >= startIndex && index < endIndex) {
+          item.style.display = itemDisplayValue(item);
+        } else {
+          item.style.display = 'none';
+        }
+      });
+
+      summary.textContent = 'แสดง ' + (startIndex + 1) + '-' + Math.min(endIndex, items.length) + ' จาก ' + items.length + ' รายการ';
+      buttons.innerHTML = '';
+      buttons.appendChild(buildPageButton(Math.max(1, currentPage - 1), 'ก่อนหน้า', 'fa-chevron-left', false, currentPage === 1));
+
+      for (let page = 1; page <= totalPages; page++) {
+        buttons.appendChild(buildPageButton(page, String(page), '', page === currentPage, false));
+      }
+
+      buttons.appendChild(buildPageButton(Math.min(totalPages, currentPage + 1), 'ถัดไป', 'fa-chevron-right', false, currentPage === totalPages));
+    }
+
+    render();
+  });
+}
 
 document.addEventListener('submit', function () {
   syncAllBeDateInputs();

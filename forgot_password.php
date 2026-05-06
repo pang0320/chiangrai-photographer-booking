@@ -8,7 +8,7 @@ if (is_post()) {
         $token = bin2hex(random_bytes(32));
         db()->prepare('DELETE FROM password_resets WHERE email = ?')->execute([$email]);
         db()->prepare('INSERT INTO password_resets (email, token, expires_at, created_at) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 1 HOUR), NOW())')->execute([$email, $token]);
-        $resetLink = APP_URL . '/reset_password.php?token=' . $token;
+        $resetLink = $token;
         flash('success', 'สร้างลิงก์รีเซ็ตรหัสผ่านแล้ว');
     }
 }
@@ -25,8 +25,8 @@ include __DIR__ . '/includes/header.php';
         </form>
         <?php if ($resetLink): ?>
             <p class="mt-5 break-all rounded-2xl bg-slate-50 p-4 text-sm">
-                Development reset link:
-                <a class="text-red-600" href="<?= h($resetLink) ?>"><?= h($resetLink) ?></a>
+                Development reset:
+                <?= clean_context_button('/reset_password.php', ['token' => $resetLink], '<i class="fa-solid fa-key mr-2"></i>เปิดหน้าตั้งรหัสผ่านใหม่', 'mt-3 rounded-full bg-red-600 px-4 py-2 font-black text-white hover:bg-neutral-950') ?>
             </p>
         <?php endif; ?>
     </div>

@@ -1,13 +1,14 @@
 <?php
 require_once __DIR__ . '/includes/functions.php';
 
+$cleanContext = clean_context_init(['id', 'slug']);
 $id = 0;
-if (isset($_GET['id'])) {
-    $id = (int)$_GET['id'];
+if (isset($cleanContext['id'])) {
+    $id = (int)$cleanContext['id'];
 }
 $slug = '';
-if (isset($_GET['slug'])) {
-    $slug = trim((string)$_GET['slug']);
+if (isset($cleanContext['slug'])) {
+    $slug = trim((string)$cleanContext['slug']);
 }
 
 if (is_post()) {
@@ -20,7 +21,7 @@ if (is_post()) {
         $user = current_user();
         toggle_favorite_photographer((int)$user['id'], $targetPhotographerId);
         flash('success', 'อัปเดตรายการโปรดแล้ว');
-        redirect('/photographer_detail.php?id=' . $targetPhotographerId);
+        clean_redirect('/photographer_detail.php', ['id' => $targetPhotographerId]);
     }
 
     if ($action === 'report_photographer' || $action === 'report_review') {
@@ -38,7 +39,7 @@ if (is_post()) {
             $stmt->execute([(int)$user['id'], $targetType, $targetId, $reason, $detail]);
             flash('success', 'ส่งรายงานให้ Admin ตรวจสอบแล้ว');
         }
-        redirect('/photographer_detail.php?id=' . $targetPhotographerId);
+        clean_redirect('/photographer_detail.php', ['id' => $targetPhotographerId]);
     }
 }
 
@@ -116,7 +117,7 @@ $similarPhotographers = db_fetch_all('SELECT p.*, d.district_name,
                                         AND EXISTS (SELECT 1 FROM photographer_service_areas a WHERE a.photographer_id = p.id AND a.district_id = ? AND a.is_active = 1)
                                       ORDER BY p.average_rating DESC, p.total_reviews DESC
                                       LIMIT 3', [$id, (int)$profile['main_district_id']]);
-$shareUrl = APP_URL . '/photographer_detail.php?slug=' . urlencode($profile['slug']);
+$shareUrl = APP_URL . '/photographer_detail.php';
 
 $pageTitle = $profile['display_name'];
 include __DIR__ . '/includes/header.php';
@@ -202,7 +203,7 @@ include __DIR__ . '/includes/header.php';
                     <?php endif; ?>
                 </div>
                 <div class="mt-4 grid gap-2">
-                    <a class="stock-button block rounded-full px-5 py-3 text-center font-black" href="/customer/create_booking.php?photographer_id=<?= (int)$profile['id'] ?>"><i class="fa-solid fa-calendar-check mr-2"></i>ส่งคำขอจอง</a>
+                    <?= clean_context_button('/customer/create_booking.php', ['photographer_id' => (int)$profile['id']], '<i class="fa-solid fa-calendar-check mr-2"></i>ส่งคำขอจอง', 'stock-button block w-full rounded-full px-5 py-3 text-center font-black') ?>
                     <?php if ($currentUser && $currentUser['role_name'] === 'customer'): ?>
                         <form method="post">
                             <?= csrf_field() ?>
@@ -426,7 +427,7 @@ include __DIR__ . '/includes/header.php';
                 <p class="section-kicker">ช่างภาพที่คล้ายกัน</p>
                 <h2 class="mt-1 text-3xl font-black text-neutral-950">ช่างภาพใกล้เคียงที่น่าสนใจ</h2>
             </div>
-            <a href="/photographers.php?district_id=<?= (int)$profile['main_district_id'] ?>" class="rounded-full border border-neutral-200 px-5 py-3 font-black hover:bg-neutral-950 hover:text-white"><i class="fa-solid fa-location-dot mr-2"></i>ดูในพื้นที่นี้</a>
+            <?= clean_context_button('/photographers.php', ['district_id' => (int)$profile['main_district_id']], '<i class="fa-solid fa-location-dot mr-2"></i>ดูในพื้นที่นี้', 'rounded-full border border-neutral-200 px-5 py-3 font-black hover:bg-neutral-950 hover:text-white') ?>
         </div>
         <div class="mt-6 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             <?php foreach ($similarPhotographers as $p): ?>

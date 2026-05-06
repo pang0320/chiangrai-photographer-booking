@@ -2,9 +2,10 @@
 require_once __DIR__ . '/../includes/functions.php';
 requireRole('admin');
 
+$cleanContext = clean_context_init(['edit']);
 $editId = 0;
-if (isset($_GET['edit'])) {
-    $editId = (int)$_GET['edit'];
+if (isset($cleanContext['edit'])) {
+    $editId = (int)$cleanContext['edit'];
 }
 
 if (is_post()) {
@@ -25,7 +26,7 @@ if (is_post()) {
         $stmt->execute([$id]);
         log_activity('delete_faq', 'faqs', $id);
         flash('success', 'ลบคำถามแล้ว');
-        redirect('/admin/faqs.php');
+        clean_redirect('/admin/faqs.php', []);
     }
 
     $category = trim((string)($_POST['category'] ?? ''));
@@ -39,7 +40,7 @@ if (is_post()) {
 
     if ($category === '' || $question === '' || $answer === '') {
         flash('error', 'กรุณากรอกข้อมูลคำถามให้ครบ');
-        redirect('/admin/faqs.php');
+        clean_redirect('/admin/faqs.php', []);
     }
 
     if ($id > 0) {
@@ -53,7 +54,7 @@ if (is_post()) {
     }
 
     flash('success', 'บันทึกคำถามแล้ว');
-    redirect('/admin/faqs.php');
+    clean_redirect('/admin/faqs.php', []);
 }
 
 $editFaq = null;
@@ -130,7 +131,7 @@ include __DIR__ . '/../includes/header.php';
                         <td><?= (int)$item['sort_order'] ?></td>
                         <td>
                             <div class="flex flex-wrap gap-2">
-                                <a href="/admin/faqs.php?edit=<?= (int)$item['id'] ?>" class="rounded-full bg-amber-50 px-3 py-1.5 font-black text-amber-700"><i class="fa-solid fa-pen mr-1"></i>แก้ไข</a>
+                                <?= clean_context_button('/admin/faqs.php', ['edit' => (int)$item['id']], '<i class="fa-solid fa-pen mr-1"></i>แก้ไข', 'rounded-full bg-amber-50 px-3 py-1.5 font-black text-amber-700') ?>
                                 <form method="post">
                                     <?= csrf_field() ?>
                                     <input type="hidden" name="action" value="delete">

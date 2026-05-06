@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../includes/functions.php';
 requireRole('admin');
+$cleanContext = clean_context_init(['rating', 'status', 'q']);
 
 if (is_post()) {
     verify_csrf();
@@ -36,14 +37,20 @@ if (is_post()) {
     redirect('/admin/reviews.php');
 }
 
-$rating = (int)($_GET['rating'] ?? 0);
-$q = trim((string)($_GET['q'] ?? ''));
+$rating = (int)clean_context_value($cleanContext, 'rating', 0);
+$status = (string)clean_context_value($cleanContext, 'status', '');
+$q = trim((string)clean_context_value($cleanContext, 'q', ''));
 $where = ['r.deleted_at IS NULL'];
 $params = [];
 
 if ($rating > 0) {
     $where[] = 'r.rating_overall = ?';
     $params[] = $rating;
+}
+
+if (in_array($status, ['visible', 'hidden'], true)) {
+    $where[] = 'r.status = ?';
+    $params[] = $status;
 }
 
 if ($q !== '') {
@@ -73,8 +80,15 @@ include __DIR__ . '/../includes/header.php';
         <h1 class="mt-1 text-3xl font-black text-neutral-950">จัดการรีวิว</h1>
     </div>
 
-    <form class="stock-card mt-6 grid gap-3 rounded-[1.5rem] p-5 md:grid-cols-3">
+    <form method="post" action="/admin/reviews.php" class="stock-card mt-6 grid gap-3 rounded-[1.5rem] p-5 md:grid-cols-4">
+        <?= clean_context_inputs([]) ?>
         <input name="q" value="<?= h($q) ?>" placeholder="ค้นหา" class="stock-input rounded-2xl px-4 py-3 font-semibold">
+
+        <select name="status" class="stock-input rounded-2xl px-4 py-3 font-semibold">
+            <option value="">ทุกสถานะ</option>
+            <option value="visible" <?php if ($status === 'visible'): ?>selected<?php endif; ?>>แสดง</option>
+            <option value="hidden" <?php if ($status === 'hidden'): ?>selected<?php endif; ?>>ซ่อน</option>
+        </select>
 
         <select name="rating" class="stock-input rounded-2xl px-4 py-3 font-semibold">
             <option value="0">ทุกคะแนน</option>

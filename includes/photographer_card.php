@@ -14,9 +14,9 @@ if (!empty($p['slug'])) {
     $cardSlug = (string)$p['slug'];
 }
 
-$cardDetailUrl = '/photographer_detail.php?id=' . $cardId;
+$cardDetailParams = ['id' => $cardId];
 if ($cardSlug !== '') {
-    $cardDetailUrl = '/photographer_detail.php?slug=' . urlencode($cardSlug);
+    $cardDetailParams = ['slug' => $cardSlug];
 }
 
 $cardImagePath = null;
@@ -70,20 +70,7 @@ if (isset($p['is_featured'])) {
 }
 ?>
 <article class="stock-card stock-card-hover rounded-[1.75rem]">
-    <a href="<?= h($cardDetailUrl) ?>" class="media-tile block h-64">
-        <img src="<?= h(public_image($cardImagePath, '/assets/uploads/seed/photo-1516035069371-29a1b244cc32.jpg')) ?>" alt="">
-        <div class="media-overlay p-5">
-            <div>
-                <?php if ($cardIsVerified): ?>
-                    <span class="rounded-full bg-white/95 px-3 py-1 text-xs font-black text-neutral-950"><i class="fa-solid fa-circle-check mr-1 text-red-600"></i>ยืนยันแล้ว</span>
-                <?php endif; ?>
-                <?php if ($cardIsFeatured): ?>
-                    <span class="ml-1 rounded-full bg-yellow-300 px-3 py-1 text-xs font-black text-neutral-950"><i class="fa-solid fa-award mr-1"></i>แนะนำ</span>
-                <?php endif; ?>
-                <p class="mt-3 text-sm font-semibold text-white/90">ดูผลงานและข้อมูลติดต่อ</p>
-            </div>
-        </div>
-    </a>
+    <?= clean_context_button('/photographer_detail.php', $cardDetailParams, '<img src="' . h(public_image($cardImagePath, '/assets/uploads/seed/photo-1516035069371-29a1b244cc32.jpg')) . '" alt=""><div class="media-overlay p-5"><div>' . ($cardIsVerified ? '<span class="rounded-full bg-white/95 px-3 py-1 text-xs font-black text-neutral-950"><i class="fa-solid fa-circle-check mr-1 text-red-600"></i>ยืนยันแล้ว</span>' : '') . ($cardIsFeatured ? '<span class="ml-1 rounded-full bg-yellow-300 px-3 py-1 text-xs font-black text-neutral-950"><i class="fa-solid fa-award mr-1"></i>แนะนำ</span>' : '') . '<p class="mt-3 text-sm font-semibold text-white/90">ดูผลงานและข้อมูลติดต่อ</p></div></div>', 'media-tile block h-64 w-full text-left', 'block') ?>
     <div class="p-5">
         <div class="flex items-start justify-between gap-3">
             <div>
@@ -106,9 +93,9 @@ if (isset($p['is_featured'])) {
             </div>
         </div>
         <div class="mt-5 grid gap-3 sm:grid-cols-3">
-            <a class="rounded-full border border-neutral-200 px-3 py-2.5 text-center text-sm font-black hover:border-neutral-950 hover:bg-neutral-950 hover:text-white" href="<?= h($cardDetailUrl) ?>"><i class="fa-solid fa-eye mr-1"></i>ดูโปรไฟล์</a>
-            <a class="stock-button rounded-full px-3 py-2.5 text-center text-sm font-black" href="/customer/create_booking.php?photographer_id=<?= $cardId ?>"><i class="fa-solid fa-calendar-check mr-1"></i>จอง</a>
-            <a class="rounded-full border border-neutral-200 px-3 py-2.5 text-center text-sm font-black hover:border-neutral-950 hover:bg-neutral-950 hover:text-white" href="/compare.php?ids=<?= $cardId ?>"><i class="fa-solid fa-code-compare mr-1"></i>เทียบ</a>
+            <?= clean_context_button('/photographer_detail.php', $cardDetailParams, '<i class="fa-solid fa-eye mr-1"></i>ดูโปรไฟล์', 'w-full rounded-full border border-neutral-200 px-3 py-2.5 text-center text-sm font-black hover:border-neutral-950 hover:bg-neutral-950 hover:text-white') ?>
+            <?= clean_context_button('/customer/create_booking.php', ['photographer_id' => $cardId], '<i class="fa-solid fa-calendar-check mr-1"></i>จอง', 'stock-button w-full rounded-full px-3 py-2.5 text-center text-sm font-black') ?>
+            <?= clean_context_button('/compare.php', ['ids' => $cardId], '<i class="fa-solid fa-code-compare mr-1"></i>เทียบ', 'w-full rounded-full border border-neutral-200 px-3 py-2.5 text-center text-sm font-black hover:border-neutral-950 hover:bg-neutral-950 hover:text-white') ?>
         </div>
     </div>
 </article>

@@ -4,9 +4,10 @@ requireRole('photographer');
 
 $profile = photographer_profile_by_user((int)current_user()['id']);
 $pid = (int)$profile['id'];
+$cleanContext = clean_context_init(['id']);
 $id = 0;
-if (isset($_GET['id'])) {
-    $id = (int)$_GET['id'];
+if (isset($cleanContext['id'])) {
+    $id = (int)$cleanContext['id'];
 }
 
 $stmt = db()->prepare('SELECT b.*, u.name AS customer_name, u.email AS customer_email, u.phone AS customer_phone, sc.name AS category_name, d.district_name

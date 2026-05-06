@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/includes/functions.php';
-$slug = trim((string)($_GET['slug'] ?? ''));
+$cleanContext = clean_context_init(['slug']);
+$slug = trim((string)clean_context_value($cleanContext, 'slug', ''));
 $stmt = db()->prepare('SELECT b.*, u.name AS admin_name
                        FROM blogs b
                        JOIN users u ON u.id = b.admin_id

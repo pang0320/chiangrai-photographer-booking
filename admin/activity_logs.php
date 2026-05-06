@@ -143,12 +143,13 @@ function activity_color_class(string $action): string
     return 'bg-slate-50 text-slate-700 border-slate-100';
 }
 
-$q = trim((string)($_GET['q'] ?? ''));
-$actionFilter = trim((string)($_GET['action'] ?? ''));
-$tableFilter = trim((string)($_GET['table_name'] ?? ''));
-$userFilter = (int)($_GET['user_id'] ?? 0);
-$dateFrom = parse_be_date_to_iso((string)($_GET['date_from'] ?? ''));
-$dateTo = parse_be_date_to_iso((string)($_GET['date_to'] ?? ''));
+$cleanContext = clean_context_init(['q', 'action', 'table_name', 'user_id', 'date_from', 'date_to']);
+$q = trim((string)clean_context_value($cleanContext, 'q', ''));
+$actionFilter = trim((string)clean_context_value($cleanContext, 'action', ''));
+$tableFilter = trim((string)clean_context_value($cleanContext, 'table_name', ''));
+$userFilter = (int)clean_context_value($cleanContext, 'user_id', 0);
+$dateFrom = parse_be_date_to_iso((string)clean_context_value($cleanContext, 'date_from', ''));
+$dateTo = parse_be_date_to_iso((string)clean_context_value($cleanContext, 'date_to', ''));
 
 $where = ['1=1'];
 $params = [];
@@ -306,7 +307,8 @@ include __DIR__ . '/../includes/header.php';
         </div>
     </div>
 
-    <form class="stock-card mt-6 grid gap-3 rounded-[1.75rem] p-5 lg:grid-cols-6">
+    <form method="post" action="/admin/activity_logs.php" class="stock-card mt-6 grid gap-3 rounded-[1.75rem] p-5 lg:grid-cols-6">
+        <?= clean_context_inputs([]) ?>
         <label class="icon-input block lg:col-span-2">
             <i class="fa-solid fa-magnifying-glass"></i>
             <input name="q" value="<?= h($q) ?>" placeholder="ค้นหาการกระทำ, ผู้ใช้, IP, รายละเอียด" class="stock-input w-full rounded-2xl px-4 py-3 font-semibold">

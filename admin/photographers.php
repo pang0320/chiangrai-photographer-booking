@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../includes/functions.php';
 requireRole('admin');
+$cleanContext = clean_context_init(['status']);
 
 if (is_post()) {
     verify_csrf();
@@ -110,7 +111,7 @@ if (is_post()) {
     redirect('/admin/photographers.php');
 }
 
-$filter = (string)($_GET['status'] ?? '');
+$filter = (string)clean_context_value($cleanContext, 'status', '');
 $where = 'p.deleted_at IS NULL';
 $params = [];
 
@@ -140,7 +141,8 @@ include __DIR__ . '/../includes/header.php';
             <h1 class="mt-1 text-3xl font-black text-neutral-950">จัดการช่างภาพ</h1>
         </div>
 
-        <form>
+        <form method="post" action="/admin/photographers.php">
+            <?= clean_context_inputs([]) ?>
             <select name="status" onchange="this.form.submit()" class="stock-input rounded-2xl px-4 py-3 font-semibold">
                 <option value="">ทุกสถานะ</option>
                 <?php foreach (['pending', 'approved', 'rejected', 'suspended'] as $status): ?>
@@ -170,9 +172,7 @@ include __DIR__ . '/../includes/header.php';
                 <?php foreach ($items as $photographer): ?>
                     <tr>
                         <td>
-                            <a class="font-black text-red-600" href="/photographer_detail.php?id=<?= (int)$photographer['id'] ?>" target="_blank">
-                                <?= h($photographer['display_name']) ?>
-                            </a>
+                            <?= clean_context_button('/photographer_detail.php', ['id' => (int)$photographer['id']], h($photographer['display_name']), 'font-black text-red-600', 'inline', 'target="_blank"') ?>
                         </td>
                         <td><?= h($photographer['email']) ?></td>
                         <td><?= h($photographer['district_name']) ?></td>

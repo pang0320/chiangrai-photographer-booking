@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/includes/functions.php';
-$token = (string)($_GET['token'] ?? $_POST['token'] ?? '');
+$cleanContext = clean_context_init(['token']);
+$token = (string)clean_context_value($cleanContext, 'token', ($_POST['token'] ?? ''));
 $stmt = db()->prepare('SELECT * FROM password_resets WHERE token = ? AND expires_at > NOW() LIMIT 1');
 $stmt->execute([$token]);
 $reset = $stmt->fetch();
@@ -13,7 +14,7 @@ if (is_post()) {
     $password = (string)($_POST['password'] ?? '');
     if (mb_strlen($password) < 8 || $password !== (string)($_POST['password_confirmation'] ?? '')) {
         flash('error', 'รหัสผ่านไม่ถูกต้อง');
-        redirect('/reset_password.php?token=' . urlencode($token));
+        clean_redirect('/reset_password.php', ['token' => $token]);
     }
     db()->prepare('UPDATE users SET password = ?, updated_at = NOW() WHERE email = ? AND deleted_at IS NULL')->execute([password_hash($password, PASSWORD_DEFAULT), $reset['email']]);
     db()->prepare('DELETE FROM password_resets WHERE email = ?')->execute([$reset['email']]);

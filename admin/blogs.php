@@ -3,9 +3,10 @@ require_once __DIR__ . '/../includes/functions.php';
 requireRole('admin');
 
 $adminUser = current_user();
+$cleanContext = clean_context_init(['edit']);
 $editId = 0;
-if (isset($_GET['edit'])) {
-    $editId = (int)$_GET['edit'];
+if (isset($cleanContext['edit'])) {
+    $editId = (int)$cleanContext['edit'];
 }
 
 function save_blog_tags(int $blogId, string $tagText): void
@@ -46,7 +47,7 @@ if (is_post()) {
         $stmt->execute([$id]);
         log_activity('delete_blog', 'blogs', $id);
         flash('success', 'ลบบทความแล้ว');
-        redirect('/admin/blogs.php');
+        clean_redirect('/admin/blogs.php', []);
     }
 
     if ($action === 'status') {
@@ -62,7 +63,7 @@ if (is_post()) {
         $stmt->execute([$status, $id]);
         log_activity('update_blog_status', 'blogs', $id);
         flash('success', 'อัปเดตสถานะบทความแล้ว');
-        redirect('/admin/blogs.php');
+        clean_redirect('/admin/blogs.php', []);
     }
 
     $title = trim((string)($_POST['title'] ?? ''));
@@ -77,7 +78,7 @@ if (is_post()) {
 
     if ($title === '' || $content === '') {
         flash('error', 'กรุณากรอกหัวข้อและเนื้อหาบทความ');
-        redirect('/admin/blogs.php');
+        clean_redirect('/admin/blogs.php', []);
     }
 
     $currentCover = '';
@@ -114,10 +115,10 @@ if (is_post()) {
         }
 
         flash('success', 'บันทึกบทความแล้ว');
-        redirect('/admin/blogs.php');
+        clean_redirect('/admin/blogs.php', []);
     } catch (Throwable $e) {
         flash('error', $e->getMessage());
-        redirect('/admin/blogs.php');
+        clean_redirect('/admin/blogs.php', []);
     }
 }
 
@@ -207,7 +208,7 @@ include __DIR__ . '/../includes/header.php';
                 <?php foreach ($items as $item): ?>
                     <tr>
                         <td>
-                            <a class="font-black text-red-600" href="/blog_detail.php?slug=<?= h($item['slug']) ?>" target="_blank"><?= h($item['title']) ?></a>
+                            <?= clean_context_button('/blog_detail.php', ['slug' => $item['slug']], h($item['title']), 'font-black text-red-600', 'inline', 'target="_blank"') ?>
                         </td>
                         <td><?= h($item['admin_name']) ?></td>
                         <td><?= h($item['tags']) ?></td>
@@ -215,7 +216,7 @@ include __DIR__ . '/../includes/header.php';
                         <td><?= h(format_be_datetime($item['created_at'])) ?></td>
                         <td>
                             <div class="flex flex-wrap gap-2">
-                                <a href="/admin/blogs.php?edit=<?= (int)$item['id'] ?>" class="rounded-full bg-amber-50 px-3 py-1.5 font-black text-amber-700"><i class="fa-solid fa-pen mr-1"></i>แก้ไข</a>
+                                <?= clean_context_button('/admin/blogs.php', ['edit' => (int)$item['id']], '<i class="fa-solid fa-pen mr-1"></i>แก้ไข', 'rounded-full bg-amber-50 px-3 py-1.5 font-black text-amber-700') ?>
                                 <form method="post" class="flex flex-wrap gap-2">
                                     <?= csrf_field() ?>
                                     <input type="hidden" name="action" value="status">

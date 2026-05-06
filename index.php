@@ -177,12 +177,7 @@ include __DIR__ . '/includes/header.php';
                 $categoryIcon = $category['icon'];
             }
             ?>
-            <a href="/photographers.php?category_id=<?= (int)$category['id'] ?>" class="stock-card stock-card-hover rounded-[1.75rem] p-6">
-                <div class="grid h-14 w-14 place-items-center rounded-2xl bg-neutral-950 text-xl text-white"><i class="fa-solid <?= h($categoryIcon) ?>"></i></div>
-                <h3 class="mt-5 text-lg font-black text-neutral-950"><?= h($category['name']) ?></h3>
-                <p class="mt-2 text-sm font-bold text-red-600"><?= (int)$category['photographer_count'] ?> ช่างภาพ</p>
-                <p class="mt-2 line-clamp-2 text-sm leading-6 text-neutral-600"><?= h($category['description']) ?></p>
-            </a>
+            <?= clean_context_button('/photographers.php', ['category_id' => (int)$category['id']], '<div class="grid h-14 w-14 place-items-center rounded-2xl bg-neutral-950 text-xl text-white"><i class="fa-solid ' . h($categoryIcon) . '"></i></div><h3 class="mt-5 text-lg font-black text-neutral-950">' . h($category['name']) . '</h3><p class="mt-2 text-sm font-bold text-red-600">' . (int)$category['photographer_count'] . ' ช่างภาพ</p><p class="mt-2 line-clamp-2 text-sm leading-6 text-neutral-600">' . h($category['description']) . '</p>', 'stock-card stock-card-hover w-full rounded-[1.75rem] p-6 text-left', 'contents') ?>
         <?php endforeach; ?>
     </div>
 </section>
@@ -222,16 +217,7 @@ include __DIR__ . '/includes/header.php';
                     $topRatedImage = $p['cover_image'];
                 }
                 ?>
-                <a href="/photographer_detail.php?id=<?= (int)$p['id'] ?>" class="stock-card stock-card-hover w-80 shrink-0 rounded-[1.75rem] p-4">
-                    <img class="h-48 w-full rounded-[1.35rem] object-cover" src="<?= h(public_image($topRatedImage, '/assets/uploads/seed/photo-1492691527719-9d1e07e534b4.jpg')) ?>" alt="">
-                    <div class="p-2">
-                        <div class="mt-4 flex items-start justify-between gap-3">
-                            <h3 class="font-black text-neutral-950"><?= h($p['display_name']) ?></h3>
-                            <span class="rounded-full bg-red-50 px-3 py-1 text-xs font-black text-red-600"><i class="fa-solid fa-star"></i> <?= number_format((float)$p['average_rating'], 1) ?></span>
-                        </div>
-                        <p class="mt-2 text-sm font-bold text-neutral-500"><?= h($p['district_name']) ?> · <?= (int)$p['total_reviews'] ?> รีวิว</p>
-                    </div>
-                </a>
+                <?= clean_context_button('/photographer_detail.php', ['id' => (int)$p['id']], '<img class="h-48 w-full rounded-[1.35rem] object-cover" src="' . h(public_image($topRatedImage, '/assets/uploads/seed/photo-1492691527719-9d1e07e534b4.jpg')) . '" alt=""><div class="p-2"><div class="mt-4 flex items-start justify-between gap-3"><h3 class="font-black text-neutral-950">' . h($p['display_name']) . '</h3><span class="rounded-full bg-red-50 px-3 py-1 text-xs font-black text-red-600"><i class="fa-solid fa-star"></i> ' . number_format((float)$p['average_rating'], 1) . '</span></div><p class="mt-2 text-sm font-bold text-neutral-500">' . h($p['district_name']) . ' · ' . (int)$p['total_reviews'] . ' รีวิว</p></div>', 'stock-card stock-card-hover w-80 shrink-0 rounded-[1.75rem] p-4 text-left', 'contents') ?>
             <?php endforeach; ?>
         </div>
     </div>
@@ -267,15 +253,7 @@ include __DIR__ . '/includes/header.php';
     </div>
     <div class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <?php foreach ($popularDistricts as $district): ?>
-            <a href="/photographers.php?district_id=<?= (int)$district['id'] ?>" class="stock-card stock-card-hover rounded-[1.6rem] p-6">
-                <div class="flex items-center justify-between gap-4">
-                    <div>
-                        <h3 class="text-xl font-black text-neutral-950"><?= h($district['district_name']) ?></h3>
-                        <p class="mt-1 text-sm font-bold text-neutral-500"><?= (int)$district['photographer_count'] ?> ช่างภาพ</p>
-                    </div>
-                    <div class="grid h-12 w-12 place-items-center rounded-2xl bg-red-50 text-red-600"><i class="fa-solid fa-location-dot"></i></div>
-                </div>
-            </a>
+            <?= clean_context_button('/photographers.php', ['district_id' => (int)$district['id']], '<div class="flex items-center justify-between gap-4"><div><h3 class="text-xl font-black text-neutral-950">' . h($district['district_name']) . '</h3><p class="mt-1 text-sm font-bold text-neutral-500">' . (int)$district['photographer_count'] . ' ช่างภาพ</p></div><div class="grid h-12 w-12 place-items-center rounded-2xl bg-red-50 text-red-600"><i class="fa-solid fa-location-dot"></i></div></div>', 'stock-card stock-card-hover w-full rounded-[1.6rem] p-6 text-left', 'contents') ?>
         <?php endforeach; ?>
     </div>
 </section>
@@ -290,15 +268,7 @@ include __DIR__ . '/includes/header.php';
         </div>
         <div class="masonry-gallery mt-8">
             <?php foreach ($portfolioShowcase as $item): ?>
-                <a href="/photographer_detail.php?id=<?= (int)$item['photographer_id'] ?>" class="media-tile block rounded-[1.5rem] shadow-xl">
-                    <img class="min-h-[220px]" src="<?= h(public_image($item['image_path'], '/assets/uploads/seed/photo-1516035069371-29a1b244cc32.jpg')) ?>" alt="">
-                    <div class="media-overlay p-5 opacity-100">
-                        <div>
-                            <b><?= h($item['title']) ?></b>
-                            <p class="mt-1 text-sm text-white/72"><?= h($item['display_name']) ?></p>
-                        </div>
-                    </div>
-                </a>
+                <?= clean_context_button('/photographer_detail.php', ['id' => (int)$item['photographer_id']], '<img class="min-h-[220px]" src="' . h(public_image($item['image_path'], '/assets/uploads/seed/photo-1516035069371-29a1b244cc32.jpg')) . '" alt=""><div class="media-overlay p-5 opacity-100"><div><b>' . h($item['title']) . '</b><p class="mt-1 text-sm text-white/72">' . h($item['display_name']) . '</p></div></div>', 'media-tile block w-full rounded-[1.5rem] text-left shadow-xl', 'contents') ?>
             <?php endforeach; ?>
         </div>
     </div>
@@ -328,7 +298,7 @@ include __DIR__ . '/includes/header.php';
         <p class="text-sm font-black uppercase tracking-[0.22em] text-white/58">Join as photographer</p>
         <h2 class="mt-3 text-4xl font-black">มีผลงานดี ให้ลูกค้าเชียงรายค้นเจอ</h2>
         <p class="mt-4 leading-8 text-white/68">สร้างโปรไฟล์ อัปโหลดผลงาน กำหนดพื้นที่ วันว่าง และรับคำขอจองผ่านระบบเดียว</p>
-        <a href="/register.php?role=photographer" class="mt-8 inline-flex rounded-full bg-white px-6 py-3 font-black text-neutral-950 hover:bg-red-600 hover:text-white"><i class="fa-solid fa-user-plus mr-2"></i>สมัครเป็นช่างภาพ</a>
+        <?= clean_context_button('/register.php', ['role' => 'photographer'], '<i class="fa-solid fa-user-plus mr-2"></i>สมัครเป็นช่างภาพ', 'mt-8 inline-flex rounded-full bg-white px-6 py-3 font-black text-neutral-950 hover:bg-red-600 hover:text-white') ?>
     </div>
 </section>
 

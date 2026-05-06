@@ -12,41 +12,42 @@ if (defined('CUSTOMER_PHOTOGRAPHERS_PAGE')) {
 
 $districts = db_fetch_all('SELECT * FROM districts WHERE is_active = 1 ORDER BY district_name');
 $categories = db_fetch_all('SELECT * FROM service_categories WHERE is_active = 1 ORDER BY sort_order, name');
+$cleanContext = clean_context_init(['district_id', 'category_id', 'available_date', 'min_rating', 'max_price', 'q', 'sort', 'page']);
 
 $districtId = 0;
-if (isset($_GET['district_id'])) {
-    $districtId = (int)$_GET['district_id'];
+if (isset($cleanContext['district_id'])) {
+    $districtId = (int)$cleanContext['district_id'];
 }
 $categoryId = 0;
-if (isset($_GET['category_id'])) {
-    $categoryId = (int)$_GET['category_id'];
+if (isset($cleanContext['category_id'])) {
+    $categoryId = (int)$cleanContext['category_id'];
 }
 $availableDate = '';
-if (isset($_GET['available_date'])) {
-    $availableDate = parse_be_date_to_iso((string)$_GET['available_date']);
+if (isset($cleanContext['available_date'])) {
+    $availableDate = parse_be_date_to_iso((string)$cleanContext['available_date']);
 }
 $minRating = 0;
-if (isset($_GET['min_rating'])) {
-    $minRating = (float)$_GET['min_rating'];
+if (isset($cleanContext['min_rating'])) {
+    $minRating = (float)$cleanContext['min_rating'];
 }
 $maxPrice = 0;
-if (isset($_GET['max_price'])) {
-    $maxPrice = (float)$_GET['max_price'];
+if (isset($cleanContext['max_price'])) {
+    $maxPrice = (float)$cleanContext['max_price'];
 }
 $keyword = '';
-if (isset($_GET['q'])) {
-    $keyword = trim((string)$_GET['q']);
+if (isset($cleanContext['q'])) {
+    $keyword = trim((string)$cleanContext['q']);
 }
 $sort = 'rating';
-if (isset($_GET['sort'])) {
-    $sort = (string)$_GET['sort'];
+if (isset($cleanContext['sort'])) {
+    $sort = (string)$cleanContext['sort'];
 }
 $page = 1;
-if (isset($_GET['page'])) {
-    $page = max(1, (int)$_GET['page']);
+if (isset($cleanContext['page'])) {
+    $page = max(1, (int)$cleanContext['page']);
 }
 
-if (!empty($_GET)) {
+if (!empty($cleanContext)) {
     record_search_log($keyword, $districtId, $categoryId);
 }
 $perPage = 9;
@@ -195,10 +196,11 @@ include __DIR__ . '/includes/header.php';
 <section class="stock-shell px-4 py-8 sm:px-6 lg:px-8">
     <div class="grid gap-8 lg:grid-cols-[320px_1fr]">
         <aside class="lg:sticky lg:top-24 lg:self-start">
-            <form class="stock-card rounded-[2rem] p-5">
+            <form method="post" action="<?= h($photographerSearchPath) ?>" class="stock-card rounded-[2rem] p-5">
+                <?= clean_context_inputs([]) ?>
                 <div class="flex items-center justify-between gap-4">
                     <h2 class="text-xl font-black text-neutral-950">ตัวกรอง</h2>
-                    <a href="<?= h($photographerSearchPath) ?>" class="text-sm font-black text-red-600">ล้าง</a>
+                    <?= clean_context_button($photographerSearchPath, [], 'ล้าง', 'text-sm font-black text-red-600') ?>
                 </div>
                 <div class="mt-5 grid gap-3">
                     <label class="icon-input block"><i class="fa-solid fa-camera"></i><input name="q" value="<?= h($keyword) ?>" placeholder="ชื่อช่างภาพ" class="stock-input w-full rounded-[1.2rem] px-4 py-3 font-semibold"></label>
@@ -300,13 +302,17 @@ include __DIR__ . '/includes/header.php';
                         <?php include __DIR__ . '/includes/photographer_card.php'; ?>
                     <?php endforeach; ?>
                 </div>
-                <?= paginate($total, $page, $perPage, $photographerSearchPath . '?' . http_build_query(array_diff_key($_GET, ['page' => true]))) ?>
+                <?php
+                $paginationParams = $cleanContext;
+                unset($paginationParams['page']);
+                ?>
+                <?= paginate_clean($total, $page, $perPage, $photographerSearchPath, $paginationParams) ?>
             <?php else: ?>
                 <div class="empty-state mt-6 rounded-[2rem] p-10 text-center">
                     <div class="mx-auto grid h-20 w-20 place-items-center rounded-3xl bg-red-50 text-3xl text-red-600"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
                     <h2 class="mt-4 text-2xl font-black text-neutral-950">ไม่พบช่างภาพตามเงื่อนไข</h2>
                     <p class="mx-auto mt-2 max-w-md text-neutral-600">ลองปรับตัวกรอง หรือดูช่างภาพใกล้เคียงที่ระบบคำนวณจากพิกัดอำเภอให้</p>
-                    <a href="<?= h($photographerSearchPath) ?>" class="mt-5 inline-flex rounded-full bg-neutral-950 px-5 py-3 font-black text-white hover:bg-red-600"><i class="fa-solid fa-xmark mr-2"></i>ล้างตัวกรอง</a>
+                    <?= clean_context_button($photographerSearchPath, [], '<i class="fa-solid fa-xmark mr-2"></i>ล้างตัวกรอง', 'mt-5 inline-flex rounded-full bg-neutral-950 px-5 py-3 font-black text-white hover:bg-red-600') ?>
                 </div>
                 <?php if ($nearby): ?>
                     <div class="mt-10">
@@ -327,7 +333,7 @@ include __DIR__ . '/includes/header.php';
                         <p class="text-sm font-black uppercase tracking-[0.22em] text-red-400">Suggested Categories</p>
                         <h2 class="mt-1 text-2xl font-black">ลองค้นหาตามประเภทงานยอดนิยม</h2>
                     </div>
-                    <a href="/register.php?role=photographer" class="rounded-full bg-white px-5 py-3 font-black text-neutral-950 hover:bg-red-600 hover:text-white"><i class="fa-solid fa-user-plus mr-2"></i>สมัครเป็นช่างภาพ</a>
+                    <?= clean_context_button('/register.php', ['role' => 'photographer'], '<i class="fa-solid fa-user-plus mr-2"></i>สมัครเป็นช่างภาพ', 'rounded-full bg-white px-5 py-3 font-black text-neutral-950 hover:bg-red-600 hover:text-white') ?>
                 </div>
                 <div class="mt-5 flex flex-wrap gap-2">
                     <?php foreach (array_slice($categories, 0, 8) as $category): ?>
@@ -337,9 +343,7 @@ include __DIR__ . '/includes/header.php';
                             $categoryIcon = $category['icon'];
                         }
                         ?>
-                        <a href="<?= h($photographerSearchPath) ?>?category_id=<?= (int)$category['id'] ?>" class="rounded-full bg-white/10 px-4 py-2 text-sm font-black hover:bg-white hover:text-neutral-950">
-                            <i class="fa-solid <?= h($categoryIcon) ?> mr-1 text-red-300"></i><?= h($category['name']) ?>
-                        </a>
+                        <?= clean_context_button($photographerSearchPath, ['category_id' => (int)$category['id']], '<i class="fa-solid ' . h($categoryIcon) . ' mr-1 text-red-300"></i>' . h($category['name']), 'rounded-full bg-white/10 px-4 py-2 text-sm font-black hover:bg-white hover:text-neutral-950') ?>
                     <?php endforeach; ?>
                 </div>
             </section>

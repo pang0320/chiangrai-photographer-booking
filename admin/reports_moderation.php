@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../includes/functions.php';
 requireRole('admin');
+$cleanContext = clean_context_init(['status']);
 
 if (is_post()) {
     verify_csrf();
@@ -17,13 +18,22 @@ if (is_post()) {
     $stmt->execute([$status, $adminNote, $id]);
     log_activity('moderate_report', 'reports', $id, $adminNote);
     flash('success', 'อัปเดตรายงานปัญหาแล้ว');
-    redirect('/admin/reports_moderation.php');
+    clean_redirect('/admin/reports_moderation.php', []);
+}
+
+$statusFilter = (string)clean_context_value($cleanContext, 'status', '');
+$whereSql = '1=1';
+$params = [];
+if (in_array($statusFilter, ['pending', 'reviewed', 'resolved', 'rejected'], true)) {
+    $whereSql = 'r.status = ?';
+    $params[] = $statusFilter;
 }
 
 $items = db_fetch_all('SELECT r.*, u.name AS reporter_name, u.email AS reporter_email
                        FROM reports r
                        LEFT JOIN users u ON u.id = r.reporter_id
-                       ORDER BY r.created_at DESC');
+                       WHERE ' . $whereSql . '
+                       ORDER BY r.created_at DESC', $params);
 
 $pageTitle = 'ตรวจสอบรายงานปัญหา';
 include __DIR__ . '/../includes/header.php';
@@ -36,6 +46,12 @@ include __DIR__ . '/../includes/header.php';
             <h1 class="mt-1 text-3xl font-black text-neutral-950"><i class="fa-solid fa-shield-halved mr-2 text-red-600"></i>รายงานปัญหา</h1>
         </div>
         <div class="rounded-full bg-red-50 px-5 py-3 text-sm font-black text-red-700"><i class="fa-solid fa-hourglass-half mr-2"></i><?= table_count('reports', 'status = "pending"') ?> รอตรวจสอบ</div>
+    </div>
+
+    <div class="mt-5 flex flex-wrap gap-2">
+        <?php foreach (['' => 'ทั้งหมด', 'pending' => 'รอตรวจสอบ', 'reviewed' => 'ตรวจแล้ว', 'resolved' => 'แก้ไขแล้ว', 'rejected' => 'ปฏิเสธ'] as $filterValue => $filterLabel): ?>
+            <?= clean_context_button('/admin/reports_moderation.php', ['status' => $filterValue], h($filterLabel), 'rounded-full px-4 py-2 text-sm font-black ' . ($statusFilter === $filterValue ? 'bg-neutral-950 text-white' : 'bg-white text-neutral-700')) ?>
+        <?php endforeach; ?>
     </div>
 
     <div class="stock-card mt-6 overflow-x-auto rounded-[1.75rem] p-5">

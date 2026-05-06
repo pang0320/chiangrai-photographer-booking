@@ -92,7 +92,7 @@ include __DIR__ . '/../includes/header.php';
                 <?php if ($bookings): ?>
                     <table class="w-full text-left text-sm">
                         <thead class="text-neutral-500"><tr><th class="py-3">รหัสจอง</th><th>ช่างภาพ</th><th>ประเภท</th><th>วันที่</th><th>สถานะ</th><th></th></tr></thead>
-                        <tbody>
+                        <tbody data-block-paginate="5">
                         <?php foreach ($bookings as $b): ?>
                             <tr class="border-t border-neutral-100">
                                 <td class="py-4 font-black"><?= h($b['booking_code']) ?></td>
@@ -100,7 +100,7 @@ include __DIR__ . '/../includes/header.php';
                                 <td><?= h($b['category_name']) ?></td>
                                 <td><?= h(format_be_date($b['booking_date'])) ?> · <?= h(time_slot_label($b['time_slot'])) ?></td>
                                 <td><?= status_badge($b['status']) ?></td>
-                                <td><a class="font-black text-red-600" href="/customer/booking_detail.php?id=<?= (int)$b['id'] ?>">ดู</a></td>
+                                <td><?= clean_context_button('/customer/booking_detail.php', ['id' => (int)$b['id']], 'ดู', 'font-black text-red-600') ?></td>
                             </tr>
                         <?php endforeach; ?>
                         </tbody>
@@ -119,11 +119,9 @@ include __DIR__ . '/../includes/header.php';
             <div class="stock-card rounded-[1.75rem] p-6">
                 <p class="section-kicker">แจ้งเตือนรีวิว</p>
                 <h2 class="mt-1 text-xl font-black text-neutral-950">งานที่รอรีวิว</h2>
-                <div class="mt-4 grid gap-3">
+                <div class="mt-4 grid gap-3" data-block-paginate="5">
                     <?php foreach ($reviewReminders as $item): ?>
-                        <a href="/customer/review.php?booking_id=<?= (int)$item['id'] ?>" class="rounded-2xl bg-red-50 p-4 font-bold text-red-700 hover:bg-red-600 hover:text-white">
-                            <?= h($item['booking_code']) ?> · <?= h($item['display_name']) ?>
-                        </a>
+                        <?= clean_context_button('/customer/review.php', ['booking_id' => (int)$item['id']], h($item['booking_code']) . ' · ' . h($item['display_name']), 'w-full rounded-2xl bg-red-50 p-4 text-left font-bold text-red-700 hover:bg-red-600 hover:text-white', 'block') ?>
                     <?php endforeach; ?>
                     <?php if (!$reviewReminders): ?>
                         <div class="rounded-2xl bg-neutral-50 p-5 text-sm font-bold text-neutral-600">ยังไม่มีงานเสร็จสิ้นที่รอรีวิว</div>
@@ -179,11 +177,7 @@ include __DIR__ . '/../includes/header.php';
         </div>
         <div class="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <?php foreach ($recentlyViewed as $item): ?>
-                <a href="/photographer_detail.php?id=<?= (int)$item['id'] ?>" class="rounded-[1.5rem] bg-neutral-50 p-3 hover:bg-red-50">
-                    <img class="h-36 w-full rounded-[1.2rem] object-cover" src="<?= h(public_image($item['featured_image'], '/assets/uploads/seed/photo-1516035069371-29a1b244cc32.jpg')) ?>" alt="">
-                    <b class="mt-3 block"><?= h($item['display_name']) ?></b>
-                    <span class="text-sm font-bold text-neutral-500"><i class="fa-solid fa-location-dot mr-1 text-red-600"></i><?= h($item['district_name']) ?></span>
-                </a>
+                <?= clean_context_button('/photographer_detail.php', ['id' => (int)$item['id']], '<img class="h-36 w-full rounded-[1.2rem] object-cover" src="' . h(public_image($item['featured_image'], '/assets/uploads/seed/photo-1516035069371-29a1b244cc32.jpg')) . '" alt=""><b class="mt-3 block">' . h($item['display_name']) . '</b><span class="text-sm font-bold text-neutral-500"><i class="fa-solid fa-location-dot mr-1 text-red-600"></i>' . h($item['district_name']) . '</span>', 'w-full rounded-[1.5rem] bg-neutral-50 p-3 text-left hover:bg-red-50', 'contents') ?>
             <?php endforeach; ?>
             <?php if (!$recentlyViewed): ?>
                 <div class="empty-state rounded-[1.5rem] p-8 text-center sm:col-span-2 xl:col-span-4">

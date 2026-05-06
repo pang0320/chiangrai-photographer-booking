@@ -2,7 +2,8 @@
 require_once __DIR__ . '/../includes/functions.php';
 requireRole('customer');
 $user = current_user();
-$photographerId = (int)($_GET['photographer_id'] ?? $_POST['photographer_id'] ?? 0);
+$cleanContext = clean_context_init(['photographer_id']);
+$photographerId = (int)clean_context_value($cleanContext, 'photographer_id', ($_POST['photographer_id'] ?? 0));
 $stmt = db()->prepare('SELECT p.*, u.id AS photographer_user_id
                        FROM photographer_profiles p
                        JOIN users u ON u.id = p.user_id
@@ -32,7 +33,7 @@ if (is_post()) {
     $slot = (string)($_POST['time_slot'] ?? '');
     if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date) || !in_array($slot, ['morning','afternoon','evening','full_day'], true) || !can_book_slot($photographerId, $date, $slot)) {
         flash('error', 'วันหรือช่วงเวลานี้ไม่พร้อมจอง');
-        redirect('/customer/create_booking.php?photographer_id=' . $photographerId);
+        clean_redirect('/customer/create_booking.php', ['photographer_id' => $photographerId]);
     }
 
     $categoryAllowed = false;
@@ -53,12 +54,12 @@ if (is_post()) {
 
     if (!$categoryAllowed || !$districtAllowed) {
         flash('error', 'ประเภทงานหรือพื้นที่ไม่ถูกต้อง');
-        redirect('/customer/create_booking.php?photographer_id=' . $photographerId);
+        clean_redirect('/customer/create_booking.php', ['photographer_id' => $photographerId]);
     }
 
     if (trim((string)$_POST['contact_name']) === '' || trim((string)$_POST['contact_phone']) === '' || trim((string)$_POST['job_detail']) === '') {
         flash('error', 'กรุณากรอกข้อมูลสำคัญให้ครบ');
-        redirect('/customer/create_booking.php?photographer_id=' . $photographerId);
+        clean_redirect('/customer/create_booking.php', ['photographer_id' => $photographerId]);
     }
     $code = generate_booking_code();
     db()->beginTransaction();
@@ -70,7 +71,7 @@ if (is_post()) {
     log_activity('create_booking', 'bookings', $bookingId);
     db()->commit();
     flash('success', 'ส่งคำขอจองแล้ว');
-    redirect('/customer/booking_detail.php?id=' . $bookingId);
+    clean_redirect('/customer/booking_detail.php', ['id' => $bookingId]);
 }
 
 $pageTitle = 'ส่งคำขอจอง';

@@ -2,7 +2,8 @@
 require_once __DIR__ . '/../includes/functions.php';
 requireRole('customer');
 $user = current_user();
-$bookingId = (int)($_GET['booking_id'] ?? $_POST['booking_id'] ?? 0);
+$cleanContext = clean_context_init(['booking_id']);
+$bookingId = (int)clean_context_value($cleanContext, 'booking_id', ($_POST['booking_id'] ?? 0));
 $stmt = db()->prepare('SELECT b.*, p.display_name, p.user_id photographer_user_id FROM bookings b JOIN photographer_profiles p ON p.id=b.photographer_id WHERE b.id=? AND b.customer_id=? AND b.status="completed" AND b.deleted_at IS NULL LIMIT 1');
 $stmt->execute([$bookingId, (int)$user['id']]);
 $booking = $stmt->fetch();

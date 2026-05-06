@@ -3,12 +3,7 @@ require_once __DIR__ . '/includes/functions.php';
 if (current_user()) {
     log_activity('logout', 'users', (int)current_user()['id'], 'User logged out');
 }
-$_SESSION = [];
-if (ini_get('session.use_cookies')) {
-    $params = session_get_cookie_params();
-    setcookie(session_name(), '', time() - 42000, $params['path'], $params['domain'], (bool)$params['secure'], (bool)$params['httponly']);
-}
-session_destroy();
+clear_auth_session();
 header('Location: /login.php');
 exit;
 

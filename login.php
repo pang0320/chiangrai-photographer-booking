@@ -30,6 +30,7 @@ if (is_post()) {
         clear_failed_login_attempts($email);
         session_regenerate_id(true);
         $_SESSION['user_id'] = (int)$user['id'];
+        $_SESSION['last_activity_at'] = time();
         db()->prepare('UPDATE users SET last_login_at = NOW() WHERE id = ?')->execute([(int)$user['id']]);
         log_activity('login', 'users', (int)$user['id'], 'User logged in');
         flash('success', 'เข้าสู่ระบบสำเร็จ');

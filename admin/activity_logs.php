@@ -353,23 +353,63 @@ include __DIR__ . '/../includes/header.php';
                     <h2 class="mt-1 text-2xl font-black text-neutral-950">กิจกรรม 14 วันล่าสุด</h2>
                 </div>
                 <span class="rounded-full bg-neutral-100 px-4 py-2 text-sm font-black text-neutral-600">
-                    <i class="fa-solid fa-chart-column mr-2 text-red-600"></i>สูงสุด <?= number_format($maxDaily) ?> log
+                    <i class="fa-solid fa-chart-line mr-2 text-red-600"></i>สูงสุด <?= number_format($maxDaily) ?> log
                 </span>
             </div>
-            <div class="mt-6 flex h-72 items-end gap-2 overflow-x-auto rounded-[1.5rem] bg-neutral-50 p-4">
-                <?php foreach ($dailyChart as $row): ?>
-                    <?php
-                    $height = 6;
-                    if ($maxDaily > 0) {
-                        $height = max(6, ((int)$row['total'] / $maxDaily) * 100);
-                    }
-                    ?>
-                    <div class="flex min-w-[52px] flex-1 flex-col items-center justify-end gap-2">
-                        <div class="text-xs font-black text-neutral-500"><?= (int)$row['total'] ?></div>
-                        <div class="w-full rounded-t-2xl bg-gradient-to-t from-red-600 to-neutral-950 shadow-lg shadow-red-900/10 transition hover:from-neutral-950 hover:to-red-600" style="height: <?= number_format($height, 0) ?>%"></div>
-                        <div class="text-center text-[10px] font-black leading-4 text-neutral-400"><?= h(substr($row['label'], 0, 5)) ?></div>
+            <?php
+            $chartWidth = 1300;
+            $chartHeight = 300;
+            $chartPadX = 42;
+            $chartPadY = 34;
+            $pointGap = ($chartWidth - ($chartPadX * 2)) / max(1, count($dailyChart) - 1);
+            $linePoints = [];
+            $areaPoints = [];
+            foreach ($dailyChart as $index => $row) {
+                $x = $chartPadX + ($index * $pointGap);
+                $ratio = $maxDaily > 0 ? ((int)$row['total'] / $maxDaily) : 0;
+                $y = ($chartHeight - $chartPadY) - ($ratio * ($chartHeight - ($chartPadY * 2)));
+                $linePoints[] = number_format($x, 2, '.', '') . ',' . number_format($y, 2, '.', '');
+                $areaPoints[] = ['x' => $x, 'y' => $y, 'row' => $row];
+            }
+            $areaPolygon = '';
+            if ($areaPoints) {
+                $areaPolygon = $chartPadX . ',' . ($chartHeight - $chartPadY) . ' ' . implode(' ', $linePoints) . ' ' . ($chartWidth - $chartPadX) . ',' . ($chartHeight - $chartPadY);
+            }
+            ?>
+            <div class="mt-6 overflow-x-auto rounded-[1.5rem] bg-neutral-50 p-4">
+                <div class="min-w-[760px]">
+                    <svg viewBox="0 0 <?= $chartWidth ?> <?= $chartHeight ?>" class="h-72 w-full" role="img" aria-label="Activity logs 14 days line chart">
+                        <defs>
+                            <linearGradient id="activityLineGradient" x1="0" x2="1" y1="0" y2="0">
+                                <stop offset="0%" stop-color="#e21b2d"/>
+                                <stop offset="100%" stop-color="#101014"/>
+                            </linearGradient>
+                            <linearGradient id="activityAreaGradient" x1="0" x2="0" y1="0" y2="1">
+                                <stop offset="0%" stop-color="#e21b2d" stop-opacity=".24"/>
+                                <stop offset="100%" stop-color="#e21b2d" stop-opacity="0"/>
+                            </linearGradient>
+                        </defs>
+                        <?php for ($grid = 0; $grid <= 4; $grid++): ?>
+                            <?php $gridY = $chartPadY + ($grid * (($chartHeight - ($chartPadY * 2)) / 4)); ?>
+                            <line x1="<?= $chartPadX ?>" y1="<?= number_format($gridY, 2, '.', '') ?>" x2="<?= $chartWidth - $chartPadX ?>" y2="<?= number_format($gridY, 2, '.', '') ?>" stroke="#e5e7eb" stroke-width="2" stroke-dasharray="8 10"/>
+                        <?php endfor; ?>
+                        <?php if ($areaPolygon !== ''): ?>
+                            <polygon points="<?= h($areaPolygon) ?>" fill="url(#activityAreaGradient)"/>
+                        <?php endif; ?>
+                        <polyline points="<?= h(implode(' ', $linePoints)) ?>" fill="none" stroke="url(#activityLineGradient)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+                        <?php foreach ($areaPoints as $point): ?>
+                            <g>
+                                <circle cx="<?= number_format($point['x'], 2, '.', '') ?>" cy="<?= number_format($point['y'], 2, '.', '') ?>" r="12" fill="#fff" stroke="#e21b2d" stroke-width="6"/>
+                                <text x="<?= number_format($point['x'], 2, '.', '') ?>" y="<?= number_format(max(18, $point['y'] - 20), 2, '.', '') ?>" text-anchor="middle" fill="#404047" font-size="24" font-weight="900"><?= (int)$point['row']['total'] ?></text>
+                            </g>
+                        <?php endforeach; ?>
+                    </svg>
+                    <div class="grid gap-1 px-2" style="grid-template-columns: repeat(14, minmax(0, 1fr));">
+                        <?php foreach ($dailyChart as $row): ?>
+                            <div class="text-center text-[10px] font-black leading-4 text-neutral-400"><?= h(substr($row['label'], 0, 5)) ?></div>
+                        <?php endforeach; ?>
                     </div>
-                <?php endforeach; ?>
+                </div>
             </div>
         </div>
 

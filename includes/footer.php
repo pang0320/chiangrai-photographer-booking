@@ -10,6 +10,10 @@ if (!$footerPath) {
 }
 $footerIsWorkspacePage = preg_match('#^/(admin|customer|photographer)/#', $footerPath) === 1;
 $footerIsContactPage = $footerPath === '/contact.php';
+$sessionRemainingSeconds = 0;
+if (!empty($_SESSION['user_id']) && !empty($_SESSION['last_activity_at'])) {
+    $sessionRemainingSeconds = max(0, SESSION_TIMEOUT_SECONDS - (time() - (int)$_SESSION['last_activity_at']));
+}
 ?>
 </main>
 <?php if ($footerIsWorkspacePage): ?>
@@ -109,5 +113,22 @@ $footerDistricts = db_fetch_all('SELECT district_name FROM districts WHERE is_ac
 Swal.fire({icon: '<?= h($item['type']) ?>', title: '<?= h($item['message']) ?>', timer: 2200, showConfirmButton: false});
 </script>
 <?php endforeach; ?>
+<?php if ($sessionRemainingSeconds > 0): ?>
+<script>
+setTimeout(function () {
+    Swal.fire({
+        icon: 'warning',
+        title: 'เซสชันหมดอายุ',
+        text: 'ไม่ได้ใช้งานเกิน 20 นาที กรุณาเข้าสู่ระบบใหม่',
+        confirmButtonText: 'เข้าสู่ระบบ',
+        confirmButtonColor: '#e21b2d',
+        allowOutsideClick: false,
+        allowEscapeKey: false
+    }).then(function () {
+        window.location.href = '/login.php?timeout=1';
+    });
+}, <?= (int)$sessionRemainingSeconds ?> * 1000);
+</script>
+<?php endif; ?>
 </body>
 </html>

@@ -28,11 +28,42 @@ function is_post(): bool
     return ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST';
 }
 
+function auth_session_expired(): bool
+{
+    if (empty($_SESSION['user_id']) || empty($_SESSION['last_activity_at'])) {
+        return false;
+    }
+
+    return (time() - (int)$_SESSION['last_activity_at']) >= SESSION_TIMEOUT_SECONDS;
+}
+
+function clear_auth_session(bool $restart = false): void
+{
+    $_SESSION = [];
+
+    if (ini_get('session.use_cookies')) {
+        $params = session_get_cookie_params();
+        setcookie(session_name(), '', time() - 42000, $params['path'], $params['domain'], (bool)$params['secure'], (bool)$params['httponly']);
+    }
+
+    session_destroy();
+
+    if ($restart) {
+        session_start();
+    }
+}
+
 function current_user(): ?array
 {
     if (empty($_SESSION['user_id'])) {
         return null;
     }
+
+    if (auth_session_expired()) {
+        clear_auth_session(true);
+        return null;
+    }
+
     static $user = null;
     if ($user !== null) {
         return $user ?: null;
@@ -52,6 +83,12 @@ function role_id(string $role): int
 
 function requireLogin(): void
 {
+    if (auth_session_expired()) {
+        clear_auth_session(true);
+        flash('warning', 'ไม่ได้ใช้งานเกิน 20 นาที กรุณาเข้าสู่ระบบใหม่');
+        redirect('/login.php?timeout=1');
+    }
+
     $user = current_user();
 
     if (!$user) {
@@ -68,11 +105,12 @@ function requireLogin(): void
             setcookie(session_name(), '', time() - 42000, $params['path'], $params['domain'], (bool)$params['secure'], (bool)$params['httponly']);
         }
 
-        session_destroy();
-        session_start();
+        clear_auth_session(true);
         flash('error', 'บัญชีของคุณถูกระงับ กรุณาติดต่อผู้ดูแลระบบ');
         redirect('/login.php');
     }
+
+    $_SESSION['last_activity_at'] = time();
 }
 
 function requireRole($roles): void

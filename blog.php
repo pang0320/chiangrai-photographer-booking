@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/includes/functions.php';
+$blogAdminUser = current_user();
 $blogs = db_fetch_all('SELECT b.*, u.name AS admin_name
                        FROM blogs b
                        JOIN users u ON u.id = b.admin_id
@@ -15,7 +16,12 @@ include __DIR__ . '/includes/header.php';
             <h1 class="mt-2 text-4xl font-black">บทความจากระบบ</h1>
             <p class="mt-2 text-neutral-600">คำแนะนำการเลือกช่างภาพ การเตรียมตัว และเช็กลิสต์ก่อนวันถ่าย</p>
         </div>
-        <a href="/photographers.php" class="stock-button rounded-full px-5 py-3 font-black"><i class="fa-solid fa-magnifying-glass mr-2"></i>ค้นหาช่างภาพ</a>
+        <div class="flex flex-wrap gap-3">
+            <?php if ($blogAdminUser && $blogAdminUser['role_name'] === 'admin'): ?>
+                <a href="/admin/blogs.php" class="rounded-full border border-neutral-200 px-5 py-3 font-black hover:bg-neutral-950 hover:text-white"><i class="fa-solid fa-pen-to-square mr-2"></i>จัดการบทความ</a>
+            <?php endif; ?>
+            <a href="/photographers.php" class="stock-button rounded-full px-5 py-3 font-black"><i class="fa-solid fa-magnifying-glass mr-2"></i>ค้นหาช่างภาพ</a>
+        </div>
     </div>
     <div class="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
         <?php foreach ($blogs as $blog): ?>

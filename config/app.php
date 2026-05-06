@@ -36,6 +36,7 @@ define('APP_URL', $appUrl);
 define('UPLOAD_PATH', __DIR__ . '/../assets/uploads');
 define('UPLOAD_URL', APP_URL . '/assets/uploads');
 define('MAX_UPLOAD_SIZE', 5 * 1024 * 1024);
+define('CSRF_PROTECTION', getenv('CSRF_PROTECTION') === '1');
 define('PAYMENT_DISCLAIMER', 'เว็บไซต์เป็นเพียงตัวกลางในการค้นหาและติดต่อช่างภาพเท่านั้น ไม่ได้เป็นตัวกลางรับชำระเงิน');
 
 session_set_cookie_params([

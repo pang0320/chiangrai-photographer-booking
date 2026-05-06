@@ -60,7 +60,7 @@ if ($me) {
         $roleIcon = 'fa-user';
         $navItems = [
             ['/customer/dashboard.php', 'แดชบอร์ด', 'fa-gauge'],
-            ['/photographers.php', 'ค้นหาช่างภาพ', 'fa-magnifying-glass'],
+            ['/customer/photographers.php', 'ค้นหาช่างภาพ', 'fa-magnifying-glass'],
             ['/customer/bookings.php', 'รายการจองของฉัน', 'fa-calendar-check'],
             ['/customer/favorites.php', 'รายการโปรด', 'fa-heart'],
             ['/customer/recently_viewed.php', 'ช่างภาพที่เคยดู', 'fa-clock-rotate-left'],
@@ -94,6 +94,9 @@ if ($me) {
             $url = $item[0];
             $label = $item[1];
             $icon = $item[2];
+            if ($me && $me['role_name'] === 'customer' && $url === '/notifications.php') {
+                $url = '/customer/notifications.php';
+            }
             $isActive = $currentPath === $url;
             $className = 'workspace-nav-link';
 

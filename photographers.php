@@ -1,6 +1,15 @@
 <?php
 require_once __DIR__ . '/includes/functions.php';
 
+if (defined('CUSTOMER_PHOTOGRAPHERS_PAGE')) {
+    requireRole('customer');
+}
+
+$photographerSearchPath = '/photographers.php';
+if (defined('CUSTOMER_PHOTOGRAPHERS_PAGE')) {
+    $photographerSearchPath = '/customer/photographers.php';
+}
+
 $districts = db_fetch_all('SELECT * FROM districts WHERE is_active = 1 ORDER BY district_name');
 $categories = db_fetch_all('SELECT * FROM service_categories WHERE is_active = 1 ORDER BY sort_order, name');
 
@@ -189,7 +198,7 @@ include __DIR__ . '/includes/header.php';
             <form class="stock-card rounded-[2rem] p-5">
                 <div class="flex items-center justify-between gap-4">
                     <h2 class="text-xl font-black text-neutral-950">ตัวกรอง</h2>
-                    <a href="/photographers.php" class="text-sm font-black text-red-600">ล้าง</a>
+                    <a href="<?= h($photographerSearchPath) ?>" class="text-sm font-black text-red-600">ล้าง</a>
                 </div>
                 <div class="mt-5 grid gap-3">
                     <label class="icon-input block"><i class="fa-solid fa-camera"></i><input name="q" value="<?= h($keyword) ?>" placeholder="ชื่อช่างภาพ" class="stock-input w-full rounded-[1.2rem] px-4 py-3 font-semibold"></label>
@@ -291,13 +300,13 @@ include __DIR__ . '/includes/header.php';
                         <?php include __DIR__ . '/includes/photographer_card.php'; ?>
                     <?php endforeach; ?>
                 </div>
-                <?= paginate($total, $page, $perPage, '/photographers.php?' . http_build_query(array_diff_key($_GET, ['page' => true]))) ?>
+                <?= paginate($total, $page, $perPage, $photographerSearchPath . '?' . http_build_query(array_diff_key($_GET, ['page' => true]))) ?>
             <?php else: ?>
                 <div class="empty-state mt-6 rounded-[2rem] p-10 text-center">
                     <div class="mx-auto grid h-20 w-20 place-items-center rounded-3xl bg-red-50 text-3xl text-red-600"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
                     <h2 class="mt-4 text-2xl font-black text-neutral-950">ไม่พบช่างภาพตามเงื่อนไข</h2>
                     <p class="mx-auto mt-2 max-w-md text-neutral-600">ลองปรับตัวกรอง หรือดูช่างภาพใกล้เคียงที่ระบบคำนวณจากพิกัดอำเภอให้</p>
-                    <a href="/photographers.php" class="mt-5 inline-flex rounded-full bg-neutral-950 px-5 py-3 font-black text-white hover:bg-red-600"><i class="fa-solid fa-xmark mr-2"></i>ล้างตัวกรอง</a>
+                    <a href="<?= h($photographerSearchPath) ?>" class="mt-5 inline-flex rounded-full bg-neutral-950 px-5 py-3 font-black text-white hover:bg-red-600"><i class="fa-solid fa-xmark mr-2"></i>ล้างตัวกรอง</a>
                 </div>
                 <?php if ($nearby): ?>
                     <div class="mt-10">
@@ -328,7 +337,7 @@ include __DIR__ . '/includes/header.php';
                             $categoryIcon = $category['icon'];
                         }
                         ?>
-                        <a href="/photographers.php?category_id=<?= (int)$category['id'] ?>" class="rounded-full bg-white/10 px-4 py-2 text-sm font-black hover:bg-white hover:text-neutral-950">
+                        <a href="<?= h($photographerSearchPath) ?>?category_id=<?= (int)$category['id'] ?>" class="rounded-full bg-white/10 px-4 py-2 text-sm font-black hover:bg-white hover:text-neutral-950">
                             <i class="fa-solid <?= h($categoryIcon) ?> mr-1 text-red-300"></i><?= h($category['name']) ?>
                         </a>
                     <?php endforeach; ?>

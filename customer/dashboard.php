@@ -64,7 +64,7 @@ include __DIR__ . '/../includes/header.php';
                 <h1 class="mt-2 text-3xl font-black sm:text-5xl">สวัสดี <?= h($user['name']) ?></h1>
                 <p class="mt-3 max-w-2xl leading-8 text-white/68">ค้นหาช่างภาพ ส่งคำขอจอง ติดตามสถานะ และรีวิวหลังงานเสร็จจากแดชบอร์ดเดียว</p>
                 <div class="mt-6 flex flex-wrap gap-3">
-                    <a href="/photographers.php" class="rounded-full bg-white px-5 py-3 font-black text-neutral-950 hover:bg-red-600 hover:text-white"><i class="fa-solid fa-magnifying-glass mr-2"></i>ค้นหาช่างภาพ</a>
+                    <a href="/customer/photographers.php" class="rounded-full bg-white px-5 py-3 font-black text-neutral-950 hover:bg-red-600 hover:text-white"><i class="fa-solid fa-magnifying-glass mr-2"></i>ค้นหาช่างภาพ</a>
                     <a href="/customer/bookings.php" class="rounded-full bg-white/12 px-5 py-3 font-black text-white hover:bg-white hover:text-neutral-950"><i class="fa-solid fa-calendar-check mr-2"></i>ประวัติการจอง</a>
                     <a href="/customer/profile.php" class="rounded-full bg-white/12 px-5 py-3 font-black text-white hover:bg-white hover:text-neutral-950"><i class="fa-solid fa-user-pen mr-2"></i>แก้ไขโปรไฟล์</a>
                     <a href="/customer/favorites.php" class="rounded-full bg-white/12 px-5 py-3 font-black text-white hover:bg-white hover:text-neutral-950"><i class="fa-solid fa-heart mr-2"></i>ช่างภาพโปรด</a>

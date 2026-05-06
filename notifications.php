@@ -3,6 +3,11 @@ require_once __DIR__ . '/includes/functions.php';
 requireLogin();
 
 $user = current_user();
+$notificationsPath = '/notifications.php';
+if (defined('CUSTOMER_NOTIFICATIONS_PAGE')) {
+    requireRole('customer');
+    $notificationsPath = '/customer/notifications.php';
+}
 
 if (is_post()) {
     verify_csrf();
@@ -16,7 +21,7 @@ if (is_post()) {
         flash('success', 'อ่านแจ้งเตือนทั้งหมดแล้ว');
     }
 
-    redirect('/notifications.php');
+    redirect($notificationsPath);
 }
 
 $filter = 'all';
@@ -58,9 +63,9 @@ include __DIR__ . '/includes/header.php';
     </div>
 
     <div class="mt-6 flex flex-wrap gap-2">
-        <a href="/notifications.php?filter=all" class="rounded-full px-4 py-2 text-sm font-black <?php if ($filter === 'all'): ?>bg-neutral-950 text-white<?php else: ?>bg-white text-neutral-700<?php endif; ?>"><i class="fa-solid fa-list mr-1"></i>ทั้งหมด</a>
-        <a href="/notifications.php?filter=unread" class="rounded-full px-4 py-2 text-sm font-black <?php if ($filter === 'unread'): ?>bg-neutral-950 text-white<?php else: ?>bg-white text-neutral-700<?php endif; ?>"><i class="fa-solid fa-bell mr-1"></i>ยังไม่อ่าน</a>
-        <a href="/notifications.php?filter=read" class="rounded-full px-4 py-2 text-sm font-black <?php if ($filter === 'read'): ?>bg-neutral-950 text-white<?php else: ?>bg-white text-neutral-700<?php endif; ?>"><i class="fa-solid fa-circle-check mr-1"></i>อ่านแล้ว</a>
+        <a href="<?= h($notificationsPath) ?>?filter=all" class="rounded-full px-4 py-2 text-sm font-black <?php if ($filter === 'all'): ?>bg-neutral-950 text-white<?php else: ?>bg-white text-neutral-700<?php endif; ?>"><i class="fa-solid fa-list mr-1"></i>ทั้งหมด</a>
+        <a href="<?= h($notificationsPath) ?>?filter=unread" class="rounded-full px-4 py-2 text-sm font-black <?php if ($filter === 'unread'): ?>bg-neutral-950 text-white<?php else: ?>bg-white text-neutral-700<?php endif; ?>"><i class="fa-solid fa-bell mr-1"></i>ยังไม่อ่าน</a>
+        <a href="<?= h($notificationsPath) ?>?filter=read" class="rounded-full px-4 py-2 text-sm font-black <?php if ($filter === 'read'): ?>bg-neutral-950 text-white<?php else: ?>bg-white text-neutral-700<?php endif; ?>"><i class="fa-solid fa-circle-check mr-1"></i>อ่านแล้ว</a>
     </div>
 
     <?php if (!$notifications): ?>

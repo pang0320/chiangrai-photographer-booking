@@ -29,7 +29,7 @@ include __DIR__ . '/../includes/header.php';
 <section class="px-4 py-8 sm:px-6 lg:px-8">
     <div class="flex flex-wrap items-end justify-between gap-4">
         <div><p class="section-kicker">Favorites</p><h1 class="mt-1 text-3xl font-black">ช่างภาพที่บันทึกไว้</h1></div>
-        <a href="/photographers.php" class="stock-button rounded-full px-5 py-3 font-black"><i class="fa-solid fa-magnifying-glass mr-2"></i>ค้นหาเพิ่ม</a>
+        <a href="/customer/photographers.php" class="stock-button rounded-full px-5 py-3 font-black"><i class="fa-solid fa-magnifying-glass mr-2"></i>ค้นหาเพิ่ม</a>
     </div>
     <div class="mt-6 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
         <?php foreach ($items as $p): ?>

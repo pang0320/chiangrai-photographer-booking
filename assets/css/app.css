@@ -279,11 +279,11 @@ body {
 
 .workspace-shell {
     display: grid;
-    grid-template-columns: 280px minmax(0, 1fr);
-    gap: 1.25rem;
-    max-width: 1560px;
+    grid-template-columns: 250px minmax(0, 1fr);
+    gap: .75rem;
+    max-width: 1920px;
     margin-inline: auto;
-    padding: 1.25rem;
+    padding: .75rem;
 }
 
 .workspace-sidebar {
@@ -294,9 +294,14 @@ body {
 
 .workspace-main {
     min-width: 0;
-    border-radius: 2rem;
+    border-radius: 1.35rem;
     background: rgba(255, 255, 255, .62);
     box-shadow: inset 0 0 0 1px rgba(16, 16, 20, .06);
+}
+
+.workspace-main > section {
+    padding-left: .75rem !important;
+    padding-right: .75rem !important;
 }
 
 .workspace-nav-link {
@@ -338,7 +343,13 @@ body {
 @media (max-width: 1024px) {
     .workspace-shell {
         grid-template-columns: 1fr;
-        padding: .75rem;
+        padding: .5rem;
+        gap: .5rem;
+    }
+
+    .workspace-main > section {
+        padding-left: .5rem !important;
+        padding-right: .5rem !important;
     }
 
     .workspace-sidebar {

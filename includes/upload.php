@@ -43,7 +43,12 @@ function upload_image(array $file, string $folder): ?string
             'file_name' => $originalName,
             'error_code' => (int)$file['error'],
         ]);
-        throw new RuntimeException('อัปโหลดไฟล์ไม่สำเร็จ');
+
+        if (in_array((int)$file['error'], [UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE], true)) {
+            throw new RuntimeException(UPLOAD_IMAGE_HELP_TEXT);
+        }
+
+        throw new RuntimeException('อัปโหลดไฟล์ไม่สำเร็จ กรุณาตรวจสอบไฟล์อีกครั้ง');
     }
 
     if ((int)$file['size'] > MAX_UPLOAD_SIZE) {
@@ -52,7 +57,7 @@ function upload_image(array $file, string $folder): ?string
             'file_size' => (int)$file['size'],
             'max_size' => MAX_UPLOAD_SIZE,
         ]);
-        throw new RuntimeException('ไฟล์ต้องมีขนาดไม่เกิน 5MB');
+        throw new RuntimeException(UPLOAD_IMAGE_HELP_TEXT);
     }
 
     if ($tmpName === '' || !is_uploaded_file($tmpName)) {
@@ -69,7 +74,7 @@ function upload_image(array $file, string $folder): ?string
             'file_name' => $originalName,
             'extension' => $ext,
         ]);
-        throw new RuntimeException('อนุญาตเฉพาะ jpg, jpeg, png, webp');
+        throw new RuntimeException(UPLOAD_IMAGE_HELP_TEXT);
     }
 
     $nameParts = explode('.', strtolower($originalName));

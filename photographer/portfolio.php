@@ -80,7 +80,7 @@ include __DIR__ . '/../includes/header.php';
         <label class="grid gap-2">
             <span class="text-sm font-black text-neutral-700"><i class="fa-solid fa-image mr-2 text-red-600"></i>ไฟล์รูปผลงาน</span>
             <input type="file" name="image" required accept="image/jpeg,image/png,image/webp" class="stock-input rounded-2xl px-4 py-3 font-semibold">
-            <span class="text-xs font-bold leading-6 text-neutral-500">รองรับ jpg, jpeg, png, webp ขนาดไม่เกิน 5MB</span>
+            <span class="text-xs font-bold leading-6 text-neutral-500"><?= h(UPLOAD_IMAGE_HELP_TEXT) ?></span>
         </label>
         <label class="grid gap-2 rounded-2xl bg-neutral-50 px-4 py-3 font-bold">
             <span class="text-sm font-black text-neutral-700"><i class="fa-solid fa-star mr-2 text-red-600"></i>ตั้งค่า featured image</span>

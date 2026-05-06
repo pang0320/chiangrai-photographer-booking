@@ -84,7 +84,7 @@ include __DIR__ . '/../includes/header.php';
 
             <label class="grid gap-3 rounded-[1.5rem] border border-dashed border-slate-300 bg-slate-50 p-5">
                 <span class="font-black text-slate-800"><i class="fa-solid fa-image mr-2 text-red-600"></i>อัปโหลดรูปโปรไฟล์ลูกค้า</span>
-                <span class="text-sm font-semibold text-slate-500">ใช้แสดงในโปรไฟล์ บัญชีผู้ใช้ และรีวิว รองรับ jpg, jpeg, png, webp ขนาดไม่เกิน 5MB</span>
+                <span class="text-sm font-semibold text-slate-500"><?= h(UPLOAD_IMAGE_HELP_TEXT) ?></span>
                 <input id="avatar-input" type="file" name="avatar" accept="image/jpeg,image/png,image/webp" class="rounded-2xl border bg-white px-4 py-3 font-semibold">
             </label>
 

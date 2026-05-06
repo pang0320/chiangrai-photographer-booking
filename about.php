@@ -54,7 +54,7 @@ include __DIR__ . '/includes/header.php';
             <p class="mt-2 leading-8 text-white/68">Photographer from Chiang Rai, Thailand และเป็นผู้พัฒนาแพลตฟอร์มนี้เพื่อช่วยให้ลูกค้าและช่างภาพท้องถิ่นติดต่อกันได้ง่ายขึ้น</p>
             <div class="mt-6 flex flex-wrap gap-3">
                 <a href="tel:0994344335" class="rounded-full bg-white px-5 py-3 font-black text-neutral-950 transition hover:bg-red-600 hover:text-white"><i class="fa-solid fa-phone mr-2"></i>099-4344335</a>
-                <a href="/contact.php" class="rounded-full bg-white/12 px-5 py-3 font-black text-white transition hover:bg-white hover:text-neutral-950"><i class="fa-solid fa-envelope mr-2"></i>ติดต่อผู้พัฒนา</a>
+                <button type="button" data-developer-modal-open class="rounded-full bg-white/12 px-5 py-3 font-black text-white transition hover:bg-white hover:text-neutral-950"><i class="fa-solid fa-code mr-2"></i>ข้อมูลผู้พัฒนา</button>
             </div>
         </div>
 
@@ -83,6 +83,9 @@ include __DIR__ . '/includes/header.php';
                     <a href="tel:0994344335" class="mt-1 block font-black text-red-600">099-4344335</a>
                 </div>
             </div>
+            <button type="button" data-developer-modal-open class="mt-5 w-full rounded-2xl bg-neutral-950 px-5 py-3 font-black text-white transition hover:bg-red-600">
+                <i class="fa-brands fa-github mr-2"></i>ดู GitHub ผู้พัฒนา
+            </button>
         </div>
     </div>
 </section>

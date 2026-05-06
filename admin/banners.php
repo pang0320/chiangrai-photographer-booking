@@ -54,7 +54,11 @@ include __DIR__ . '/../includes/header.php';
         <?= csrf_field() ?>
         <input name="title" required placeholder="Title" class="stock-input rounded-2xl px-4 py-3 font-semibold">
         <input name="subtitle" placeholder="Subtitle" class="stock-input rounded-2xl px-4 py-3 font-semibold">
-        <input type="file" name="image" accept="image/jpeg,image/png,image/webp" class="stock-input rounded-2xl px-4 py-3 font-semibold">
+        <label class="grid gap-2 text-sm font-black text-neutral-700">
+            <span><i class="fa-solid fa-image mr-2 text-red-600"></i>รูป Banner</span>
+            <input type="file" name="image" accept="image/jpeg,image/png,image/webp" class="stock-input rounded-2xl px-4 py-3 font-semibold">
+            <span class="text-xs font-bold leading-6 text-neutral-500"><?= h(UPLOAD_IMAGE_HELP_TEXT) ?></span>
+        </label>
         <input name="button_text" placeholder="Button text" class="stock-input rounded-2xl px-4 py-3 font-semibold">
         <input name="button_url" placeholder="Button URL" class="stock-input rounded-2xl px-4 py-3 font-semibold">
         <input type="number" name="sort_order" value="0" class="stock-input rounded-2xl px-4 py-3 font-semibold">

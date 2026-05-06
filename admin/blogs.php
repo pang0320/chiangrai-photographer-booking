@@ -185,6 +185,7 @@ include __DIR__ . '/../includes/header.php';
             <label class="grid gap-2 text-sm font-black text-neutral-700">
                 <span><i class="fa-solid fa-image mr-1 text-red-600"></i>รูปปก</span>
                 <input type="file" name="cover_image" accept="image/jpeg,image/png,image/webp" class="stock-input rounded-2xl px-4 py-3 font-semibold">
+                <span class="text-xs font-bold leading-6 text-neutral-500"><?= h(UPLOAD_IMAGE_HELP_TEXT) ?></span>
             </label>
         </div>
         <button class="stock-button rounded-2xl px-5 py-3 font-black"><i class="fa-solid fa-floppy-disk mr-2"></i>บันทึกบทความ</button>

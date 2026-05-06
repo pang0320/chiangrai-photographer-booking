@@ -55,7 +55,11 @@ include __DIR__ . '/../includes/header.php';
                 </label>
             <?php endforeach; ?>
             <textarea name="comment" rows="5" class="rounded-2xl border px-4 py-3" placeholder="ความคิดเห็น"></textarea>
-            <input type="file" name="images[]" multiple accept="image/jpeg,image/png,image/webp" class="rounded-2xl border px-4 py-3">
+            <label class="grid gap-2 text-sm font-bold">
+                รูปภาพรีวิว
+                <input type="file" name="images[]" multiple accept="image/jpeg,image/png,image/webp" class="rounded-2xl border px-4 py-3">
+                <span class="text-xs font-bold leading-6 text-slate-500"><?= h(UPLOAD_IMAGE_HELP_TEXT) ?></span>
+            </label>
             <button data-confirm="ยืนยันบันทึกรีวิว?" class="stock-button rounded-2xl px-5 py-3 font-black"><i class="fa-solid fa-floppy-disk mr-2"></i>บันทึกรีวิว</button>
         </form>
     </div>

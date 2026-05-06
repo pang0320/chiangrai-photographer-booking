@@ -76,13 +76,13 @@ include __DIR__ . '/../includes/header.php';
             <div class="grid gap-4 sm:grid-cols-2">
                 <label class="grid gap-3 rounded-[1.5rem] border border-dashed border-slate-300 bg-slate-50 p-5">
                     <span class="font-black text-slate-800"><i class="fa-solid fa-user-circle mr-2 text-red-600"></i>อัปโหลดรูปโปรไฟล์ช่างภาพ</span>
-                    <span class="text-sm font-semibold text-slate-500">ใช้เป็นรูปหน้าช่างภาพใน card, navbar และหน้าโปรไฟล์</span>
+                    <span class="text-sm font-semibold text-slate-500"><?= h(UPLOAD_IMAGE_HELP_TEXT) ?></span>
                     <input id="profile-image-input" type="file" name="profile_image" accept="image/jpeg,image/png,image/webp" class="rounded-2xl border bg-white px-4 py-3 font-semibold">
                 </label>
 
                 <label class="grid gap-3 rounded-[1.5rem] border border-dashed border-slate-300 bg-slate-50 p-5">
                     <span class="font-black text-slate-800"><i class="fa-solid fa-panorama mr-2 text-red-600"></i>อัปโหลดรูปหน้าปกโปรไฟล์</span>
-                    <span class="text-sm font-semibold text-slate-500">ใช้เป็นภาพ cover ขนาดใหญ่บนหน้าโปรไฟล์ช่างภาพ</span>
+                    <span class="text-sm font-semibold text-slate-500"><?= h(UPLOAD_IMAGE_HELP_TEXT) ?></span>
                     <input id="cover-image-input" type="file" name="cover_image" accept="image/jpeg,image/png,image/webp" class="rounded-2xl border bg-white px-4 py-3 font-semibold">
                 </label>
             </div>

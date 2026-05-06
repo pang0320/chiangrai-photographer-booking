@@ -30,6 +30,44 @@ document.addEventListener('click', function (event) {
 });
 
 document.addEventListener('DOMContentLoaded', function () {
+  const developerModal = document.getElementById('developer-modal');
+  const developerOpenButtons = document.querySelectorAll('[data-developer-modal-open]');
+  const developerCloseButtons = document.querySelectorAll('[data-developer-modal-close], [data-developer-modal-backdrop]');
+
+  function openDeveloperModal() {
+    if (!developerModal) return;
+    developerModal.classList.remove('hidden');
+    developerModal.classList.add('flex');
+    developerModal.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('overflow-hidden');
+  }
+
+  function closeDeveloperModal() {
+    if (!developerModal) return;
+    developerModal.classList.add('hidden');
+    developerModal.classList.remove('flex');
+    developerModal.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('overflow-hidden');
+  }
+
+  developerOpenButtons.forEach(function (button) {
+    button.addEventListener('click', function () {
+      openDeveloperModal();
+    });
+  });
+
+  developerCloseButtons.forEach(function (button) {
+    button.addEventListener('click', function () {
+      closeDeveloperModal();
+    });
+  });
+
+  document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape') {
+      closeDeveloperModal();
+    }
+  });
+
   if (window.jQuery && jQuery.fn.DataTable) {
     jQuery('.datatable').DataTable({
       pageLength: 10,

@@ -52,7 +52,11 @@ include __DIR__ . '/../includes/header.php';
     <form method="post" enctype="multipart/form-data" class="stock-card mt-6 grid gap-4 rounded-[1.5rem] p-5">
         <?= csrf_field() ?>
         <input name="title" required placeholder="หัวข้อ" class="stock-input rounded-2xl px-4 py-3 font-semibold">
-        <input type="file" name="cover_image" accept="image/jpeg,image/png,image/webp" class="stock-input rounded-2xl px-4 py-3 font-semibold">
+        <label class="grid gap-2 text-sm font-black text-neutral-700">
+            <span><i class="fa-solid fa-image mr-2 text-red-600"></i>รูปปกบทความ</span>
+            <input type="file" name="cover_image" accept="image/jpeg,image/png,image/webp" class="stock-input rounded-2xl px-4 py-3 font-semibold">
+            <span class="text-xs font-bold leading-6 text-neutral-500"><?= h(UPLOAD_IMAGE_HELP_TEXT) ?></span>
+        </label>
         <textarea name="content" rows="8" required placeholder="เนื้อหา" class="stock-input rounded-2xl px-4 py-3 font-semibold"></textarea>
         <select name="status" class="stock-input rounded-2xl px-4 py-3 font-semibold">
             <option value="draft">ฉบับร่าง</option>

@@ -41,9 +41,9 @@ include __DIR__ . '/includes/header.php';
             <a href="tel:0994344335" class="rounded-2xl bg-white px-4 py-4 font-black text-neutral-950 transition hover:bg-red-600 hover:text-white">
                 <i class="fa-solid fa-phone mr-2"></i>โทร 099-4344335
             </a>
-            <a href="/about.php" class="rounded-2xl bg-white/12 px-4 py-4 font-black text-white transition hover:bg-white hover:text-neutral-950">
+            <button type="button" data-developer-modal-open class="rounded-2xl bg-white/12 px-4 py-4 text-left font-black text-white transition hover:bg-white hover:text-neutral-950">
                 <i class="fa-solid fa-circle-info mr-2"></i>ดูข้อมูลผู้พัฒนา
-            </a>
+            </button>
         </div>
 
         <div class="mt-6 rounded-[1.25rem] bg-white/10 p-4 text-sm font-bold leading-7 text-white/68">
@@ -72,9 +72,9 @@ include __DIR__ . '/includes/header.php';
                 <a href="tel:0994344335" class="rounded-2xl bg-red-50 p-4 font-black text-red-700 transition hover:bg-red-600 hover:text-white">
                     <i class="fa-solid fa-phone mb-3 block text-2xl"></i>099-4344335
                 </a>
-                <a href="/about.php" class="rounded-2xl bg-neutral-950 p-4 font-black text-white transition hover:bg-red-600">
+                <button type="button" data-developer-modal-open class="rounded-2xl bg-neutral-950 p-4 text-left font-black text-white transition hover:bg-red-600">
                     <i class="fa-solid fa-user mb-3 block text-2xl text-red-300"></i>ข้อมูลผู้พัฒนา
-                </a>
+                </button>
             </div>
         </div>
     </div>

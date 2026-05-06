@@ -82,7 +82,9 @@ $footerDistricts = db_fetch_all('SELECT district_name FROM districts WHERE is_ac
                 </div>
                 <?php if (!$footerIsContactPage): ?>
                     <div class="mt-5 text-sm leading-7 text-white/62">
-                        <p><i class="fa-solid fa-code mr-2 text-red-400"></i>Creepygame / Game</p>
+                        <button type="button" data-developer-modal-open class="text-left transition hover:text-red-400">
+                            <i class="fa-solid fa-code mr-2 text-red-400"></i>Creepygame / Game
+                        </button>
                         <p><i class="fa-solid fa-phone mr-2 text-red-400"></i>099-4344335</p>
                     </div>
                 <?php endif; ?>
@@ -98,12 +100,71 @@ $footerDistricts = db_fetch_all('SELECT district_name FROM districts WHERE is_ac
         </div>
         <?php if (!$footerIsContactPage): ?>
             <div class="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-white/5 px-4 py-3 text-xs font-bold text-white/50">
-                <span><i class="fa-solid fa-code mr-2 text-red-400"></i>Developer: Creepygame / Game</span>
+                <button type="button" data-developer-modal-open class="transition hover:text-red-400">
+                    <i class="fa-solid fa-code mr-2 text-red-400"></i>Developer: Creepygame / Game
+                </button>
                 <span><i class="fa-solid fa-camera-retro mr-1 text-red-400"></i>Photographer from Chiang Rai, Thailand</span>
             </div>
         <?php endif; ?>
     </div>
 </footer>
+<div id="developer-modal" class="fixed inset-0 z-[90] hidden items-center justify-center bg-neutral-950/75 px-4 py-8 backdrop-blur-sm" aria-hidden="true">
+    <div data-developer-modal-backdrop class="absolute inset-0"></div>
+    <div class="relative w-full max-w-2xl overflow-hidden rounded-[2rem] bg-white shadow-2xl">
+        <div class="bg-gradient-to-r from-neutral-950 via-slate-900 to-red-700 p-6 text-white">
+            <div class="flex items-start justify-between gap-4">
+                <div>
+                    <p class="text-xs font-black uppercase tracking-[0.22em] text-red-200"><i class="fa-solid fa-code mr-2"></i>Development Credits</p>
+                    <h2 class="mt-2 text-2xl font-black">ข้อมูลผู้พัฒนา</h2>
+                    <p class="mt-2 text-sm font-bold text-white/70">ทีมพัฒนาเว็บไซต์ค้นหาและจองช่างภาพเชียงราย</p>
+                </div>
+                <button type="button" data-developer-modal-close class="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-white/12 text-white transition hover:bg-white hover:text-neutral-950" aria-label="ปิดหน้าต่างข้อมูลผู้พัฒนา">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="grid gap-4 p-6 sm:grid-cols-2">
+            <article class="rounded-[1.5rem] border border-neutral-200 bg-neutral-50 p-5 transition hover:-translate-y-1 hover:bg-white hover:shadow-lg">
+                <div class="flex items-start gap-4">
+                    <div class="grid h-14 w-14 place-items-center rounded-2xl bg-neutral-950 text-2xl text-white">
+                        <i class="fa-brands fa-github"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs font-black uppercase tracking-[0.18em] text-red-600">Developer</p>
+                        <h3 class="mt-1 text-xl font-black text-neutral-950">Creepygame / Game</h3>
+                        <p class="mt-2 text-sm font-bold leading-6 text-neutral-600">Photographer from Chiang Rai / Thailand</p>
+                    </div>
+                </div>
+                <a href="https://github.com/Creepygame" target="_blank" rel="noopener noreferrer" class="mt-5 flex items-center justify-center gap-2 rounded-2xl bg-neutral-950 px-4 py-3 font-black text-white transition hover:bg-red-600">
+                    <i class="fa-brands fa-github"></i>
+                    github.com/Creepygame
+                </a>
+            </article>
+
+            <article class="rounded-[1.5rem] border border-neutral-200 bg-neutral-50 p-5 transition hover:-translate-y-1 hover:bg-white hover:shadow-lg">
+                <div class="flex items-start gap-4">
+                    <div class="grid h-14 w-14 place-items-center rounded-2xl bg-red-600 text-2xl text-white">
+                        <i class="fa-solid fa-handshake-angle"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs font-black uppercase tracking-[0.18em] text-red-600">Development Assistant</p>
+                        <h3 class="mt-1 text-xl font-black text-neutral-950">ผู้ช่วยการพัฒนา</h3>
+                        <p class="mt-2 text-sm font-bold leading-6 text-neutral-600">ร่วมช่วยพัฒนาและดูแลรายละเอียดของระบบ</p>
+                    </div>
+                </div>
+                <a href="https://github.com/pang0320" target="_blank" rel="noopener noreferrer" class="mt-5 flex items-center justify-center gap-2 rounded-2xl bg-red-600 px-4 py-3 font-black text-white transition hover:bg-neutral-950">
+                    <i class="fa-brands fa-github"></i>
+                    github.com/pang0320
+                </a>
+            </article>
+        </div>
+
+        <div class="border-t border-neutral-200 bg-neutral-50 px-6 py-4 text-sm font-bold leading-7 text-neutral-600">
+            <i class="fa-solid fa-circle-info mr-2 text-red-600"></i><?= h(PAYMENT_DISCLAIMER) ?>
+        </div>
+    </div>
+</div>
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>

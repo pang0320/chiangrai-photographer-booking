@@ -231,7 +231,7 @@ include __DIR__ . '/includes/header.php';
                             <option value="<?= (int)$category['id'] ?>" <?php if ($isSelectedCategory): ?>selected<?php endif; ?>><?= h($category['name']) ?></option>
                         <?php endforeach; ?>
                     </select>
-                    <label class="icon-input block"><i class="fa-solid fa-calendar"></i><?= be_date_input('available_date', $availableDate, 'stock-input w-full rounded-[1.2rem] px-4 py-3 font-semibold', false, 'วันที่ว่าง พ.ศ.') ?></label>
+                    <?= be_date_input('available_date', $availableDate, 'stock-input w-full rounded-[1.2rem] px-4 py-3 font-semibold', false, 'วันที่ต้องการจ้าง') ?>
                     <select name="min_rating" class="stock-input rounded-[1.2rem] px-4 py-3 font-semibold">
                         <option value="0">ทุกคะแนน</option>
                         <?php for ($i = 5; $i >= 1; $i--): ?>

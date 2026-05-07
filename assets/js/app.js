@@ -72,6 +72,7 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   initBlockPagination();
+  initCalendarDateInputs();
 
   if (window.jQuery && jQuery.fn.DataTable) {
     jQuery('.datatable').DataTable({
@@ -119,6 +120,143 @@ document.addEventListener('DOMContentLoaded', function () {
     if (hidden.value && !input.value) {
       input.value = formatIsoToBeDate(hidden.value);
     }
+  });
+});
+
+function initCalendarDateInputs() {
+  const thaiMonths = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+
+  document.querySelectorAll('[data-calendar-date]').forEach(function (calendar) {
+    const hidden = document.getElementById(calendar.dataset.target || '');
+    const grid = calendar.querySelector('[data-calendar-grid]');
+    const monthLabel = calendar.querySelector('[data-calendar-month]');
+    const selectedLabel = calendar.querySelector('[data-calendar-selected]');
+    const selectedPopoverLabel = calendar.querySelector('[data-calendar-selected-popover]');
+    const trigger = calendar.querySelector('[data-calendar-trigger]');
+    const popover = calendar.querySelector('[data-calendar-popover]');
+    const prevButton = calendar.querySelector('[data-calendar-prev]');
+    const nextButton = calendar.querySelector('[data-calendar-next]');
+    let statuses = {};
+    let current;
+
+    if (!hidden || !grid || !monthLabel) return;
+
+    try {
+      statuses = JSON.parse(calendar.dataset.statuses || '{}') || {};
+    } catch (error) {
+      statuses = {};
+    }
+
+    const selectedIso = parseBeDateToIso(hidden.value);
+    if (selectedIso) {
+      const parts = selectedIso.split('-').map(function (part) { return parseInt(part, 10); });
+      current = new Date(parts[0], parts[1] - 1, 1);
+    } else {
+      const today = new Date();
+      current = new Date(today.getFullYear(), today.getMonth(), 1);
+    }
+
+    function renderCalendar() {
+      const year = current.getFullYear();
+      const month = current.getMonth();
+      const firstDay = new Date(year, month, 1).getDay();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const selected = parseBeDateToIso(hidden.value);
+
+      monthLabel.textContent = thaiMonths[month] + ' ' + (year + 543);
+      grid.innerHTML = '';
+
+      for (let blank = 0; blank < firstDay; blank++) {
+        const spacer = document.createElement('span');
+        spacer.className = 'calendar-day calendar-day-empty';
+        grid.appendChild(spacer);
+      }
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const iso = buildIsoDate(year, month + 1, day);
+        const status = statuses[iso] || calendar.dataset.defaultStatus || 'available';
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = String(day);
+        button.className = 'calendar-day calendar-day-' + status;
+        button.dataset.date = iso;
+
+        if (iso === selected) {
+          button.className += ' calendar-day-selected';
+        }
+
+        button.addEventListener('click', function () {
+          hidden.value = iso;
+          if (selectedLabel) {
+            selectedLabel.textContent = formatIsoToBeDate(iso);
+          }
+          if (selectedPopoverLabel) {
+            selectedPopoverLabel.textContent = formatIsoToBeDate(iso);
+          }
+          closeCalendar();
+          renderCalendar();
+        });
+
+        grid.appendChild(button);
+      }
+    }
+
+    if (prevButton) {
+      prevButton.addEventListener('click', function () {
+        current = new Date(current.getFullYear(), current.getMonth() - 1, 1);
+        renderCalendar();
+      });
+    }
+
+    if (nextButton) {
+      nextButton.addEventListener('click', function () {
+        current = new Date(current.getFullYear(), current.getMonth() + 1, 1);
+        renderCalendar();
+      });
+    }
+
+    function openCalendar() {
+      document.querySelectorAll('[data-calendar-date].calendar-date-open').forEach(function (item) {
+        if (item !== calendar) {
+          item.classList.remove('calendar-date-open');
+        }
+      });
+      calendar.classList.add('calendar-date-open');
+    }
+
+    function closeCalendar() {
+      calendar.classList.remove('calendar-date-open');
+    }
+
+    if (trigger && popover) {
+      trigger.addEventListener('click', function (event) {
+        event.stopPropagation();
+        if (calendar.classList.contains('calendar-date-open')) {
+          closeCalendar();
+        } else {
+          openCalendar();
+        }
+      });
+
+      popover.addEventListener('click', function (event) {
+        event.stopPropagation();
+      });
+    }
+
+    renderCalendar();
+  });
+}
+
+document.addEventListener('click', function () {
+  document.querySelectorAll('[data-calendar-date].calendar-date-open').forEach(function (calendar) {
+    calendar.classList.remove('calendar-date-open');
+  });
+});
+
+document.addEventListener('keydown', function (event) {
+  if (event.key !== 'Escape') return;
+  document.querySelectorAll('[data-calendar-date].calendar-date-open').forEach(function (calendar) {
+    calendar.classList.remove('calendar-date-open');
   });
 });
 

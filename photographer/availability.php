@@ -53,6 +53,35 @@ $stmt = db()->prepare('SELECT * FROM photographer_availability WHERE photographe
 $stmt->execute([$pid]);
 $items = $stmt->fetchAll();
 
+$calendarRows = db_fetch_all('SELECT pa.available_date, pa.status,
+                              (SELECT b.status
+                               FROM bookings b
+                               WHERE b.photographer_id = pa.photographer_id
+                                 AND b.booking_date = pa.available_date
+                                 AND b.status IN ("pending","accepted","confirmed")
+                                 AND b.deleted_at IS NULL
+                               ORDER BY FIELD(b.status, "confirmed", "accepted", "pending")
+                               LIMIT 1) AS booking_status
+                              FROM photographer_availability pa
+                              WHERE pa.photographer_id = ?
+                                AND pa.available_date >= CURDATE()', [$pid]);
+$GLOBALS['calendar_date_statuses']['available_date'] = [];
+$calendarStatusPriority = ['unavailable' => 0, 'available' => 1, 'pending' => 2, 'booked' => 3];
+foreach ($calendarRows as $row) {
+    $dateKey = (string)$row['available_date'];
+    $statusKey = (string)$row['status'];
+    if ($row['booking_status'] === 'pending') {
+        $statusKey = 'pending';
+    } elseif (in_array((string)$row['booking_status'], ['accepted', 'confirmed'], true)) {
+        $statusKey = 'booked';
+    }
+    $currentStatus = $GLOBALS['calendar_date_statuses']['available_date'][$dateKey] ?? 'unavailable';
+    if (($calendarStatusPriority[$statusKey] ?? 0) >= ($calendarStatusPriority[$currentStatus] ?? 0)) {
+        $GLOBALS['calendar_date_statuses']['available_date'][$dateKey] = $statusKey;
+    }
+}
+$GLOBALS['calendar_date_labels']['available_date'] = 'วันที่รับงาน';
+
 $pageTitle = 'วันว่าง';
 include __DIR__ . '/../includes/header.php';
 ?>
@@ -63,7 +92,7 @@ include __DIR__ . '/../includes/header.php';
         <h1 class="mt-1 text-3xl font-black text-neutral-950">จัดการวันว่าง</h1>
     </div>
 
-    <form method="post" class="stock-card mt-6 grid gap-4 rounded-[1.5rem] p-5 md:grid-cols-5">
+    <form method="post" class="stock-card mt-6 grid gap-4 rounded-[1.5rem] p-5 md:grid-cols-[1.4fr_1fr_1fr_1fr_auto]">
         <?= csrf_field() ?>
 
         <?= be_date_input('available_date', '', 'stock-input rounded-2xl px-4 py-3 font-semibold', true, 'วันที่ พ.ศ. เช่น 05/05/2569') ?>

@@ -25,6 +25,36 @@ $districts = db()->prepare('SELECT d.* FROM photographer_service_areas psa JOIN 
 $districts->execute([$photographerId]);
 $districts = $districts->fetchAll();
 
+$calendarRows = db_fetch_all('SELECT pa.available_date, pa.status,
+                              (SELECT b.status
+                               FROM bookings b
+                               WHERE b.photographer_id = pa.photographer_id
+                                 AND b.booking_date = pa.available_date
+                                 AND b.status IN ("pending","accepted","confirmed")
+                                 AND b.deleted_at IS NULL
+                               ORDER BY FIELD(b.status, "confirmed", "accepted", "pending")
+                               LIMIT 1) AS booking_status
+                              FROM photographer_availability pa
+                              WHERE pa.photographer_id = ?
+                                AND pa.available_date >= CURDATE()', [$photographerId]);
+$GLOBALS['calendar_date_statuses']['booking_date'] = [];
+$GLOBALS['calendar_date_default_status']['booking_date'] = 'unavailable';
+$calendarStatusPriority = ['unavailable' => 0, 'available' => 1, 'pending' => 2, 'booked' => 3];
+foreach ($calendarRows as $row) {
+    $dateKey = (string)$row['available_date'];
+    $statusKey = (string)$row['status'];
+    if ($row['booking_status'] === 'pending') {
+        $statusKey = 'pending';
+    } elseif (in_array((string)$row['booking_status'], ['accepted', 'confirmed'], true)) {
+        $statusKey = 'booked';
+    }
+    $currentStatus = $GLOBALS['calendar_date_statuses']['booking_date'][$dateKey] ?? 'unavailable';
+    if (($calendarStatusPriority[$statusKey] ?? 0) >= ($calendarStatusPriority[$currentStatus] ?? 0)) {
+        $GLOBALS['calendar_date_statuses']['booking_date'][$dateKey] = $statusKey;
+    }
+}
+$GLOBALS['calendar_date_labels']['booking_date'] = 'วันที่ต้องการจ้าง';
+
 if (is_post()) {
     verify_csrf();
     $categoryId = (int)($_POST['category_id'] ?? 0);

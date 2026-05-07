@@ -613,6 +613,22 @@ function be_date_input_value(?string $value): string
 function be_date_input(string $name, ?string $value = '', string $classes = '', bool $required = false, string $placeholder = 'วว/ดด/พ.ศ.'): string
 {
     $isoDate = parse_be_date_to_iso($value);
+    $calendarNames = ['available_date', 'booking_date'];
+
+    if (in_array($name, $calendarNames, true)) {
+        $statuses = [];
+        if (isset($GLOBALS['calendar_date_statuses'][$name]) && is_array($GLOBALS['calendar_date_statuses'][$name])) {
+            $statuses = $GLOBALS['calendar_date_statuses'][$name];
+        }
+
+        $label = $name === 'booking_date' ? 'วันที่ต้องการจ้าง' : 'วันที่ต้องการจ้าง';
+        if (isset($GLOBALS['calendar_date_labels'][$name]) && is_string($GLOBALS['calendar_date_labels'][$name])) {
+            $label = $GLOBALS['calendar_date_labels'][$name];
+        }
+
+        return calendar_date_input($name, $isoDate, $statuses, $required, $label);
+    }
+
     $id = 'be_date_' . bin2hex(random_bytes(4));
     $requiredAttribute = '';
 
@@ -622,6 +638,34 @@ function be_date_input(string $name, ?string $value = '', string $classes = '', 
 
     return '<input type="text" data-be-date-visible data-target="' . h($id) . '" value="' . h(be_date_input_value($isoDate)) . '" placeholder="' . h($placeholder) . '" autocomplete="off" inputmode="numeric" class="' . h($classes) . '"' . $requiredAttribute . '>'
         . '<input type="hidden" id="' . h($id) . '" name="' . h($name) . '" value="' . h($isoDate) . '">';
+}
+
+function calendar_date_input(string $name, ?string $value = '', array $dateStatuses = [], bool $required = false, string $label = 'วันที่ต้องการจ้าง'): string
+{
+    $isoDate = parse_be_date_to_iso($value);
+    $id = 'calendar_date_' . bin2hex(random_bytes(4));
+    $requiredAttribute = $required ? ' required' : '';
+    $statusJson = h(json_encode($dateStatuses, JSON_UNESCAPED_UNICODE));
+    $defaultStatus = 'available';
+    if (isset($GLOBALS['calendar_date_default_status'][$name]) && is_string($GLOBALS['calendar_date_default_status'][$name])) {
+        $defaultStatus = $GLOBALS['calendar_date_default_status'][$name];
+    }
+
+    return '<div class="calendar-date" data-calendar-date data-target="' . h($id) . '" data-statuses="' . $statusJson . '" data-default-status="' . h($defaultStatus) . '">'
+        . '<input type="hidden" id="' . h($id) . '" name="' . h($name) . '" value="' . h($isoDate) . '"' . $requiredAttribute . '>'
+        . '<button type="button" class="calendar-date-trigger" data-calendar-trigger>'
+        . '<span><i class="fa-solid fa-calendar-days"></i><span><b>' . h($label) . '</b><small data-calendar-selected>' . h($isoDate ? format_be_date($isoDate) : 'เลือกวันที่') . '</small></span></span><i class="fa-solid fa-chevron-down"></i>'
+        . '</button>'
+        . '<div class="calendar-date-popover" data-calendar-popover>'
+        . '<div class="calendar-date-header">'
+        . '<div><p class="calendar-date-label">' . h($label) . '</p><p class="calendar-date-selected" data-calendar-selected-popover>' . h($isoDate ? format_be_date($isoDate) : 'ยังไม่ได้เลือกวันที่') . '</p></div>'
+        . '<div class="calendar-date-controls"><button type="button" data-calendar-prev aria-label="เดือนก่อนหน้า"><i class="fa-solid fa-chevron-left"></i></button><button type="button" data-calendar-next aria-label="เดือนถัดไป"><i class="fa-solid fa-chevron-right"></i></button></div>'
+        . '</div>'
+        . '<div class="calendar-date-month" data-calendar-month></div>'
+        . '<div class="calendar-date-weekdays"><span>อา</span><span>จ</span><span>อ</span><span>พ</span><span>พฤ</span><span>ศ</span><span>ส</span></div>'
+        . '<div class="calendar-date-grid" data-calendar-grid></div>'
+        . '<div class="calendar-date-legend"><span><i class="calendar-dot calendar-dot-available"></i>ว่าง</span><span><i class="calendar-dot calendar-dot-unavailable"></i>ไม่ว่าง</span><span><i class="calendar-dot calendar-dot-booked"></i>ถูกจอง</span><span><i class="calendar-dot calendar-dot-pending"></i>รอตอบรับ</span></div>'
+        . '</div></div>';
 }
 
 function booking_status_label(string $status): string

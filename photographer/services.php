@@ -65,7 +65,7 @@ include __DIR__ . '/../includes/header.php';
         </select>
 
         <input name="description" placeholder="รายละเอียด" class="stock-input rounded-2xl px-4 py-3 font-semibold md:col-span-2">
-        <input type="number" step="0.01" name="starting_price" placeholder="ราคาเริ่มต้น" class="stock-input rounded-2xl px-4 py-3 font-semibold">
+        <input type="number" step="0.01" name="starting_price" placeholder="ราคาเริ่มต้นโดยประมาณ (บาท)" class="stock-input rounded-2xl px-4 py-3 font-semibold">
 
         <label class="rounded-2xl bg-neutral-50 px-4 py-3 font-bold">
             <input type="checkbox" name="is_active" checked>
@@ -81,7 +81,7 @@ include __DIR__ . '/../includes/header.php';
                 <div>
                     <b><?= h($service['name']) ?></b>
                     <p class="text-sm text-neutral-600">
-                        <?= h($service['description']) ?> · <?= number_format((float)$service['starting_price']) ?> บาท
+                        <?= h($service['description']) ?> · ราคาเริ่มต้นโดยประมาณ <?= number_format((float)$service['starting_price']) ?> บาท
                     </p>
                 </div>
 
@@ -89,12 +89,15 @@ include __DIR__ . '/../includes/header.php';
                     <?= csrf_field() ?>
                     <input type="hidden" name="action" value="delete">
                     <input type="hidden" name="id" value="<?= (int)$service['id'] ?>">
-                    <button data-confirm="ลบบริการนี้?" class="rounded-full bg-red-50 px-3 py-2 text-sm font-black text-red-700">
+                    <button data-confirm="ลบบริการนี้?" class="btn-danger btn-sm">
                         <i class="fa-solid fa-trash mr-1"></i>ลบ
                     </button>
                 </form>
             </div>
         <?php endforeach; ?>
+    </div>
+    <div class="mt-6 rounded-[1.5rem] bg-red-50 p-5 text-sm font-black leading-7 text-red-700">
+        <i class="fa-solid fa-circle-info mr-2"></i>ราคาที่กรอกเป็นราคาเริ่มต้นโดยประมาณเท่านั้น เว็บไซต์ไม่รับชำระเงิน ลูกค้าและช่างภาพตกลงราคาและชำระเงินกันเองภายนอกระบบ
     </div>
 </section>
 

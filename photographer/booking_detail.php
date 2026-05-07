@@ -93,7 +93,7 @@ include __DIR__ . '/../includes/header.php';
                     <?= h(format_be_datetime($log['created_at'])) ?>
                     · <?= h($oldStatusText) ?>
                     → <?= h($log['new_status']) ?>
-                    โดย <?= h($changedByName) ?>
+                    ผู้ดำเนินการ: <?= h($changedByName) ?>
                     <?= h($log['note']) ?>
                 </div>
             <?php endforeach; ?>

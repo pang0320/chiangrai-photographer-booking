@@ -177,7 +177,7 @@ include __DIR__ . '/includes/header.php';
                         <span class="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-red-600 text-white"><i class="fa-solid fa-camera"></i></span>
                         <span>
                             <b class="block text-lg">ช่างภาพ</b>
-                            <span class="mt-1 block text-sm font-semibold text-neutral-500">สร้างโปรไฟล์ ผลงาน และพื้นที่ให้บริการ</span>
+                            <span class="mt-1 block text-sm font-semibold text-neutral-500">สร้างโปรไฟล์ ตัวอย่างงานถ่ายภาพ และพื้นที่ให้บริการ</span>
                         </span>
                     </span>
                 </label>

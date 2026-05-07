@@ -34,10 +34,27 @@ if (is_post()) {
         $targetId = (int)($_POST['target_id'] ?? $targetPhotographerId);
         $reason = trim((string)($_POST['reason'] ?? ''));
         $detail = trim((string)($_POST['detail'] ?? ''));
-        if ($reason !== '' && $targetId > 0) {
+        $reasonLength = strlen($reason);
+        if (function_exists('mb_strlen')) {
+            $reasonLength = mb_strlen($reason, 'UTF-8');
+        }
+        $detailLength = strlen($detail);
+        if (function_exists('mb_strlen')) {
+            $detailLength = mb_strlen($detail, 'UTF-8');
+        }
+
+        if ($reason === '' || $detail === '') {
+            flash('error', 'กรุณากรอกเหตุผลและรายละเอียดในการรายงาน');
+        } elseif ($reasonLength > 180) {
+            flash('error', 'เหตุผลในการรายงานต้องไม่เกิน 180 ตัวอักษร');
+        } elseif ($detailLength > 2000) {
+            flash('error', 'รายละเอียดในการรายงานต้องไม่เกิน 2,000 ตัวอักษร');
+        } elseif ($targetId > 0) {
             $stmt = db()->prepare('INSERT INTO reports (reporter_id, target_type, target_id, reason, detail, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, "pending", NOW(), NOW())');
             $stmt->execute([(int)$user['id'], $targetType, $targetId, $reason, $detail]);
             flash('success', 'ส่งรายงานให้ Admin ตรวจสอบแล้ว');
+        } else {
+            flash('error', 'ไม่พบข้อมูลที่ต้องการรายงาน');
         }
         clean_redirect('/photographer_detail.php', ['id' => $targetPhotographerId]);
     }
@@ -138,7 +155,8 @@ include __DIR__ . '/includes/header.php';
                     <?php if ((int)$profile['is_featured'] === 1): ?>
                         <span class="rounded-full bg-yellow-300 px-3 py-1 text-xs font-black text-neutral-950"><i class="fa-solid fa-award mr-1"></i>ช่างภาพแนะนำ</span>
                     <?php endif; ?>
-                    <span class="rounded-full bg-red-600 px-3 py-1 text-xs font-black text-white"><i class="fa-solid fa-star mr-1"></i><?= number_format((float)$profile['average_rating'], 1) ?> / <?= (int)$profile['total_reviews'] ?> รีวิว</span>
+                    <span class="rounded-full bg-red-600 px-3 py-1 text-xs font-black text-white"><i class="fa-solid fa-star mr-1"></i>คะแนนเฉลี่ย <?= number_format((float)$profile['average_rating'], 1) ?></span>
+                    <span class="rounded-full bg-white/14 px-3 py-1 text-xs font-black text-white"><i class="fa-solid fa-comment mr-1 text-red-300"></i>จำนวนรีวิว <?= number_format((int)$profile['total_reviews']) ?> รายการ</span>
                     <span class="rounded-full bg-white/14 px-3 py-1 text-xs font-black text-white"><i class="fa-solid fa-bolt mr-1 text-yellow-300"></i>ตอบกลับไว</span>
                     <?php if ((float)$profile['average_rating'] >= 4.8): ?>
                         <span class="rounded-full bg-white/14 px-3 py-1 text-xs font-black text-white"><i class="fa-solid fa-award mr-1 text-yellow-300"></i>คะแนนสูง</span>
@@ -149,13 +167,17 @@ include __DIR__ . '/includes/header.php';
                 <div class="mt-6 flex flex-wrap gap-3 text-sm font-black">
                     <span class="rounded-full bg-white/12 px-4 py-2"><i class="fa-solid fa-location-dot mr-2 text-red-300"></i><?= h($profile['district_name']) ?></span>
                     <span class="rounded-full bg-white/12 px-4 py-2"><i class="fa-solid fa-briefcase mr-2 text-red-300"></i><?= (int)$profile['experience_years'] ?> ปี</span>
-                    <span class="rounded-full bg-white/12 px-4 py-2"><i class="fa-solid fa-tag mr-2 text-red-300"></i>เริ่มต้น <?= number_format((float)$profile['starting_price']) ?> บาท</span>
+                    <span class="rounded-full bg-white/12 px-4 py-2"><i class="fa-solid fa-tag mr-2 text-red-300"></i>ราคาเริ่มต้นโดยประมาณ <?= number_format((float)$profile['starting_price']) ?> บาท</span>
                 </div>
                 <div class="mt-8 grid max-w-4xl gap-3 sm:grid-cols-4">
                     <div class="stat-pill rounded-3xl p-4"><p class="text-3xl font-black"><?= number_format((float)$profile['average_rating'], 1) ?></p><p class="text-sm font-bold text-white/68">คะแนนเฉลี่ย</p></div>
-                    <div class="stat-pill rounded-3xl p-4"><p class="text-3xl font-black"><?= (int)$profile['total_reviews'] ?></p><p class="text-sm font-bold text-white/68">รีวิว</p></div>
-                    <div class="stat-pill rounded-3xl p-4"><p class="text-3xl font-black"><?= (int)$completedJobs ?></p><p class="text-sm font-bold text-white/68">งานสำเร็จ</p></div>
-                    <div class="stat-pill rounded-3xl p-4"><p class="text-3xl font-black"><?= number_format((float)$profile['response_rate'], 0) ?>%</p><p class="text-sm font-bold text-white/68">อัตราตอบกลับ</p></div>
+                    <div class="stat-pill rounded-3xl p-4"><p class="text-3xl font-black"><?= (int)$profile['total_reviews'] ?></p><p class="text-sm font-bold text-white/68">จำนวนรีวิว</p></div>
+                    <div class="stat-pill rounded-3xl p-4"><p class="text-3xl font-black"><?= (int)$completedJobs ?></p><p class="text-sm font-bold text-white/68">จำนวนงานสำเร็จ</p></div>
+                    <div class="stat-pill rounded-3xl p-4">
+                        <p class="text-3xl font-black"><?= number_format((float)$profile['response_rate'], 0) ?>%</p>
+                        <p class="text-sm font-bold text-white/68">อัตราตอบกลับ</p>
+                        <p class="mt-2 text-xs font-bold leading-5 text-white/58">คิดจากคำขอที่ช่างภาพตอบรับหรือปฏิเสธ เทียบกับคำขอทั้งหมด</p>
+                    </div>
                 </div>
             </div>
             <div class="glass-panel rounded-[2rem] p-5 text-neutral-950 lg:sticky lg:top-24">
@@ -166,10 +188,14 @@ include __DIR__ . '/includes/header.php';
                         <p class="mt-1 text-sm font-semibold text-neutral-500"><?= h($profile['district_name']) ?></p>
                     </div>
                 </div>
-                <p class="mt-5 rounded-2xl bg-red-50 p-4 text-sm font-black text-red-700"><?= h(PAYMENT_DISCLAIMER) ?></p>
+                <p class="mt-5 rounded-2xl bg-red-50 p-4 text-sm font-black leading-7 text-red-700"><?= h(PAYMENT_DISCLAIMER) ?> ราคาเริ่มต้นโดยประมาณใช้เป็นข้อมูลประกอบการตัดสินใจ ลูกค้าและช่างภาพต้องตกลงราคาและการชำระเงินกันเองภายนอกระบบ</p>
                 <div class="mt-4 grid grid-cols-2 gap-2 text-sm font-black">
-                    <div class="rounded-2xl bg-neutral-50 p-3"><i class="fa-solid fa-heart mr-1 text-red-600"></i><?= (int)$favoriteCount ?> คนบันทึก</div>
-                    <div class="rounded-2xl bg-neutral-50 p-3"><i class="fa-solid fa-clock mr-1 text-red-600"></i><?= number_format((float)$profile['average_response_hours'], 1) ?> ชม.</div>
+                    <div class="info-tile rounded-2xl p-3"><p class="text-xs text-neutral-500"><i class="fa-solid fa-heart mr-1 text-red-600"></i>บันทึกเป็นรายการโปรด</p><b><?= (int)$favoriteCount ?> คน</b></div>
+                    <div class="info-tile rounded-2xl p-3">
+                        <p class="text-xs text-neutral-500"><i class="fa-solid fa-clock mr-1 text-red-600"></i>เวลาตอบกลับเฉลี่ย</p>
+                        <b><?= number_format((float)$profile['average_response_hours'], 1) ?> ชม.</b>
+                        <p class="mt-1 text-xs font-bold leading-5 text-neutral-500">คำนวณจากเวลาที่ใช้ตอบรับหรือปฏิเสธคำขอจอง</p>
+                    </div>
                 </div>
                 <div class="mt-4 grid grid-cols-2 gap-2">
                     <?php if ($profile['phone_public']): ?>
@@ -203,13 +229,13 @@ include __DIR__ . '/includes/header.php';
                     <?php endif; ?>
                 </div>
                 <div class="mt-4 grid gap-2">
-                    <?= clean_context_button('/customer/create_booking.php', ['photographer_id' => (int)$profile['id']], '<i class="fa-solid fa-calendar-check mr-2"></i>ส่งคำขอจอง', 'stock-button block w-full rounded-full px-5 py-3 text-center font-black') ?>
+                    <?= clean_context_button('/customer/create_booking.php', ['photographer_id' => (int)$profile['id']], '<i class="fa-solid fa-calendar-check mr-2"></i>ส่งคำขอจอง', 'btn-cta btn-lg block w-full text-center') ?>
                     <?php if ($currentUser && $currentUser['role_name'] === 'customer'): ?>
                         <form method="post">
                             <?= csrf_field() ?>
                             <input type="hidden" name="action" value="favorite">
                             <input type="hidden" name="photographer_id" value="<?= (int)$profile['id'] ?>">
-                            <button class="w-full rounded-full border border-neutral-200 px-5 py-3 text-center font-black hover:bg-neutral-950 hover:text-white">
+                            <button class="btn-muted btn-lg w-full text-center">
                                 <?php if ($isFavorite): ?>
                                     <i class="fa-solid fa-heart-crack mr-2 text-red-600"></i>ยกเลิกรายการโปรด
                                 <?php else: ?>
@@ -224,13 +250,20 @@ include __DIR__ . '/includes/header.php';
                     <a target="_blank" href="https://www.facebook.com/sharer/sharer.php?u=<?= urlencode($shareUrl) ?>" class="rounded-full bg-[#1877f2] px-3 py-2 text-center text-xs font-black text-white"><i class="fa-brands fa-facebook mr-1"></i>แชร์</a>
                     <a target="_blank" href="https://social-plugins.line.me/lineit/share?url=<?= urlencode($shareUrl) ?>" class="rounded-full bg-[#06c755] px-3 py-2 text-center text-xs font-black text-white"><i class="fa-brands fa-line mr-1"></i>LINE</a>
                 </div>
-                <form method="post" class="mt-4 grid gap-2 rounded-2xl bg-neutral-50 p-3">
+                <form method="post" class="mt-4 grid gap-3 rounded-2xl bg-neutral-50 p-3">
                     <?= csrf_field() ?>
                     <input type="hidden" name="action" value="report_photographer">
                     <input type="hidden" name="photographer_id" value="<?= (int)$profile['id'] ?>">
                     <input type="hidden" name="target_id" value="<?= (int)$profile['id'] ?>">
-                    <input name="reason" required placeholder="เหตุผลรายงานโปรไฟล์" class="stock-input rounded-xl px-3 py-2 text-sm">
-                    <button class="rounded-xl bg-red-50 px-3 py-2 text-sm font-black text-red-700"><i class="fa-solid fa-triangle-exclamation mr-1"></i>รายงานโปรไฟล์</button>
+                    <label class="grid gap-1 text-xs font-black text-neutral-600">
+                        <span><i class="fa-solid fa-triangle-exclamation mr-1 text-red-600"></i>เหตุผลในการรายงาน</span>
+                        <input name="reason" required maxlength="180" placeholder="เช่น ข้อมูลติดต่อไม่ถูกต้อง" class="stock-input rounded-xl px-3 py-2 text-sm">
+                    </label>
+                    <label class="grid gap-1 text-xs font-black text-neutral-600">
+                        <span><i class="fa-solid fa-pen-to-square mr-1 text-red-600"></i>รายละเอียดเพิ่มเติม</span>
+                        <textarea name="detail" required maxlength="2000" rows="3" placeholder="พิมพ์รายละเอียดปัญหาที่พบ เพื่อให้ผู้ดูแลตรวจสอบได้ชัดเจน" class="stock-input rounded-xl px-3 py-2 text-sm"></textarea>
+                    </label>
+                    <button class="btn-danger btn-sm rounded-xl"><i class="fa-solid fa-triangle-exclamation"></i>รายงานโปรไฟล์</button>
                 </form>
             </div>
         </div>
@@ -243,15 +276,15 @@ include __DIR__ . '/includes/header.php';
             <div>
                 <div class="flex items-end justify-between gap-4">
                     <div>
-                        <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">แกลเลอรีผลงาน</p>
-                        <h2 class="mt-1 text-3xl font-black text-neutral-950">ผลงานภาพถ่าย</h2>
+                        <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">อัลบั้มตัวอย่างงาน</p>
+                        <h2 class="mt-1 text-3xl font-black text-neutral-950">ตัวอย่างงานถ่ายภาพ</h2>
                     </div>
                 </div>
                 <?php if (!$portfolio): ?>
                     <div class="empty-state mt-6 rounded-[2rem] p-10 text-center">
                         <i class="fa-solid fa-images text-4xl text-red-600"></i>
-                        <h3 class="mt-3 text-xl font-black">ยังไม่มีผลงาน</h3>
-                        <p class="mt-2 text-neutral-600">เมื่อช่างภาพอัปโหลดผลงาน รูปจะแสดงในส่วนนี้</p>
+                        <h3 class="mt-3 text-xl font-black">ยังไม่มีตัวอย่างงานถ่ายภาพ</h3>
+                        <p class="mt-2 text-neutral-600">เมื่อช่างภาพอัปโหลดอัลบั้มตัวอย่างงาน รูปจะแสดงในส่วนนี้</p>
                     </div>
                 <?php endif; ?>
                 <div class="masonry-gallery mt-6">
@@ -289,7 +322,7 @@ include __DIR__ . '/includes/header.php';
                         <div class="stock-card stock-card-hover rounded-[1.5rem] p-6">
                             <div class="flex items-start justify-between gap-4">
                                 <h3 class="font-black text-neutral-950"><i class="fa-solid <?= h($serviceIcon) ?> mr-2 text-red-600"></i><?= h($s['name']) ?></h3>
-                                <span class="rounded-full bg-neutral-950 px-3 py-1 text-xs font-black text-white"><?= number_format((float)$s['starting_price']) ?> ฿</span>
+                                <span class="rounded-full bg-neutral-950 px-3 py-1 text-xs font-black text-white">ราคาเริ่มต้นโดยประมาณ <?= number_format((float)$s['starting_price']) ?> บาท</span>
                             </div>
                             <p class="mt-3 text-sm leading-6 text-neutral-600"><?= h($s['description']) ?></p>
                         </div>
@@ -312,7 +345,7 @@ include __DIR__ . '/includes/header.php';
                         <div class="text-center">
                             <p class="text-6xl font-black text-neutral-950"><?= number_format((float)$profile['average_rating'], 1) ?></p>
                             <p class="mt-2 text-red-600"><?= str_repeat('★', (int)round((float)$profile['average_rating'])) ?></p>
-                            <p class="mt-1 text-sm font-bold text-neutral-500"><?= (int)$profile['total_reviews'] ?> รีวิว</p>
+                            <p class="mt-1 text-sm font-bold text-neutral-500">จำนวนรีวิว <?= number_format((int)$profile['total_reviews']) ?> รายการ</p>
                         </div>
                         <div class="grid gap-3">
                             <?php
@@ -336,7 +369,7 @@ include __DIR__ . '/includes/header.php';
                             <?php foreach ([['คุณภาพงาน', $ratingQuality], ['การสื่อสาร', $ratingCommunication], ['ตรงเวลา', $ratingPunctuality], ['ความเป็นมืออาชีพ', $ratingProfessional]] as $ratingRow): ?>
                                 <?php $ratingPercent = min(100, max(0, ((float)$ratingRow[1] / 5) * 100)); ?>
                                 <div>
-                                    <div class="mb-1 flex justify-between text-sm font-black"><span><?= h($ratingRow[0]) ?></span><span><?= number_format((float)$ratingRow[1], 1) ?></span></div>
+	                                    <div class="mb-1 flex justify-between text-sm font-black"><span>คะแนน: <?= h($ratingRow[0]) ?></span><span><?= number_format((float)$ratingRow[1], 1) ?>/5</span></div>
                                     <div class="rating-bar"><span style="width: <?= number_format($ratingPercent, 0) ?>%"></span></div>
                                 </div>
                             <?php endforeach; ?>
@@ -348,17 +381,26 @@ include __DIR__ . '/includes/header.php';
                         <article class="stock-card rounded-[1.5rem] p-6">
                             <div class="flex flex-wrap items-center justify-between gap-3">
                                 <b class="text-neutral-950"><?= h($r['customer_name']) ?></b>
-                                <span class="text-red-600"><?= str_repeat('★', (int)$r['rating_overall']) ?></span>
+                                <span class="text-red-600" title="คะแนนรวม <?= (int)$r['rating_overall'] ?> จาก 5"><?= str_repeat('★', (int)$r['rating_overall']) ?></span>
                             </div>
                             <p class="mt-3 leading-7 text-neutral-700"><?= nl2br(h($r['comment'])) ?></p>
                             <?php if ($currentUser): ?>
-                                <form method="post" class="mt-4 flex flex-wrap gap-2">
+                                <form method="post" class="mt-4 grid gap-3 rounded-2xl bg-neutral-50 p-4">
                                     <?= csrf_field() ?>
                                     <input type="hidden" name="action" value="report_review">
                                     <input type="hidden" name="photographer_id" value="<?= (int)$profile['id'] ?>">
                                     <input type="hidden" name="target_id" value="<?= (int)$r['id'] ?>">
-                                    <input name="reason" required placeholder="เหตุผลรายงานรีวิว" class="stock-input rounded-xl px-3 py-2 text-sm">
-                                    <button class="rounded-xl bg-red-50 px-3 py-2 text-sm font-black text-red-700"><i class="fa-solid fa-triangle-exclamation mr-1"></i>รายงานรีวิว</button>
+                                    <div class="grid gap-3 md:grid-cols-2">
+                                        <label class="grid gap-1 text-xs font-black text-neutral-600">
+                                            <span><i class="fa-solid fa-triangle-exclamation mr-1 text-red-600"></i>เหตุผลในการรายงาน</span>
+                                            <input name="reason" required maxlength="180" placeholder="เช่น รีวิวไม่เหมาะสม" class="stock-input rounded-xl px-3 py-2 text-sm">
+                                        </label>
+                                        <label class="grid gap-1 text-xs font-black text-neutral-600">
+                                            <span><i class="fa-solid fa-pen-to-square mr-1 text-red-600"></i>รายละเอียดเพิ่มเติม</span>
+                                            <textarea name="detail" required maxlength="2000" rows="2" placeholder="พิมพ์รายละเอียดปัญหาที่ต้องการให้ผู้ดูแลตรวจสอบ" class="stock-input rounded-xl px-3 py-2 text-sm"></textarea>
+                                        </label>
+                                    </div>
+                                    <button class="btn-danger btn-sm justify-self-start rounded-xl"><i class="fa-solid fa-triangle-exclamation"></i>รายงานรีวิว</button>
                                 </form>
                             <?php endif; ?>
                         </article>
@@ -441,7 +483,7 @@ include __DIR__ . '/includes/header.php';
         <div class="stock-card rounded-[1.75rem] p-7">
             <p class="section-kicker">คำถามที่พบบ่อย</p>
             <h2 class="mt-1 text-2xl font-black text-neutral-950">การจองและติดต่อ</h2>
-            <p class="mt-4 leading-7 text-neutral-600">ลูกค้าต้องเข้าสู่ระบบก่อนส่งคำขอจอง หลังจากช่างภาพตอบรับ สามารถติดต่อผ่านช่องทางภายนอกเพื่อตกลงรายละเอียดได้โดยตรง</p>
+            <p class="mt-4 leading-7 text-neutral-600">ลูกค้าต้องเข้าสู่ระบบก่อนส่งคำขอจอง หลังจากช่างภาพตอบรับ สามารถติดต่อผ่านช่องทางภายนอกเพื่อตกลงรายละเอียด ราคา และการชำระเงินได้โดยตรง</p>
         </div>
         <div class="stock-card rounded-[1.75rem] bg-red-50 p-7">
             <p class="section-kicker">หมายเหตุสำคัญ</p>

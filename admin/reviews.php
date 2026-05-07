@@ -90,14 +90,14 @@ include __DIR__ . '/../includes/header.php';
             <option value="hidden" <?php if ($status === 'hidden'): ?>selected<?php endif; ?>>ซ่อน</option>
         </select>
 
-        <select name="rating" class="stock-input rounded-2xl px-4 py-3 font-semibold">
-            <option value="0">ทุกคะแนน</option>
-            <?php for ($i = 5; $i >= 1; $i--): ?>
-                <option value="<?= $i ?>" <?php if ($rating === $i): ?>selected<?php endif; ?>>
-                    <?= $i ?>
-                </option>
-            <?php endfor; ?>
-        </select>
+	        <select name="rating" class="stock-input rounded-2xl px-4 py-3 font-semibold">
+	            <option value="0">ทุกคะแนนรวม</option>
+	            <?php for ($i = 5; $i >= 1; $i--): ?>
+	                <option value="<?= $i ?>" <?php if ($rating === $i): ?>selected<?php endif; ?>>
+	                    <?= $i ?> คะแนน
+	                </option>
+	            <?php endfor; ?>
+	        </select>
 
         <button class="stock-button rounded-2xl px-5 py-3 font-black"><i class="fa-solid fa-magnifying-glass mr-2"></i>ค้นหา</button>
     </form>
@@ -108,7 +108,7 @@ include __DIR__ . '/../includes/header.php';
                 <tr>
                     <th>ลูกค้า</th>
                     <th>ช่างภาพ</th>
-                    <th>คะแนน</th>
+	                    <th>คะแนนรวม</th>
                     <th>คอมเมนต์</th>
                     <th>สถานะ</th>
                     <th>จัดการ</th>
@@ -119,16 +119,16 @@ include __DIR__ . '/../includes/header.php';
                     <tr>
                         <td><?= h($review['customer_name']) ?></td>
                         <td><?= h($review['display_name']) ?></td>
-                        <td><?= (int)$review['rating_overall'] ?></td>
+	                        <td><?= (int)$review['rating_overall'] ?> คะแนน</td>
                         <td><?= h($review['comment']) ?></td>
                         <td><?= status_badge($review['status']) ?></td>
                         <td>
                             <form method="post" class="flex flex-wrap gap-2">
                                 <?= csrf_field() ?>
                                 <input type="hidden" name="id" value="<?= (int)$review['id'] ?>">
-                                <button name="action" value="show" class="rounded-full bg-emerald-50 px-3 py-1.5 font-black text-emerald-700"><i class="fa-solid fa-eye mr-1"></i>แสดง</button>
-                                <button name="action" value="hide" class="rounded-full bg-amber-50 px-3 py-1.5 font-black text-amber-700"><i class="fa-solid fa-eye-slash mr-1"></i>ซ่อน</button>
-                                <button data-confirm="ลบรีวิวนี้?" name="action" value="delete" class="rounded-full bg-red-50 px-3 py-1.5 font-black text-red-700"><i class="fa-solid fa-trash mr-1"></i>ลบ</button>
+                                <button name="action" value="show" class="btn-success btn-sm"><i class="fa-solid fa-eye"></i>แสดง</button>
+                                <button name="action" value="hide" class="btn-muted btn-sm"><i class="fa-solid fa-eye-slash"></i>ซ่อน</button>
+                                <button data-confirm="ลบรีวิวนี้?" name="action" value="delete" class="btn-danger btn-sm"><i class="fa-solid fa-trash"></i>ลบ</button>
                             </form>
                         </td>
                     </tr>

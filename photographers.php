@@ -116,20 +116,43 @@ $photographers = $stmt->fetchAll();
 $nearby = [];
 if (!$photographers && $districtId > 0) {
     $radius = (float)setting('nearby_radius_km', '30');
-    $nearSql = "SELECT p.*, d.district_name,
-        (6371 * ACOS(COS(RADIANS(src.latitude)) * COS(RADIANS(d.latitude)) * COS(RADIANS(d.longitude) - RADIANS(src.longitude)) + SIN(RADIANS(src.latitude)) * SIN(RADIANS(d.latitude)))) AS distance_km,
-        (SELECT image_path FROM photographer_portfolios pp WHERE pp.photographer_id = p.id AND pp.deleted_at IS NULL ORDER BY pp.is_featured DESC, pp.sort_order ASC LIMIT 1) featured_image
+    $nearCategorySql = '';
+    $nearParams = [$districtId];
+
+    if ($categoryId > 0) {
+        $nearCategorySql = ' AND EXISTS (
+            SELECT 1
+            FROM photographer_services ps_filter
+            WHERE ps_filter.photographer_id = p.id
+              AND ps_filter.category_id = ?
+              AND ps_filter.is_active = 1
+        )';
+        $nearParams[] = $categoryId;
+    }
+
+    $nearParams[] = $radius;
+    $nearSql = "SELECT p.*, main_d.district_name,
+        MIN(6371 * ACOS(LEAST(1, GREATEST(-1,
+            COS(RADIANS(src.latitude)) * COS(RADIANS(d.latitude)) * COS(RADIANS(d.longitude) - RADIANS(src.longitude)) +
+            SIN(RADIANS(src.latitude)) * SIN(RADIANS(d.latitude))
+        )))) AS distance_km,
+        (SELECT image_path FROM photographer_portfolios pp WHERE pp.photographer_id = p.id AND pp.deleted_at IS NULL ORDER BY pp.is_featured DESC, pp.sort_order ASC LIMIT 1) featured_image,
+        (SELECT GROUP_CONCAT(DISTINCT d2.district_name ORDER BY d2.district_name SEPARATOR ', ') FROM photographer_service_areas psa2 JOIN districts d2 ON d2.id = psa2.district_id WHERE psa2.photographer_id = p.id AND psa2.is_active = 1) areas,
+        (SELECT GROUP_CONCAT(DISTINCT sc.name ORDER BY sc.sort_order SEPARATOR ', ') FROM photographer_services ps JOIN service_categories sc ON sc.id = ps.category_id WHERE ps.photographer_id = p.id AND ps.is_active = 1) services
         FROM districts src
         JOIN photographer_service_areas psa ON psa.district_id <> src.id AND psa.is_active = 1
         JOIN photographer_profiles p ON p.id = psa.photographer_id AND p.approval_status = 'approved' AND p.is_available = 1 AND p.deleted_at IS NULL
         JOIN users u ON u.id = p.user_id AND u.status = 'active' AND u.deleted_at IS NULL
         JOIN districts d ON d.id = psa.district_id
+        LEFT JOIN districts main_d ON main_d.id = p.main_district_id
         WHERE src.id = ?
+        {$nearCategorySql}
+        GROUP BY p.id
         HAVING distance_km <= ?
         ORDER BY distance_km ASC, p.average_rating DESC
         LIMIT 6";
     $nearStmt = db()->prepare($nearSql);
-    $nearStmt->execute([$districtId, $radius]);
+    $nearStmt->execute($nearParams);
     $nearby = $nearStmt->fetchAll();
 }
 
@@ -160,11 +183,11 @@ include __DIR__ . '/includes/header.php';
             <div>
                 <p class="text-sm font-black uppercase tracking-[0.24em] text-red-400">ค้นหาช่างภาพ</p>
                 <h1 class="mt-3 text-4xl font-black tracking-tight sm:text-6xl">ค้นหาช่างภาพเชียงราย</h1>
-                <p class="mt-4 max-w-2xl text-lg font-semibold leading-8 text-white/70">ค้นหาจากอำเภอ ประเภทงาน วันที่ว่าง คะแนน รีวิว ชื่อ และราคาเริ่มต้น พร้อมแนะนำช่างภาพใกล้เคียงเมื่อพื้นที่ที่เลือกยังไม่มีผลลัพธ์</p>
+	                <p class="mt-4 max-w-2xl text-lg font-semibold leading-8 text-white/70">ค้นหาจากอำเภอ ประเภทงาน วันที่ว่าง คะแนนเฉลี่ย จำนวนรีวิว ชื่อ และราคาเริ่มต้นโดยประมาณ พร้อมแนะนำช่างภาพใกล้เคียงเมื่อพื้นที่ที่เลือกยังไม่มีผลลัพธ์</p>
                 <div class="mt-6 flex flex-wrap gap-2">
-                    <span class="premium-chip"><i class="fa-solid fa-shield-halved text-red-600"></i> โปรไฟล์ผ่านอนุมัติ</span>
-                    <span class="premium-chip"><i class="fa-solid fa-location-crosshairs text-red-600"></i> แนะนำพื้นที่ใกล้เคียง</span>
-                    <span class="premium-chip"><i class="fa-solid fa-credit-card text-red-600"></i> ไม่มีรับชำระเงิน</span>
+                    <span class="info-chip"><i class="fa-solid fa-shield-halved text-red-600"></i> โปรไฟล์ผ่านอนุมัติ</span>
+                    <span class="info-chip"><i class="fa-solid fa-location-crosshairs text-red-600"></i> แนะนำพื้นที่ใกล้เคียง</span>
+                    <span class="info-chip"><i class="fa-solid fa-credit-card text-red-600"></i> ไม่มีรับชำระเงิน</span>
                 </div>
             </div>
             <div class="stock-card rounded-[2rem] bg-white/95 p-5 text-neutral-950">
@@ -178,15 +201,19 @@ include __DIR__ . '/includes/header.php';
                     <?php endif; ?>
                 </p>
                 <?php
-                $summaryDate = '-';
+                $summaryDate = 'ยังไม่เลือก';
                 if ($availableDate !== '') {
-                    $summaryDate = $availableDate;
+                    $summaryDate = format_be_date($availableDate);
+                }
+                $summaryRating = 'ทุกคะแนนเฉลี่ย';
+                if ($minRating > 0) {
+                    $summaryRating = number_format((float)$minRating, 1) . ' คะแนนขึ้นไป';
                 }
                 ?>
-                <div class="mt-4 grid grid-cols-3 gap-2 text-center">
-                    <div class="rounded-2xl bg-neutral-50 p-3"><b><?= number_format(count($photographers)) ?></b><p class="text-xs font-bold text-neutral-500">หน้านี้</p></div>
-                    <div class="rounded-2xl bg-neutral-50 p-3"><b><?= number_format((float)$minRating, 1) ?></b><p class="text-xs font-bold text-neutral-500">ขั้นต่ำ</p></div>
-                    <div class="rounded-2xl bg-neutral-50 p-3"><b><?= h($summaryDate) ?></b><p class="text-xs font-bold text-neutral-500">วันที่</p></div>
+                <div class="mt-4 grid gap-2 text-center sm:grid-cols-3">
+                    <div class="info-tile rounded-2xl p-3"><b><?= number_format(count($photographers)) ?></b><p class="text-xs font-bold text-neutral-500">จำนวนช่างภาพในหน้านี้</p></div>
+                    <div class="info-tile rounded-2xl p-3"><b><?= h($summaryRating) ?></b><p class="text-xs font-bold text-neutral-500">คะแนนขั้นต่ำ</p></div>
+                    <div class="info-tile rounded-2xl p-3"><b><?= h($summaryDate) ?></b><p class="text-xs font-bold text-neutral-500">วันที่ต้องการจ้าง</p></div>
                 </div>
             </div>
         </div>
@@ -232,8 +259,8 @@ include __DIR__ . '/includes/header.php';
                         <?php endforeach; ?>
                     </select>
                     <?= be_date_input('available_date', $availableDate, 'stock-input w-full rounded-[1.2rem] px-4 py-3 font-semibold', false, 'วันที่ต้องการจ้าง') ?>
-                    <select name="min_rating" class="stock-input rounded-[1.2rem] px-4 py-3 font-semibold">
-                        <option value="0">ทุกคะแนน</option>
+	                    <select name="min_rating" class="stock-input rounded-[1.2rem] px-4 py-3 font-semibold">
+	                        <option value="0">ทุกคะแนนเฉลี่ย</option>
                         <?php for ($i = 5; $i >= 1; $i--): ?>
                             <?php
                             $isSelectedRating = false;
@@ -241,7 +268,7 @@ include __DIR__ . '/includes/header.php';
                                 $isSelectedRating = true;
                             }
                             ?>
-                            <option value="<?= $i ?>" <?php if ($isSelectedRating): ?>selected<?php endif; ?>><?= $i ?> ดาวขึ้นไป</option>
+                            <option value="<?= $i ?>" <?php if ($isSelectedRating): ?>selected<?php endif; ?>><?= $i ?> คะแนนขึ้นไป</option>
                         <?php endfor; ?>
                     </select>
                     <?php
@@ -250,13 +277,16 @@ include __DIR__ . '/includes/header.php';
                         $maxPriceValue = (string)$maxPrice;
                     }
                     ?>
-                    <label class="icon-input block"><i class="fa-solid fa-tag"></i><input type="number" min="0" name="max_price" value="<?= h($maxPriceValue) ?>" placeholder="ราคาไม่เกิน" class="stock-input w-full rounded-[1.2rem] px-4 py-3 font-semibold"></label>
+                    <label class="icon-input block"><i class="fa-solid fa-tag"></i><input type="number" min="0" name="max_price" value="<?= h($maxPriceValue) ?>" placeholder="ราคาเริ่มต้นโดยประมาณไม่เกิน (บาท)" class="stock-input w-full rounded-[1.2rem] px-4 py-3 font-semibold"></label>
                     <select name="sort" class="stock-input rounded-[1.2rem] px-4 py-3 font-semibold">
-                        <option value="rating" <?php if ($sort === 'rating'): ?>selected<?php endif; ?>>คะแนนสูงสุด</option>
-                        <option value="reviews" <?php if ($sort === 'reviews'): ?>selected<?php endif; ?>>รีวิวมากที่สุด</option>
+	                        <option value="rating" <?php if ($sort === 'rating'): ?>selected<?php endif; ?>>คะแนนเฉลี่ยสูงสุด</option>
+	                        <option value="reviews" <?php if ($sort === 'reviews'): ?>selected<?php endif; ?>>จำนวนรีวิวมากที่สุด</option>
                         <option value="newest" <?php if ($sort === 'newest'): ?>selected<?php endif; ?>>ใหม่ล่าสุด</option>
-                        <option value="price_low" <?php if ($sort === 'price_low'): ?>selected<?php endif; ?>>ราคาเริ่มต้นต่ำสุด</option>
+                        <option value="price_low" <?php if ($sort === 'price_low'): ?>selected<?php endif; ?>>ราคาเริ่มต้นโดยประมาณต่ำสุด</option>
                     </select>
+                    <div class="rounded-2xl bg-red-50 p-4 text-sm font-black leading-6 text-red-700">
+                        <i class="fa-solid fa-circle-info mr-2"></i>ราคาเป็นราคาเริ่มต้นโดยประมาณ เว็บไซต์ไม่รับชำระเงิน ลูกค้าและช่างภาพตกลงราคากันภายนอกระบบ
+                    </div>
                     <button class="stock-button rounded-[1.2rem] px-5 py-3 font-black"><i class="fa-solid fa-magnifying-glass mr-2"></i>ค้นหา</button>
                 </div>
             </form>
@@ -288,12 +318,12 @@ include __DIR__ . '/includes/header.php';
             </div>
 
             <div class="mt-4 flex flex-wrap gap-2">
-                <?php if ($keyword !== ''): ?><span class="premium-chip">ชื่อ: <?= h($keyword) ?></span><?php endif; ?>
-                <?php if ($selectedDistrictName !== ''): ?><span class="premium-chip">อำเภอ: <?= h($selectedDistrictName) ?></span><?php endif; ?>
-                <?php if ($selectedCategoryName !== ''): ?><span class="premium-chip">ประเภท: <?= h($selectedCategoryName) ?></span><?php endif; ?>
-                <?php if ($availableDate !== ''): ?><span class="premium-chip">วันที่: <?= h($availableDate) ?></span><?php endif; ?>
-                <?php if ($minRating > 0): ?><span class="premium-chip"><?= number_format($minRating, 0) ?> ดาวขึ้นไป</span><?php endif; ?>
-                <?php if ($maxPrice > 0): ?><span class="premium-chip">ไม่เกิน <?= number_format($maxPrice) ?> บาท</span><?php endif; ?>
+                <?php if ($keyword !== ''): ?><span class="info-chip">ชื่อช่างภาพ: <?= h($keyword) ?></span><?php endif; ?>
+                <?php if ($selectedDistrictName !== ''): ?><span class="info-chip">อำเภอ: <?= h($selectedDistrictName) ?></span><?php endif; ?>
+                <?php if ($selectedCategoryName !== ''): ?><span class="info-chip">ประเภทงาน: <?= h($selectedCategoryName) ?></span><?php endif; ?>
+                <?php if ($availableDate !== ''): ?><span class="info-chip">วันที่ต้องการจ้าง: <?= h(format_be_date($availableDate)) ?></span><?php endif; ?>
+                <?php if ($minRating > 0): ?><span class="info-chip">คะแนนเฉลี่ยขั้นต่ำ: <?= number_format($minRating, 0) ?> คะแนนขึ้นไป</span><?php endif; ?>
+                <?php if ($maxPrice > 0): ?><span class="info-chip">ราคาเริ่มต้นโดยประมาณไม่เกิน: <?= number_format($maxPrice) ?> บาท</span><?php endif; ?>
             </div>
 
             <?php if ($photographers): ?>
@@ -311,18 +341,43 @@ include __DIR__ . '/includes/header.php';
                 <div class="empty-state mt-6 rounded-[2rem] p-10 text-center">
                     <div class="mx-auto grid h-20 w-20 place-items-center rounded-3xl bg-red-50 text-3xl text-red-600"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
                     <h2 class="mt-4 text-2xl font-black text-neutral-950">ไม่พบช่างภาพตามเงื่อนไข</h2>
-                    <p class="mx-auto mt-2 max-w-md text-neutral-600">ลองปรับตัวกรอง หรือดูช่างภาพใกล้เคียงที่ระบบคำนวณจากพิกัดอำเภอให้</p>
+                    <p class="mx-auto mt-2 max-w-md text-neutral-600">
+                        <?php if ($selectedDistrictName !== ''): ?>
+                            ไม่พบช่างภาพในอำเภอ<?= h($selectedDistrictName) ?>ตามเงื่อนไขนี้
+                        <?php else: ?>
+                            ลองปรับตัวกรอง หรือดูช่างภาพใกล้เคียงที่ระบบคำนวณจากพิกัดอำเภอให้
+                        <?php endif; ?>
+                    </p>
                     <?= clean_context_button($photographerSearchPath, [], '<i class="fa-solid fa-xmark mr-2"></i>ล้างตัวกรอง', 'mt-5 inline-flex rounded-full bg-neutral-950 px-5 py-3 font-black text-white hover:bg-red-600') ?>
                 </div>
                 <?php if ($nearby): ?>
                     <div class="mt-10">
                         <p class="section-kicker">Nearby recommendation</p>
                         <h2 class="mt-1 text-2xl font-black text-neutral-950">ช่างภาพใกล้เคียงที่แนะนำ</h2>
+                        <div class="mt-4 flex flex-wrap gap-2">
+                            <span class="info-chip"><i class="fa-solid fa-location-dot text-red-600"></i>อำเภอที่เลือก: <?= h($selectedDistrictName) ?></span>
+                            <?php if ($selectedCategoryName !== ''): ?>
+                                <span class="info-chip"><i class="fa-solid fa-layer-group text-red-600"></i>ล็อกประเภทงาน: <?= h($selectedCategoryName) ?></span>
+                            <?php endif; ?>
+                            <span class="info-chip"><i class="fa-solid fa-route text-red-600"></i>รัศมีแนะนำ: ไม่เกิน <?= number_format($radius, 0) ?> กม.</span>
+                        </div>
+                        <div class="mt-4 rounded-[1.5rem] bg-amber-50 p-5 text-sm font-black leading-7 text-amber-800">
+                            <i class="fa-solid fa-circle-info mr-2"></i>
+                            ระยะทางเป็นค่าประมาณจากพิกัด latitude/longitude ของอำเภอที่เลือกไปยังอำเภอให้บริการที่ใกล้ที่สุดของช่างภาพ ไม่ใช่ระยะทางถนนจริง
+                        </div>
                     </div>
                     <div class="mt-6 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
                         <?php foreach ($nearby as $p): ?>
                             <?php include __DIR__ . '/includes/photographer_card.php'; ?>
                         <?php endforeach; ?>
+                    </div>
+                <?php elseif ($districtId > 0): ?>
+                    <div class="mt-8 rounded-[1.5rem] bg-neutral-50 p-6 text-center font-bold text-neutral-600">
+                        <i class="fa-solid fa-location-crosshairs mb-2 block text-3xl text-red-600"></i>
+                        ยังไม่พบช่างภาพใกล้เคียงในรัศมี <?= number_format($radius, 0) ?> กม.
+                        <?php if ($selectedCategoryName !== ''): ?>
+                            สำหรับประเภทงาน<?= h($selectedCategoryName) ?>
+                        <?php endif; ?>
                     </div>
                 <?php endif; ?>
             <?php endif; ?>

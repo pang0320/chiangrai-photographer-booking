@@ -38,7 +38,7 @@ include __DIR__ . '/../includes/header.php';
                 <form method="post" class="mt-3">
                     <?= csrf_field() ?>
                     <input type="hidden" name="photographer_id" value="<?= (int)$p['id'] ?>">
-                    <button data-confirm="ยกเลิกรายการโปรด?" class="w-full rounded-full bg-red-50 px-4 py-3 font-black text-red-700"><i class="fa-solid fa-heart-crack mr-2"></i>ยกเลิกรายการโปรด</button>
+                    <button data-confirm="ยกเลิกรายการโปรด?" class="btn-muted btn-lg w-full"><i class="fa-solid fa-heart-crack mr-2"></i>ยกเลิกรายการโปรด</button>
                 </form>
             </div>
         <?php endforeach; ?>

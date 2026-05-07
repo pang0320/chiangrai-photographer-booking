@@ -3,7 +3,7 @@ require_once __DIR__ . '/../includes/functions.php';
 requireRole('admin');
 
 $allowedStatuses = ['pending', 'accepted', 'rejected', 'cancelled', 'confirmed', 'completed'];
-$cleanContext = clean_context_init(['status', 'photographer_id', 'customer_id', 'date']);
+$cleanContext = clean_context_init(['status', 'photographer_id', 'customer_id', 'date', 'tab']);
 
 if (is_post()) {
     verify_csrf();
@@ -81,10 +81,20 @@ $selectedStatus = (string)clean_context_value($cleanContext, 'status', '');
 $selectedPhotographerId = (string)clean_context_value($cleanContext, 'photographer_id', '');
 $selectedCustomerId = (string)clean_context_value($cleanContext, 'customer_id', '');
 $selectedDate = (string)clean_context_value($cleanContext, 'date', '');
+$tab = (string)clean_context_value($cleanContext, 'tab', 'active');
+$allowedTabs = ['all', 'active', 'completed'];
+
+if (!in_array($tab, $allowedTabs, true)) {
+    $tab = 'active';
+}
 
 if ($selectedStatus !== '') {
     $where[] = 'b.status = ?';
     $params[] = $selectedStatus;
+} elseif ($tab === 'active') {
+    $where[] = 'b.status IN ("pending", "accepted", "confirmed")';
+} elseif ($tab === 'completed') {
+    $where[] = 'b.status = "completed"';
 }
 
 if ($selectedPhotographerId !== '') {
@@ -116,18 +126,44 @@ $stmt = db()->prepare($sql);
 $stmt->execute($params);
 $items = $stmt->fetchAll();
 
+$bookingCounts = [
+    'all' => (int)db_fetch_value('SELECT COUNT(*) FROM bookings WHERE deleted_at IS NULL'),
+    'active' => (int)db_fetch_value('SELECT COUNT(*) FROM bookings WHERE deleted_at IS NULL AND status IN ("pending", "accepted", "confirmed")'),
+    'completed' => (int)db_fetch_value('SELECT COUNT(*) FROM bookings WHERE deleted_at IS NULL AND status = "completed"'),
+];
+
 $pageTitle = 'จัดการคำขอจอง';
 include __DIR__ . '/../includes/header.php';
 ?>
 
 <section class="px-4 py-8 sm:px-6 lg:px-8">
-    <div>
-        <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">ผู้ดูแลระบบ</p>
-        <h1 class="mt-1 text-3xl font-black text-neutral-950">จัดการคำขอจอง</h1>
-    </div>
+	    <div>
+	        <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">ผู้ดูแลระบบ</p>
+	        <h1 class="mt-1 text-3xl font-black text-neutral-950">จัดการคำขอจอง</h1>
+	        <p class="mt-2 text-sm font-bold text-neutral-500">แยกดูงานที่กำลังดำเนินการและงานที่เสร็จสิ้นแล้ว พร้อมตัวกรองละเอียดของแอดมิน</p>
+	    </div>
 
-    <form method="post" action="/admin/bookings.php" class="stock-card mt-6 grid gap-3 rounded-[1.5rem] p-5 md:grid-cols-5">
-        <?= clean_context_inputs([]) ?>
+	    <?php
+	    $tabs = [
+	        'active' => ['กำลังดำเนินการ', 'fa-hourglass-half', $bookingCounts['active']],
+	        'completed' => ['เสร็จสิ้นแล้ว', 'fa-circle-check', $bookingCounts['completed']],
+	        'all' => ['ทั้งหมด', 'fa-list', $bookingCounts['all']],
+	    ];
+	    ?>
+	    <div class="mt-6 flex flex-wrap gap-2">
+	        <?php foreach ($tabs as $tabKey => $tabItem): ?>
+	            <?php
+	            $tabClass = 'btn-muted btn-md rounded-full';
+	            if ($tab === $tabKey && $selectedStatus === '') {
+	                $tabClass = 'btn-primary btn-md rounded-full';
+	            }
+	            ?>
+	            <?= clean_context_button('/admin/bookings.php', ['tab' => $tabKey], '<i class="fa-solid ' . h($tabItem[1]) . '"></i>' . h($tabItem[0]) . ' <span class="rounded-full bg-white/20 px-2 py-0.5 text-xs">' . number_format((int)$tabItem[2]) . '</span>', $tabClass) ?>
+	        <?php endforeach; ?>
+	    </div>
+
+	    <form method="post" action="/admin/bookings.php" class="stock-card mt-6 grid gap-3 rounded-[1.5rem] p-5 md:grid-cols-5">
+	        <?= clean_context_inputs(['tab' => $tab]) ?>
         <select name="status" class="stock-input rounded-2xl px-4 py-3 font-semibold">
             <option value="">ทุกสถานะ</option>
             <?php foreach ($allowedStatuses as $status): ?>
@@ -143,57 +179,65 @@ include __DIR__ . '/../includes/header.php';
         <button class="stock-button rounded-2xl px-5 py-3 font-black"><i class="fa-solid fa-magnifying-glass mr-2"></i>ค้นหา</button>
     </form>
 
-    <div class="stock-card mt-6 overflow-x-auto rounded-[1.5rem] p-5">
-        <table class="datatable w-full text-sm">
-            <thead>
-                <tr>
-                    <th>รหัสจอง</th>
-                    <th>ลูกค้า</th>
-                    <th>ช่างภาพ</th>
-                    <th>ประเภท</th>
-                    <th>วันที่</th>
-                    <th>สถานะ</th>
-                    <th>เปลี่ยนสถานะ</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($items as $booking): ?>
-                    <tr>
-                        <td class="font-black"><?= h($booking['booking_code']) ?></td>
-                        <td><?= h($booking['customer_name']) ?></td>
-                        <td><?= h($booking['display_name']) ?></td>
-                        <td><?= h($booking['category_name']) ?></td>
-                        <td><?= h(format_be_date($booking['booking_date'])) ?> <?= h(time_slot_label($booking['time_slot'])) ?></td>
-                        <td><?= status_badge($booking['status']) ?></td>
-                        <td>
-                            <form method="post" class="flex flex-wrap gap-2">
-                                <?= csrf_field() ?>
-                                <input type="hidden" name="action" value="change_status">
-                                <input type="hidden" name="id" value="<?= (int)$booking['id'] ?>">
+	    <div class="stock-card mt-6 overflow-x-auto rounded-[1.5rem] p-5">
+	        <?php if ($items): ?>
+	            <table class="datatable w-full text-sm">
+	                <thead>
+	                    <tr>
+	                        <th>รหัสจอง</th>
+	                        <th>ลูกค้า</th>
+	                        <th>ช่างภาพ</th>
+	                        <th>ประเภท</th>
+	                        <th>วันที่</th>
+	                        <th>สถานะ</th>
+	                        <th>เปลี่ยนสถานะ</th>
+	                    </tr>
+	                </thead>
+	                <tbody>
+	                    <?php foreach ($items as $booking): ?>
+	                        <tr>
+	                            <td class="font-black"><?= h($booking['booking_code']) ?></td>
+	                            <td><?= h($booking['customer_name']) ?></td>
+	                            <td><?= h($booking['display_name']) ?></td>
+	                            <td><?= h($booking['category_name']) ?></td>
+	                            <td><?= h(format_be_date($booking['booking_date'])) ?> <?= h(time_slot_label($booking['time_slot'])) ?></td>
+	                            <td><?= status_badge($booking['status']) ?></td>
+	                            <td>
+	                                <form method="post" class="flex flex-wrap gap-2">
+	                                    <?= csrf_field() ?>
+	                                    <input type="hidden" name="action" value="change_status">
+	                                    <input type="hidden" name="id" value="<?= (int)$booking['id'] ?>">
 
-                                <select name="status" class="rounded-xl border border-neutral-200 px-3 py-2">
-                                    <?php foreach ($allowedStatuses as $status): ?>
-                                        <option value="<?= h($status) ?>" <?php if ($booking['status'] === $status): ?>selected<?php endif; ?>>
-                                            <?= h(booking_status_label($status)) ?>
-                                        </option>
-                                    <?php endforeach; ?>
-                                </select>
+	                                    <select name="status" class="rounded-xl border border-neutral-200 px-3 py-2">
+	                                        <?php foreach ($allowedStatuses as $status): ?>
+	                                            <option value="<?= h($status) ?>" <?php if ($booking['status'] === $status): ?>selected<?php endif; ?>>
+	                                                <?= h(booking_status_label($status)) ?>
+	                                            </option>
+	                                        <?php endforeach; ?>
+	                                    </select>
 
-                                <button
-                                    type="submit"
-                                    data-confirm="ยืนยันเปลี่ยนสถานะคำขอจอง?"
-                                    data-confirm-text="รหัส <?= h($booking['booking_code']) ?> จะถูกเปลี่ยนเป็นสถานะที่เลือก"
-                                    data-confirm-button="ยืนยันเปลี่ยนสถานะ"
-                                    class="rounded-xl bg-neutral-950 px-3 py-2 font-black text-white hover:bg-red-600">
-                                    <i class="fa-solid fa-floppy-disk mr-1"></i>บันทึก
-                                </button>
-                            </form>
-                        </td>
-                    </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
-    </div>
-</section>
+	                                    <button
+	                                        type="submit"
+	                                        data-confirm="ยืนยันเปลี่ยนสถานะคำขอจอง?"
+	                                        data-confirm-text="รหัส <?= h($booking['booking_code']) ?> จะถูกเปลี่ยนเป็นสถานะที่เลือก"
+	                                        data-confirm-button="ยืนยันเปลี่ยนสถานะ"
+	                                        class="btn-cta btn-md rounded-xl">
+	                                        <i class="fa-solid fa-floppy-disk mr-1"></i>บันทึก
+	                                    </button>
+	                                </form>
+	                            </td>
+	                        </tr>
+	                    <?php endforeach; ?>
+	                </tbody>
+	            </table>
+	        <?php else: ?>
+	            <div class="empty-state rounded-[2rem] p-10 text-center">
+	                <i class="fa-solid fa-calendar-xmark text-4xl text-red-600"></i>
+	                <h2 class="mt-3 text-xl font-black text-neutral-950">ไม่พบรายการจองในเงื่อนไขนี้</h2>
+	                <p class="mt-2 text-neutral-600">ลองเปลี่ยนแท็บ หรือปรับตัวกรองสถานะ/วันที่ใหม่</p>
+	            </div>
+	        <?php endif; ?>
+	    </div>
+	</section>
 
 <?php include __DIR__ . '/../includes/footer.php'; ?>

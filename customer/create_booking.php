@@ -111,7 +111,7 @@ include __DIR__ . '/../includes/header.php';
     <div class="mx-auto max-w-3xl stock-card rounded-[2rem] p-8">
         <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">คำขอจอง</p>
         <h1 class="mt-2 text-3xl font-black text-neutral-950">ส่งคำขอจอง: <?= h($profile['display_name']) ?></h1>
-        <p class="mt-4 rounded-2xl bg-red-50 p-4 text-sm font-black text-red-700"><?= h(PAYMENT_DISCLAIMER) ?></p>
+        <p class="mt-4 rounded-2xl bg-red-50 p-4 text-sm font-black leading-7 text-red-700"><?= h(PAYMENT_DISCLAIMER) ?> ราคาเริ่มต้นโดยประมาณที่แสดงในระบบใช้เป็นข้อมูลประกอบการตัดสินใจ ลูกค้าและช่างภาพต้องตกลงราคาและการชำระเงินกันเองภายนอกระบบ</p>
         <form method="post" class="mt-6 grid gap-4">
             <?= csrf_field() ?><input type="hidden" name="photographer_id" value="<?= $photographerId ?>">
             <div class="grid gap-4 sm:grid-cols-2">

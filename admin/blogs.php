@@ -216,19 +216,19 @@ include __DIR__ . '/../includes/header.php';
                         <td><?= h(format_be_datetime($item['created_at'])) ?></td>
                         <td>
                             <div class="flex flex-wrap gap-2">
-                                <?= clean_context_button('/admin/blogs.php', ['edit' => (int)$item['id']], '<i class="fa-solid fa-pen mr-1"></i>แก้ไข', 'rounded-full bg-amber-50 px-3 py-1.5 font-black text-amber-700') ?>
+                                <?= clean_context_button('/admin/blogs.php', ['edit' => (int)$item['id']], '<i class="fa-solid fa-pen"></i>แก้ไข', 'btn-warning btn-sm') ?>
                                 <form method="post" class="flex flex-wrap gap-2">
                                     <?= csrf_field() ?>
                                     <input type="hidden" name="action" value="status">
                                     <input type="hidden" name="id" value="<?= (int)$item['id'] ?>">
-                                    <button name="status" value="published" class="rounded-full bg-emerald-50 px-3 py-1.5 font-black text-emerald-700"><i class="fa-solid fa-check mr-1"></i>เผยแพร่</button>
-                                    <button name="status" value="hidden" class="rounded-full bg-slate-100 px-3 py-1.5 font-black text-slate-700"><i class="fa-solid fa-eye-slash mr-1"></i>ซ่อน</button>
+                                    <button name="status" value="published" class="btn-success btn-sm"><i class="fa-solid fa-check"></i>เผยแพร่</button>
+                                    <button name="status" value="hidden" class="btn-muted btn-sm"><i class="fa-solid fa-eye-slash"></i>ซ่อน</button>
                                 </form>
                                 <form method="post">
                                     <?= csrf_field() ?>
                                     <input type="hidden" name="action" value="delete">
                                     <input type="hidden" name="id" value="<?= (int)$item['id'] ?>">
-                                    <button data-confirm="ลบบทความนี้?" class="rounded-full bg-red-50 px-3 py-1.5 font-black text-red-700"><i class="fa-solid fa-trash mr-1"></i>ลบ</button>
+                                    <button data-confirm="ลบบทความนี้?" class="btn-danger btn-sm"><i class="fa-solid fa-trash"></i>ลบ</button>
                                 </form>
                             </div>
                         </td>

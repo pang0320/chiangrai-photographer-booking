@@ -25,7 +25,7 @@ $steps = [
     ],
     [
         'title' => 'เพิ่มรูปปก',
-        'description' => 'ใช้ภาพผลงานเด่นเป็น first impression ของโปรไฟล์',
+        'description' => 'ใช้ภาพตัวอย่างงานเด่นเป็น first impression ของโปรไฟล์',
         'done' => trim((string)$profile['cover_image']) !== '',
         'url' => '/photographer/profile.php',
         'icon' => 'fa-image',
@@ -46,13 +46,13 @@ $steps = [
     ],
     [
         'title' => 'เลือกประเภทงาน',
-        'description' => 'เพิ่มหมวดงานพร้อมราคาเริ่มต้นให้ลูกค้าตัดสินใจง่าย',
+        'description' => 'เพิ่มหมวดงานพร้อมราคาเริ่มต้นโดยประมาณให้ลูกค้าตัดสินใจง่าย',
         'done' => $serviceCount > 0,
         'url' => '/photographer/services.php',
         'icon' => 'fa-layer-group',
     ],
     [
-        'title' => 'อัปโหลดผลงานอย่างน้อย 5 รูป',
+        'title' => 'อัปโหลดตัวอย่างงานถ่ายภาพอย่างน้อย 5 รูป',
         'description' => 'ตอนนี้มี ' . $portfolioCount . ' รูป',
         'done' => $portfolioCount >= 5,
         'url' => '/photographer/portfolio.php',
@@ -77,7 +77,7 @@ include __DIR__ . '/../includes/header.php';
             <div>
                 <p class="text-sm font-black uppercase tracking-[0.22em] text-white/58">Onboarding</p>
                 <h1 class="mt-2 text-3xl font-black sm:text-5xl">ตั้งค่าโปรไฟล์ให้พร้อมรับงาน</h1>
-                <p class="mt-4 max-w-2xl leading-8 text-white/70">ทำครบตามขั้นตอนนี้ โปรไฟล์จะดูน่าเชื่อถือขึ้นและพร้อมแสดงผลงานแบบมืออาชีพหลังผู้ดูแลระบบอนุมัติ</p>
+                <p class="mt-4 max-w-2xl leading-8 text-white/70">ทำครบตามขั้นตอนนี้ โปรไฟล์จะดูน่าเชื่อถือขึ้นและพร้อมแสดงตัวอย่างงานถ่ายภาพแบบมืออาชีพหลังผู้ดูแลระบบอนุมัติ</p>
                 <div class="mt-6 flex flex-wrap gap-3">
                     <a href="/photographer/dashboard.php" class="rounded-full bg-white px-5 py-3 font-black text-neutral-950 hover:bg-red-600 hover:text-white"><i class="fa-solid fa-gauge mr-2"></i>ไปแดชบอร์ด</a>
                     <a href="/photographer/profile.php" class="rounded-full bg-white/12 px-5 py-3 font-black text-white hover:bg-white hover:text-neutral-950"><i class="fa-solid fa-user-pen mr-2"></i>แก้ไขโปรไฟล์</a>

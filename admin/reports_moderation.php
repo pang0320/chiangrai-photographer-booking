@@ -81,11 +81,11 @@ include __DIR__ . '/../includes/header.php';
                             <form method="post" class="grid min-w-[260px] gap-2">
                                 <?= csrf_field() ?>
                                 <input type="hidden" name="id" value="<?= (int)$item['id'] ?>">
-                                <input name="admin_note" value="<?= h($item['admin_note']) ?>" placeholder="บันทึกผู้ดูแล" class="stock-input rounded-xl px-3 py-2 text-sm">
+                                <input name="admin_note" value="<?= h($item['admin_note']) ?>" placeholder="บันทึกโดยผู้ดูแล" class="stock-input rounded-xl px-3 py-2 text-sm">
                                 <div class="flex flex-wrap gap-2">
-                                    <button name="status" value="reviewed" class="rounded-full bg-sky-50 px-3 py-1.5 font-black text-sky-700"><i class="fa-solid fa-eye mr-1"></i>ตรวจแล้ว</button>
-                                    <button name="status" value="resolved" class="rounded-full bg-emerald-50 px-3 py-1.5 font-black text-emerald-700"><i class="fa-solid fa-check mr-1"></i>แก้ไขแล้ว</button>
-                                    <button name="status" value="rejected" class="rounded-full bg-red-50 px-3 py-1.5 font-black text-red-700"><i class="fa-solid fa-xmark mr-1"></i>ปฏิเสธ</button>
+                                    <button name="status" value="reviewed" class="btn-warning btn-sm"><i class="fa-solid fa-eye"></i>ตรวจแล้ว</button>
+                                    <button name="status" value="resolved" class="btn-success btn-sm"><i class="fa-solid fa-check"></i>แก้ไขแล้ว</button>
+                                    <button name="status" value="rejected" class="btn-danger btn-sm"><i class="fa-solid fa-xmark"></i>ปฏิเสธ</button>
                                 </div>
                             </form>
                         </td>

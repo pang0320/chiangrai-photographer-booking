@@ -254,7 +254,7 @@ include __DIR__ . '/../includes/header.php';
             <div class="mt-4 grid gap-3" data-block-paginate="5">
                 <?php foreach ($recentReviews as $review): ?>
                     <div class="rounded-[1.5rem] bg-neutral-50 p-4">
-                        <div class="flex justify-between gap-4"><b><?= h($review['customer_name']) ?></b><span class="text-red-600"><?= str_repeat('★', (int)$review['rating_overall']) ?></span></div>
+	                        <div class="flex justify-between gap-4"><b><?= h($review['customer_name']) ?></b><span class="text-red-600" title="คะแนนรวม <?= (int)$review['rating_overall'] ?> จาก 5"><?= str_repeat('★', (int)$review['rating_overall']) ?></span></div>
                         <p class="mt-1 text-sm font-bold text-neutral-500"><?= h($review['display_name']) ?> · <?= status_badge($review['status']) ?></p>
                     </div>
                 <?php endforeach; ?>
@@ -268,7 +268,7 @@ include __DIR__ . '/../includes/header.php';
             <h2 class="mt-1 text-xl font-black text-neutral-950">ช่างภาพเด่น</h2>
             <div class="mt-4 grid gap-3" data-block-paginate="5">
                 <?php foreach ($topPhotographers as $p): ?>
-                    <div class="flex justify-between rounded-2xl bg-neutral-50 p-3 text-sm"><b><?= h($p['display_name']) ?></b><span><?= number_format((float)$p['average_rating'], 1) ?> ★</span></div>
+                    <div class="info-row flex justify-between rounded-2xl p-3 text-sm"><b><?= h($p['display_name']) ?></b><span>คะแนนเฉลี่ย <?= number_format((float)$p['average_rating'], 1) ?></span></div>
                 <?php endforeach; ?>
             </div>
         </div>
@@ -277,7 +277,7 @@ include __DIR__ . '/../includes/header.php';
             <h2 class="mt-1 text-xl font-black text-neutral-950">หมวดหมู่ยอดนิยม</h2>
             <div class="mt-4 grid gap-3" data-block-paginate="5">
                 <?php foreach ($topCategories as $category): ?>
-                    <div class="flex justify-between rounded-2xl bg-neutral-50 p-3 text-sm"><b><?= h($category['name']) ?></b><span><?= (int)$category['total'] ?> งาน</span></div>
+                    <div class="info-row flex justify-between rounded-2xl p-3 text-sm"><b><?= h($category['name']) ?></b><span>จำนวนงาน <?= (int)$category['total'] ?></span></div>
                 <?php endforeach; ?>
             </div>
         </div>
@@ -286,7 +286,7 @@ include __DIR__ . '/../includes/header.php';
             <h2 class="mt-1 text-xl font-black text-neutral-950">คำค้นยอดนิยม</h2>
             <div class="mt-4 grid gap-3" data-block-paginate="5">
                 <?php foreach ($popularKeywords as $keyword): ?>
-                    <div class="flex justify-between rounded-2xl bg-neutral-50 p-3 text-sm"><b><i class="fa-solid fa-magnifying-glass mr-1 text-red-600"></i><?= h($keyword['keyword']) ?></b><span><?= (int)$keyword['total'] ?></span></div>
+                    <div class="info-row flex justify-between rounded-2xl p-3 text-sm"><b><i class="fa-solid fa-magnifying-glass mr-1 text-red-600"></i><?= h($keyword['keyword']) ?></b><span>จำนวนครั้ง <?= (int)$keyword['total'] ?></span></div>
                 <?php endforeach; ?>
                 <?php if (!$popularKeywords): ?>
                     <div class="empty-state rounded-2xl p-5 text-center text-sm font-bold text-neutral-600"><i class="fa-solid fa-magnifying-glass mr-1 text-red-600"></i>ยังไม่มีข้อมูลค้นหา</div>
@@ -304,7 +304,7 @@ include __DIR__ . '/../includes/header.php';
                         $logName = $log['name'];
                     }
                     ?>
-                    <div class="rounded-2xl bg-neutral-50 p-3 text-sm">
+                    <div class="info-row rounded-2xl p-3 text-sm">
                         <b><?= h($log['action']) ?></b>
                         <p class="mt-1 text-xs font-bold text-neutral-500"><?= h(format_be_datetime($log['created_at'])) ?> · <?= h($logName) ?></p>
                     </div>
@@ -319,7 +319,7 @@ include __DIR__ . '/../includes/header.php';
             <h2 class="mt-1 text-xl font-black text-neutral-950"><i class="fa-solid fa-map-location-dot mr-2 text-red-600"></i>อำเภอที่ถูกค้นหามากสุด</h2>
             <div class="mt-4 grid gap-3" data-block-paginate="5">
                 <?php foreach ($popularSearchDistricts as $district): ?>
-                    <div class="flex justify-between rounded-2xl bg-neutral-50 p-3 text-sm"><b><?= h($district['district_name']) ?></b><span><?= (int)$district['total'] ?> ครั้ง</span></div>
+                    <div class="info-row flex justify-between rounded-2xl p-3 text-sm"><b><?= h($district['district_name']) ?></b><span>จำนวนครั้ง <?= (int)$district['total'] ?></span></div>
                 <?php endforeach; ?>
             </div>
         </div>
@@ -328,7 +328,7 @@ include __DIR__ . '/../includes/header.php';
             <h2 class="mt-1 text-xl font-black text-neutral-950"><i class="fa-solid fa-layer-group mr-2 text-red-600"></i>ประเภทงานที่ถูกค้นหามากสุด</h2>
             <div class="mt-4 grid gap-3" data-block-paginate="5">
                 <?php foreach ($popularSearchCategories as $category): ?>
-                    <div class="flex justify-between rounded-2xl bg-neutral-50 p-3 text-sm"><b><?= h($category['name']) ?></b><span><?= (int)$category['total'] ?> ครั้ง</span></div>
+                    <div class="info-row flex justify-between rounded-2xl p-3 text-sm"><b><?= h($category['name']) ?></b><span>จำนวนครั้ง <?= (int)$category['total'] ?></span></div>
                 <?php endforeach; ?>
             </div>
         </div>
@@ -436,7 +436,7 @@ include __DIR__ . '/../includes/header.php';
                                     <p class="font-black text-neutral-950">
                                         <?= h($oldStatusText) ?> <i class="fa-solid fa-arrow-right mx-2 text-red-600"></i> <?= h(booking_status_label((string)$log['new_status'])) ?>
                                     </p>
-                                    <p class="mt-1 font-bold text-neutral-500"><?= h(format_be_datetime($log['created_at'])) ?> · โดย <?= h($changedBy) ?></p>
+                                    <p class="mt-1 font-bold text-neutral-500"><?= h(format_be_datetime($log['created_at'])) ?> · ผู้ดำเนินการ: <?= h($changedBy) ?></p>
                                     <?php if (!empty($log['note'])): ?>
                                         <p class="mt-2 text-neutral-600"><?= h($log['note']) ?></p>
                                     <?php endif; ?>

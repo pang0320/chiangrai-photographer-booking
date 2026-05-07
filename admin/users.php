@@ -174,13 +174,13 @@ include __DIR__ . '/../includes/header.php';
                                 <?= csrf_field() ?>
                                 <input type="hidden" name="id" value="<?= (int)$user['id'] ?>">
 
-                                <button data-confirm="ยืนยันเปิดใช้งานบัญชีนี้?" name="action" value="activate" class="rounded-full bg-emerald-50 px-3 py-1.5 font-black text-emerald-700">
+                                <button data-confirm="ยืนยันเปิดใช้งานบัญชีนี้?" name="action" value="activate" class="btn-success btn-sm">
                                     <i class="fa-solid fa-check mr-1"></i>เปิดใช้งาน
                                 </button>
-                                <button data-confirm="ยืนยันระงับบัญชีนี้?" name="action" value="suspend" class="rounded-full bg-amber-50 px-3 py-1.5 font-black text-amber-700">
+                                <button data-confirm="ยืนยันระงับบัญชีนี้?" name="action" value="suspend" class="btn-warning btn-sm">
                                     <i class="fa-solid fa-ban mr-1"></i>ระงับ
                                 </button>
-                                <button data-confirm="ลบผู้ใช้นี้?" name="action" value="delete" class="rounded-full bg-red-50 px-3 py-1.5 font-black text-red-700">
+                                <button data-confirm="ลบผู้ใช้นี้?" name="action" value="delete" class="btn-danger btn-sm">
                                     <i class="fa-solid fa-trash mr-1"></i>ลบ
                                 </button>
                             </form>

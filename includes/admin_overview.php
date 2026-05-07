@@ -76,16 +76,16 @@ $overviewMap = [
         ],
     ],
     'reviews.php' => [
-        'description' => 'ดูแลรีวิว คะแนน และสถานะการแสดงผล เพื่อให้หน้าโปรไฟล์ช่างภาพน่าเชื่อถือ',
+        'description' => 'ดูแลจำนวนรีวิว คะแนนเฉลี่ย และสถานะการแสดงผล เพื่อให้หน้าโปรไฟล์ช่างภาพน่าเชื่อถือ',
         'stats' => [
-            ['รีวิวทั้งหมด', 'SELECT COUNT(*) FROM reviews WHERE deleted_at IS NULL', 'fa-star', 'text-amber-600', 'รีวิวในระบบ', '/admin/reviews.php'],
+            ['จำนวนรีวิวทั้งหมด', 'SELECT COUNT(*) FROM reviews WHERE deleted_at IS NULL', 'fa-star', 'text-amber-600', 'รีวิวในระบบ', '/admin/reviews.php'],
             ['แสดงอยู่', 'SELECT COUNT(*) FROM reviews WHERE status = "visible" AND deleted_at IS NULL', 'fa-eye', 'text-emerald-600', 'visible', '/admin/reviews.php?status=visible'],
             ['ถูกซ่อน', 'SELECT COUNT(*) FROM reviews WHERE status = "hidden" AND deleted_at IS NULL', 'fa-eye-slash', 'text-rose-600', 'hidden', '/admin/reviews.php?status=hidden'],
-            ['คะแนนเฉลี่ย', 'SELECT COALESCE(ROUND(AVG(rating_overall), 1), 0) FROM reviews WHERE deleted_at IS NULL', 'fa-chart-simple', 'text-sky-600', 'จากรีวิวทั้งหมด', '/admin/reviews.php'],
+            ['คะแนนเฉลี่ยจากรีวิว', 'SELECT COALESCE(ROUND(AVG(rating_overall), 1), 0) FROM reviews WHERE deleted_at IS NULL', 'fa-chart-simple', 'text-sky-600', 'จากรีวิวทั้งหมด', '/admin/reviews.php'],
         ],
         'cards' => [
             ['Moderation', 'รีวิวที่ต้องตรวจ', 'ซ่อนหรือเปิดรีวิวที่มีผลต่อความน่าเชื่อถือของโปรไฟล์', '/admin/reviews.php?status=hidden', 'ดูรีวิวที่ซ่อน', 'fa-shield-halved'],
-            ['Rating', 'รีวิว 5 ดาว ' . number_format(admin_overview_count('SELECT COUNT(*) FROM reviews WHERE rating_overall = 5 AND deleted_at IS NULL')), 'ติดตามคุณภาพบริการจากคะแนนลูกค้า', '/admin/reviews.php', 'ดูคะแนนทั้งหมด', 'fa-ranking-star'],
+            ['Rating', 'จำนวนรีวิว 5 คะแนน ' . number_format(admin_overview_count('SELECT COUNT(*) FROM reviews WHERE rating_overall = 5 AND deleted_at IS NULL')), 'ติดตามคุณภาพบริการจากคะแนนที่ลูกค้าให้', '/admin/reviews.php', 'ดูคะแนนทั้งหมด', 'fa-ranking-star'],
             ['Content', 'รีวิวพร้อมข้อความ ' . number_format(admin_overview_count('SELECT COUNT(*) FROM reviews WHERE comment <> "" AND deleted_at IS NULL')), 'ตรวจเนื้อหารีวิวที่ลูกค้าเขียนไว้', '/admin/reviews.php', 'ตรวจข้อความรีวิว', 'fa-comment-dots'],
         ],
     ],
@@ -207,7 +207,7 @@ $overviewMap = [
             ['การจองทั้งหมด', 'SELECT COUNT(*) FROM bookings WHERE deleted_at IS NULL', 'fa-calendar-check', 'text-sky-600', 'ข้อมูลการจอง', '/admin/reports.php'],
             ['คำค้นทั้งหมด', 'SELECT COUNT(*) FROM search_logs', 'fa-magnifying-glass', 'text-emerald-600', 'พฤติกรรมค้นหา', '/admin/reports.php'],
             ['ช่างภาพทั้งหมด', 'SELECT COUNT(*) FROM photographer_profiles WHERE deleted_at IS NULL', 'fa-camera-retro', 'text-amber-600', 'โปรไฟล์', '/admin/photographers.php'],
-            ['รีวิวทั้งหมด', 'SELECT COUNT(*) FROM reviews WHERE deleted_at IS NULL', 'fa-star', 'text-rose-600', 'คะแนนลูกค้า', '/admin/reviews.php'],
+            ['จำนวนรีวิวทั้งหมด', 'SELECT COUNT(*) FROM reviews WHERE deleted_at IS NULL', 'fa-star', 'text-rose-600', 'รีวิวในระบบ', '/admin/reviews.php'],
         ],
         'cards' => [
             ['Analytics', 'รายงานการใช้งาน', 'ดูแนวโน้มคำขอจอง คำค้น และข้อมูลยอดนิยม', '/admin/reports.php', 'เปิดรายงาน', 'fa-chart-line'],

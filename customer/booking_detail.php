@@ -52,14 +52,14 @@ include __DIR__ . '/../includes/header.php';
                 <form method="post">
                     <?= csrf_field() ?>
                     <input type="hidden" name="action" value="cancel">
-                    <button data-confirm="ยืนยันยกเลิกคำขอจอง?" class="rounded-2xl bg-rose-600 px-5 py-3 font-bold text-white">
+                    <button data-confirm="ยืนยันยกเลิกคำขอจอง?" class="btn-muted btn-lg rounded-2xl">
                         <i class="fa-solid fa-xmark mr-2"></i>ยกเลิก
                     </button>
                 </form>
             <?php endif; ?>
 
             <?php if ($booking['status'] === 'completed' && !$hasReview): ?>
-                <?= clean_context_button('/customer/review.php', ['booking_id' => $id], '<i class="fa-solid fa-star mr-2"></i>รีวิวช่างภาพ', 'rounded-2xl bg-emerald-600 px-5 py-3 font-bold text-white') ?>
+                <?= clean_context_button('/customer/review.php', ['booking_id' => $id], '<i class="fa-solid fa-star mr-2"></i>รีวิวช่างภาพ', 'btn-success btn-lg rounded-2xl') ?>
             <?php endif; ?>
         </div>
     </div>
@@ -81,7 +81,7 @@ include __DIR__ . '/../includes/header.php';
                     <?= h(format_be_datetime($log['created_at'])) ?>
                     · <?= h($oldStatusText) ?>
                     → <?= h($log['new_status']) ?>
-                    โดย <?= h($changedByName) ?>
+                    ผู้ดำเนินการ: <?= h($changedByName) ?>
                     <?= h($log['note']) ?>
                 </div>
             <?php endforeach; ?>

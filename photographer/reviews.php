@@ -166,7 +166,7 @@ if ($reviewIds) {
 }
 
 $ratingBreakdown = [
-    ['คะแนนรวม', $reviewSummary['avg_overall'], 'fa-star', 'from-red-600 to-amber-400'],
+    ['คะแนนรวมเฉลี่ย', $reviewSummary['avg_overall'], 'fa-star', 'from-red-600 to-amber-400'],
     ['คุณภาพงาน', $reviewSummary['avg_quality'], 'fa-camera', 'from-indigo-500 to-sky-400'],
     ['การสื่อสาร', $reviewSummary['avg_communication'], 'fa-comment', 'from-emerald-500 to-teal-400'],
     ['ความตรงเวลา', $reviewSummary['avg_punctuality'], 'fa-clock', 'from-amber-500 to-orange-400'],
@@ -196,7 +196,7 @@ include __DIR__ . '/../includes/header.php';
                 <p class="mt-4 max-w-3xl leading-8 text-white/70">ดูคะแนนเฉลี่ย คุณภาพงาน การสื่อสาร ความตรงเวลา และรีวิวจริงจากลูกค้า เพื่อปรับโปรไฟล์และบริการให้ดูน่าเชื่อถือยิ่งขึ้น</p>
                 <div class="mt-6 flex flex-wrap gap-3">
                     <a href="/photographer/dashboard.php" class="rounded-full bg-white px-5 py-3 font-black text-neutral-950 transition hover:bg-red-600 hover:text-white"><i class="fa-solid fa-gauge mr-2"></i>แดชบอร์ด</a>
-                    <a href="/photographer/portfolio.php" class="rounded-full bg-white/12 px-5 py-3 font-black text-white transition hover:bg-white hover:text-neutral-950"><i class="fa-solid fa-images mr-2"></i>จัดการผลงาน</a>
+                    <a href="/photographer/portfolio.php" class="rounded-full bg-white/12 px-5 py-3 font-black text-white transition hover:bg-white hover:text-neutral-950"><i class="fa-solid fa-images mr-2"></i>จัดการตัวอย่างงาน</a>
                     <a href="/photographer/profile.php" class="rounded-full bg-white/12 px-5 py-3 font-black text-white transition hover:bg-white hover:text-neutral-950"><i class="fa-solid fa-user-pen mr-2"></i>แก้ไขโปรไฟล์</a>
                 </div>
             </div>
@@ -213,7 +213,7 @@ include __DIR__ . '/../includes/header.php';
                     <?= str_repeat('★', (int)round($reviewSummary['avg_overall'])) ?>
                     <span class="text-white/25"><?= str_repeat('★', max(0, 5 - (int)round($reviewSummary['avg_overall']))) ?></span>
                 </div>
-                <p class="mt-2 text-sm font-bold text-white/70"><?= number_format($reviewSummary['visible_reviews']) ?> รีวิวที่แสดงผล</p>
+	                <p class="mt-2 text-sm font-bold text-white/70">จำนวนรีวิวที่แสดงผล <?= number_format($reviewSummary['visible_reviews']) ?> รายการ</p>
             </div>
         </div>
     </div>
@@ -221,15 +221,15 @@ include __DIR__ . '/../includes/header.php';
     <div class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         <?php
         $summaryCards = [
-            ['รีวิวทั้งหมด', $reviewSummary['total_reviews'], 'fa-comments', 'text-red-600', 'รวม visible/hidden'],
+	            ['จำนวนรีวิวทั้งหมด', $reviewSummary['total_reviews'], 'fa-comments', 'text-red-600', 'รวม visible/hidden'],
             ['แสดงผล', $reviewSummary['visible_reviews'], 'fa-eye', 'text-emerald-600', $visiblePercent . '% ของทั้งหมด'],
             ['ถูกซ่อน', $reviewSummary['hidden_reviews'], 'fa-eye-slash', 'text-slate-600', 'ซ่อนโดยผู้ดูแล'],
-            ['คะแนนรวม', number_format($reviewSummary['avg_overall'], 1), 'fa-star', 'text-yellow-500', 'เฉพาะรีวิวที่แสดง'],
-            ['Profile Rating', number_format((float)$profile['average_rating'], 1), 'fa-camera-retro', 'text-indigo-600', 'ค่าจากโปรไฟล์'],
+	            ['คะแนนรวมเฉลี่ย', number_format($reviewSummary['avg_overall'], 1), 'fa-star', 'text-yellow-500', 'เฉพาะรีวิวที่แสดง'],
+	            ['คะแนนโปรไฟล์', number_format((float)$profile['average_rating'], 1), 'fa-camera-retro', 'text-indigo-600', 'ค่าจากโปรไฟล์'],
         ];
         ?>
         <?php foreach ($summaryCards as $card): ?>
-            <div class="metric-card rounded-[1.5rem] p-5 transition hover:-translate-y-1 hover:shadow-2xl">
+            <div class="metric-card info-tile rounded-[1.5rem] p-5">
                 <div class="flex items-center justify-between gap-4">
                     <p class="text-sm font-bold text-neutral-500"><?= h($card[0]) ?></p>
                     <span class="grid h-11 w-11 place-items-center rounded-2xl bg-white shadow-sm"><i class="fa-solid <?= h($card[2]) ?> <?= h($card[3]) ?>"></i></span>
@@ -260,7 +260,7 @@ include __DIR__ . '/../includes/header.php';
                     ?>
                     <div>
                         <div class="mb-2 flex flex-wrap items-center justify-between gap-3 text-sm font-black">
-                            <span><i class="fa-solid <?= h($row[2]) ?> mr-2 text-red-600"></i><?= h($row[0]) ?></span>
+	                            <span><i class="fa-solid <?= h($row[2]) ?> mr-2 text-red-600"></i>คะแนน: <?= h($row[0]) ?></span>
                             <span class="rounded-full bg-neutral-100 px-3 py-1 text-neutral-700"><?= number_format((float)$row[1], 1) ?>/5</span>
                         </div>
                         <div class="h-4 overflow-hidden rounded-full bg-neutral-100">
@@ -340,7 +340,7 @@ include __DIR__ . '/../includes/header.php';
                     }
                     ?>
                     <div class="rounded-2xl <?= h($toneClass) ?> p-4">
-                        <p class="font-black"><i class="fa-solid <?= h($row[2]) ?> mr-2"></i><?= h($row[0]) ?></p>
+	                        <p class="font-black"><i class="fa-solid <?= h($row[2]) ?> mr-2"></i>คะแนน: <?= h($row[0]) ?></p>
                         <p class="mt-2 text-3xl font-black"><?= number_format((float)$row[1], 1) ?></p>
                         <p class="mt-1 text-xs font-bold opacity-80">คะแนนเฉลี่ยจากรีวิวลูกค้า</p>
                     </div>
@@ -393,7 +393,7 @@ include __DIR__ . '/../includes/header.php';
                                 </div>
                             </div>
                             <div class="text-right">
-                                <div class="text-lg text-yellow-400"><?= str_repeat('★', (int)$review['rating_overall']) ?><span class="text-neutral-200"><?= str_repeat('★', max(0, 5 - (int)$review['rating_overall'])) ?></span></div>
+	                                <div class="text-lg text-yellow-400" title="คะแนนรวม <?= (int)$review['rating_overall'] ?> จาก 5"><?= str_repeat('★', (int)$review['rating_overall']) ?><span class="text-neutral-200"><?= str_repeat('★', max(0, 5 - (int)$review['rating_overall'])) ?></span></div>
                                 <p class="text-xs font-black text-neutral-400"><?= h(format_be_datetime($review['created_at'])) ?></p>
                             </div>
                         </div>
@@ -410,7 +410,7 @@ include __DIR__ . '/../includes/header.php';
                             ];
                             ?>
                             <?php foreach ($reviewMiniRatings as $mini): ?>
-                                <div class="rounded-2xl bg-neutral-50 p-3">
+                                <div class="info-tile rounded-2xl p-3">
                                     <p class="text-xs font-black text-neutral-500"><i class="fa-solid <?= h($mini[2]) ?> mr-1 text-red-600"></i><?= h($mini[0]) ?></p>
                                     <p class="mt-1 text-lg font-black text-neutral-950"><?= number_format((float)$mini[1], 1) ?>/5</p>
                                 </div>

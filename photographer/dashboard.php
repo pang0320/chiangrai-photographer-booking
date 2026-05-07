@@ -251,7 +251,7 @@ if ($stats['services'] <= 0) {
 }
 
 if ($stats['portfolio'] < 5) {
-    $missingSteps[] = ['เพิ่ม Portfolio อย่างน้อย 5 รูป', '/photographer/portfolio.php', 'fa-images'];
+    $missingSteps[] = ['เพิ่มตัวอย่างงานถ่ายภาพอย่างน้อย 5 รูป', '/photographer/portfolio.php', 'fa-images'];
 }
 
 if ($stats['available_slots'] <= 0) {
@@ -308,14 +308,14 @@ include __DIR__ . '/../includes/header.php';
                         <span class="rounded-full bg-emerald-400/18 px-3 py-1 text-xs font-black text-emerald-100"><i class="fa-solid fa-circle-check mr-1"></i>ยืนยันตัวตนแล้ว</span>
                     <?php endif; ?>
                     <span class="rounded-full bg-white/12 px-3 py-1 text-xs font-black text-white"><i class="fa-solid fa-eye mr-1 text-red-300"></i><?= number_format((int)$profile['profile_views']) ?> เข้าชม</span>
-                    <span class="rounded-full bg-white/12 px-3 py-1 text-xs font-black text-white"><i class="fa-solid fa-star mr-1 text-yellow-300"></i><?= number_format((float)$profile['average_rating'], 1) ?> คะแนน</span>
+	                    <span class="rounded-full bg-white/12 px-3 py-1 text-xs font-black text-white"><i class="fa-solid fa-star mr-1 text-yellow-300"></i>คะแนนเฉลี่ย <?= number_format((float)$profile['average_rating'], 1) ?></span>
                     <span class="rounded-full bg-white/12 px-3 py-1 text-xs font-black text-white"><i class="fa-solid fa-bolt mr-1 text-amber-300"></i>ตอบกลับ <?= number_format($responseRate, 0) ?>%</span>
                 </div>
                 <p class="mt-4 max-w-3xl leading-8 text-white/70">สรุปคำขอจอง คะแนน รีวิว วันว่าง และความพร้อมของโปรไฟล์ในหน้าจอเดียว เว็บไซต์เป็นเพียงตัวกลางค้นหา จอง และติดต่อช่างภาพโดยตรง ไม่มีระบบชำระเงิน</p>
                 <div class="mt-6 flex flex-wrap gap-3">
                     <?= clean_context_button('/photographer/bookings.php', ['status' => 'pending'], '<i class="fa-solid fa-bell mr-2"></i>ดูคำขอใหม่', 'rounded-full bg-white px-5 py-3 font-black text-neutral-950 transition hover:bg-red-600 hover:text-white') ?>
                     <a href="/photographer/availability.php" class="rounded-full bg-white/12 px-5 py-3 font-black text-white transition hover:bg-white hover:text-neutral-950"><i class="fa-solid fa-calendar-plus mr-2"></i>เพิ่มวันว่าง</a>
-                    <a href="/photographer/portfolio.php" class="rounded-full bg-white/12 px-5 py-3 font-black text-white transition hover:bg-white hover:text-neutral-950"><i class="fa-solid fa-images mr-2"></i>เพิ่มผลงาน</a>
+                    <a href="/photographer/portfolio.php" class="rounded-full bg-white/12 px-5 py-3 font-black text-white transition hover:bg-white hover:text-neutral-950"><i class="fa-solid fa-images mr-2"></i>เพิ่มตัวอย่างงาน</a>
                     <a href="/photographer/profile.php" class="rounded-full bg-white/12 px-5 py-3 font-black text-white transition hover:bg-white hover:text-neutral-950"><i class="fa-solid fa-user-pen mr-2"></i>แก้ไขโปรไฟล์</a>
                 </div>
             </div>
@@ -349,13 +349,13 @@ include __DIR__ . '/../includes/header.php';
             ['คำขอใหม่', $stats['pending'], 'fa-hourglass-half', 'text-amber-600', 'รอตอบรับลูกค้า'],
             ['กำลังดำเนินการ', $stats['accepted_group'], 'fa-calendar-check', 'text-sky-600', 'ตอบรับ/นัดหมาย'],
             ['เสร็จสิ้น', $stats['completed'], 'fa-circle-check', 'text-emerald-600', 'completed'],
-            ['คะแนนเฉลี่ย', number_format((float)$profile['average_rating'], 1), 'fa-star', 'text-yellow-500', (int)$profile['total_reviews'] . ' รีวิว'],
+	            ['คะแนนเฉลี่ย', number_format((float)$profile['average_rating'], 1), 'fa-star', 'text-yellow-500', 'จำนวนรีวิว ' . number_format((int)$profile['total_reviews']) . ' รายการ'],
             ['เข้าชมโปรไฟล์', number_format((int)$profile['profile_views']), 'fa-eye', 'text-red-600', 'ยอดเปิดดูทั้งหมด'],
             ['วันว่างอนาคต', $stats['available_slots'], 'fa-calendar-days', 'text-teal-600', 'slot ที่เปิดไว้'],
         ];
         ?>
         <?php foreach ($metricCards as $card): ?>
-            <div class="metric-card rounded-[1.5rem] p-5 transition hover:-translate-y-1 hover:shadow-2xl">
+            <div class="metric-card info-tile rounded-[1.5rem] p-5">
                 <div class="flex items-center justify-between gap-4">
                     <p class="text-sm font-bold text-neutral-500"><?= h($card[0]) ?></p>
                     <span class="grid h-11 w-11 place-items-center rounded-2xl bg-white shadow-sm"><i class="fa-solid <?= h($card[2]) ?> <?= h($card[3]) ?>"></i></span>
@@ -481,16 +481,17 @@ include __DIR__ . '/../includes/header.php';
             <p class="section-kicker">Performance</p>
             <h2 class="mt-1 text-2xl font-black text-neutral-950"><i class="fa-solid fa-bolt mr-2 text-red-600"></i>สรุปประสิทธิภาพ</h2>
             <div class="mt-5 grid gap-3">
-                <div class="rounded-2xl bg-emerald-50 p-4">
-                    <div class="flex items-center justify-between gap-3"><p class="font-black text-emerald-800"><i class="fa-solid fa-reply mr-2"></i>อัตราตอบกลับ</p><b class="text-2xl text-emerald-700"><?= number_format($responseRate, 0) ?>%</b></div>
-                    <p class="mt-1 text-xs font-bold text-emerald-700">เวลาเฉลี่ย <?= number_format($averageResponseHours, 1) ?> ชม.</p>
-                </div>
+	                <div class="rounded-2xl bg-emerald-50 p-4">
+	                    <div class="flex items-center justify-between gap-3"><p class="font-black text-emerald-800"><i class="fa-solid fa-reply mr-2"></i>อัตราตอบกลับ</p><b class="text-2xl text-emerald-700"><?= number_format($responseRate, 0) ?>%</b></div>
+	                    <p class="mt-1 text-xs font-bold leading-5 text-emerald-700">คิดจากคำขอที่ช่างภาพตอบรับหรือปฏิเสธ เทียบกับคำขอทั้งหมด</p>
+	                    <p class="mt-1 text-xs font-bold text-emerald-700">เวลาตอบกลับเฉลี่ย <?= number_format($averageResponseHours, 1) ?> ชม.</p>
+	                </div>
                 <div class="rounded-2xl bg-sky-50 p-4">
                     <div class="flex items-center justify-between gap-3"><p class="font-black text-sky-800"><i class="fa-solid fa-trophy mr-2"></i>อัตรางานเสร็จ</p><b class="text-2xl text-sky-700"><?= number_format($successRate) ?>%</b></div>
                     <p class="mt-1 text-xs font-bold text-sky-700">จากคำขอทั้งหมด <?= number_format($stats['total']) ?> รายการ</p>
                 </div>
                 <div class="rounded-2xl bg-amber-50 p-4">
-                    <div class="flex items-center justify-between gap-3"><p class="font-black text-amber-800"><i class="fa-solid fa-image mr-2"></i>Portfolio</p><b class="text-2xl text-amber-700"><?= number_format($stats['portfolio']) ?></b></div>
+                    <div class="flex items-center justify-between gap-3"><p class="font-black text-amber-800"><i class="fa-solid fa-image mr-2"></i>ตัวอย่างงานถ่ายภาพ</p><b class="text-2xl text-amber-700"><?= number_format($stats['portfolio']) ?></b></div>
                     <p class="mt-1 text-xs font-bold text-amber-700">รูปเด่น <?= number_format($stats['featured_portfolio']) ?> รูป</p>
                 </div>
                 <div class="rounded-2xl bg-red-50 p-4">
@@ -528,7 +529,7 @@ include __DIR__ . '/../includes/header.php';
 
         <div class="stock-card rounded-[1.75rem] p-6">
             <p class="section-kicker">Rating Breakdown</p>
-            <h2 class="mt-1 text-xl font-black text-neutral-950"><i class="fa-solid fa-star-half-stroke mr-2 text-red-600"></i>คะแนนรีวิว</h2>
+	            <h2 class="mt-1 text-xl font-black text-neutral-950"><i class="fa-solid fa-star-half-stroke mr-2 text-red-600"></i>คะแนนเฉลี่ยจากรีวิว</h2>
             <?php
             $ratingBars = [
                 ['ภาพรวม', $ratings['overall'], 'fa-star'],
@@ -548,7 +549,7 @@ include __DIR__ . '/../includes/header.php';
                     }
                     ?>
                     <div>
-                        <div class="mb-2 flex justify-between gap-3 text-sm font-black"><span><i class="fa-solid <?= h($rating[2]) ?> mr-2 text-red-600"></i><?= h($rating[0]) ?></span><span><?= number_format((float)$rating[1], 1) ?></span></div>
+	                        <div class="mb-2 flex justify-between gap-3 text-sm font-black"><span><i class="fa-solid <?= h($rating[2]) ?> mr-2 text-red-600"></i>คะแนน: <?= h($rating[0]) ?></span><span><?= number_format((float)$rating[1], 1) ?>/5</span></div>
                         <div class="rating-bar"><span style="width: <?= $width ?>%"></span></div>
                     </div>
                 <?php endforeach; ?>
@@ -563,7 +564,7 @@ include __DIR__ . '/../includes/header.php';
             <h2 class="mt-1 text-xl font-black text-neutral-950"><i class="fa-solid fa-wand-magic-sparkles mr-2 text-red-600"></i>ทางลัดจัดการโปรไฟล์</h2>
             <div class="mt-5 grid gap-3 sm:grid-cols-2">
                 <a href="/photographer/profile.php" class="rounded-[1.35rem] bg-neutral-950 p-4 font-black text-white transition hover:-translate-y-1 hover:bg-red-600"><i class="fa-solid fa-id-card mb-3 block text-2xl text-red-300"></i>แก้ไขโปรไฟล์</a>
-                <a href="/photographer/portfolio.php" class="rounded-[1.35rem] bg-red-50 p-4 font-black text-red-700 transition hover:-translate-y-1 hover:bg-red-600 hover:text-white"><i class="fa-solid fa-images mb-3 block text-2xl"></i>เพิ่มผลงาน</a>
+                <a href="/photographer/portfolio.php" class="rounded-[1.35rem] bg-red-50 p-4 font-black text-red-700 transition hover:-translate-y-1 hover:bg-red-600 hover:text-white"><i class="fa-solid fa-images mb-3 block text-2xl"></i>เพิ่มตัวอย่างงาน</a>
                 <a href="/photographer/availability.php" class="rounded-[1.35rem] bg-amber-50 p-4 font-black text-amber-700 transition hover:-translate-y-1 hover:bg-amber-500 hover:text-white"><i class="fa-solid fa-calendar-plus mb-3 block text-2xl"></i>เพิ่มวันว่าง</a>
                 <a href="/photographer/articles.php" class="rounded-[1.35rem] bg-emerald-50 p-4 font-black text-emerald-700 transition hover:-translate-y-1 hover:bg-emerald-600 hover:text-white"><i class="fa-solid fa-newspaper mb-3 block text-2xl"></i>เขียนบทความ</a>
             </div>
@@ -662,7 +663,7 @@ include __DIR__ . '/../includes/header.php';
             <div class="mt-5 grid gap-4 md:grid-cols-2" data-block-paginate="5">
                 <?php foreach ($latestReviews as $review): ?>
                     <article class="rounded-[1.5rem] bg-neutral-50 p-5 transition hover:-translate-y-1 hover:bg-white hover:shadow-lg">
-                        <div class="flex items-center justify-between gap-4"><b><i class="fa-solid fa-user mr-2 text-red-600"></i><?= h($review['customer_name']) ?></b><span class="text-red-600"><?= str_repeat('★', (int)$review['rating_overall']) ?></span></div>
+	                        <div class="flex items-center justify-between gap-4"><b><i class="fa-solid fa-user mr-2 text-red-600"></i><?= h($review['customer_name']) ?></b><span class="text-red-600" title="คะแนนรวม <?= (int)$review['rating_overall'] ?> จาก 5"><?= str_repeat('★', (int)$review['rating_overall']) ?></span></div>
                         <p class="mt-3 line-clamp-3 text-sm leading-7 text-neutral-700"><?= h($review['comment']) ?></p>
                     </article>
                 <?php endforeach; ?>
@@ -679,9 +680,9 @@ include __DIR__ . '/../includes/header.php';
             <p class="section-kicker">Tips</p>
             <h2 class="mt-1 text-xl font-black text-neutral-950"><i class="fa-solid fa-lightbulb mr-2 text-red-600"></i>เพิ่มโอกาสรับงาน</h2>
             <div class="mt-4 grid gap-3 text-sm font-bold leading-7 text-neutral-700">
-                <p class="rounded-2xl bg-white p-4"><i class="fa-solid fa-images mr-2 text-red-600"></i>อัปโหลดผลงานอย่างน้อย 8-12 รูป และตั้งรูปเด่นให้ชัดเจน</p>
+                <p class="rounded-2xl bg-white p-4"><i class="fa-solid fa-images mr-2 text-red-600"></i>อัปโหลดตัวอย่างงานถ่ายภาพอย่างน้อย 8-12 รูป และตั้งรูปเด่นให้ชัดเจน</p>
                 <p class="rounded-2xl bg-white p-4"><i class="fa-solid fa-calendar-plus mr-2 text-red-600"></i>เปิดวันว่างล่วงหน้า 2-4 สัปดาห์ เพื่อให้ลูกค้าจองได้ง่าย</p>
-                <p class="rounded-2xl bg-white p-4"><i class="fa-solid fa-phone mr-2 text-red-600"></i>ระบุช่องทางติดต่อและราคาเริ่มต้นให้ครบ ลดคำถามซ้ำก่อนจอง</p>
+                <p class="rounded-2xl bg-white p-4"><i class="fa-solid fa-phone mr-2 text-red-600"></i>ระบุช่องทางติดต่อและราคาเริ่มต้นโดยประมาณให้ครบ ลดคำถามซ้ำก่อนจอง โดยลูกค้าและช่างภาพตกลงราคาและชำระเงินกันเองภายนอกระบบ</p>
                 <p class="rounded-2xl bg-white p-4"><i class="fa-solid fa-reply mr-2 text-red-600"></i>ตอบรับหรือปฏิเสธคำขอเร็ว ช่วยเพิ่มความน่าเชื่อถือของโปรไฟล์</p>
             </div>
         </div>

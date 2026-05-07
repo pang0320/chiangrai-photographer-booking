@@ -13,9 +13,50 @@ if (is_post()) {
 
         if ($action === 'delete') {
             $id = (int)($_POST['id'] ?? 0);
-            $stmt = db()->prepare('UPDATE photographer_portfolios SET deleted_at = NOW() WHERE id = ? AND photographer_id = ?');
+            $stmt = db()->prepare('SELECT id, image_path FROM photographer_portfolios WHERE id = ? AND photographer_id = ? AND deleted_at IS NULL LIMIT 1');
             $stmt->execute([$id, $pid]);
-            flash('success', 'ลบผลงานแล้ว');
+            $portfolioItem = $stmt->fetch();
+
+            if (!$portfolioItem) {
+                throw new RuntimeException('ไม่พบตัวอย่างงานถ่ายภาพที่ต้องการลบ');
+            }
+
+            db()->beginTransaction();
+
+            $stmt = db()->prepare('UPDATE photographer_portfolios SET deleted_at = NOW(), updated_at = NOW() WHERE id = ? AND photographer_id = ?');
+            $stmt->execute([$id, $pid]);
+
+            $imagePath = trim((string)$portfolioItem['image_path']);
+            $fileDeleted = false;
+            $fileDeleteNote = 'skip_non_portfolio_path';
+            $fileName = basename($imagePath);
+            $isRandomUploadedFile = (bool)preg_match('/^[a-f0-9]{32}\.(jpg|jpeg|png|webp)$/i', $fileName);
+
+            if ($imagePath !== '' && strpos($imagePath, 'portfolios/') === 0 && strpos($imagePath, '..') === false && strpos($imagePath, '\\') === false && $isRandomUploadedFile) {
+                $portfolioUploadDir = realpath(UPLOAD_PATH . '/portfolios');
+                $targetPath = realpath(UPLOAD_PATH . '/' . $imagePath);
+
+                if ($portfolioUploadDir !== false && $targetPath !== false && strpos($targetPath, $portfolioUploadDir . DIRECTORY_SEPARATOR) === 0 && is_file($targetPath)) {
+                    if (!@unlink($targetPath)) {
+                        throw new RuntimeException('ลบไฟล์รูปตัวอย่างงานไม่สำเร็จ กรุณาลองใหม่');
+                    }
+
+                    $fileDeleted = true;
+                    $fileDeleteNote = 'deleted_uploaded_file';
+                } else {
+                    $fileDeleteNote = 'file_not_found_or_outside_upload_folder';
+                }
+            } elseif ($imagePath !== '' && strpos($imagePath, 'portfolios/') === 0 && !$isRandomUploadedFile) {
+                $fileDeleteNote = 'skip_seed_or_shared_portfolio_file';
+            }
+
+            db()->commit();
+            log_activity('delete_portfolio_file', 'photographer_portfolios', $id, json_encode([
+                'image_path' => $imagePath,
+                'file_deleted' => $fileDeleted,
+                'note' => $fileDeleteNote,
+            ], JSON_UNESCAPED_UNICODE));
+            flash('success', 'ลบตัวอย่างงานถ่ายภาพแล้ว');
         } else {
             $path = upload_image($_FILES['image'] ?? [], 'portfolios');
 
@@ -38,12 +79,15 @@ if (is_post()) {
                 $isFeatured,
                 (int)($_POST['sort_order'] ?? 0),
             ]);
-            flash('success', 'เพิ่มผลงานแล้ว');
+            flash('success', 'เพิ่มตัวอย่างงานถ่ายภาพแล้ว');
         }
 
         log_activity('manage_portfolio', 'photographer_portfolios', $pid);
         redirect('/photographer/portfolio.php');
     } catch (Throwable $e) {
+        if (db()->inTransaction()) {
+            db()->rollBack();
+        }
         flash('error', $e->getMessage());
     }
 }
@@ -52,33 +96,33 @@ $stmt = db()->prepare('SELECT * FROM photographer_portfolios WHERE photographer_
 $stmt->execute([$pid]);
 $items = $stmt->fetchAll();
 
-$pageTitle = 'ผลงาน';
+$pageTitle = 'ตัวอย่างงานถ่ายภาพ';
 include __DIR__ . '/../includes/header.php';
 ?>
 
 <section class="px-4 py-8 sm:px-6 lg:px-8">
     <div>
         <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">สตูดิโอช่างภาพ</p>
-        <h1 class="mt-1 text-3xl font-black text-neutral-950">ผลงาน</h1>
+        <h1 class="mt-1 text-3xl font-black text-neutral-950">ตัวอย่างงานถ่ายภาพ</h1>
     </div>
 
     <form method="post" enctype="multipart/form-data" class="stock-card mt-6 grid gap-4 rounded-[1.5rem] p-5 md:grid-cols-2">
         <?= csrf_field() ?>
         <label class="grid gap-2">
-            <span class="text-sm font-black text-neutral-700"><i class="fa-solid fa-heading mr-2 text-red-600"></i>ชื่อผลงาน</span>
+            <span class="text-sm font-black text-neutral-700"><i class="fa-solid fa-heading mr-2 text-red-600"></i>ชื่ออัลบั้มตัวอย่างงาน</span>
             <input name="title" required placeholder="เช่น งานแต่งริมโขง / รับปริญญาแม่ฟ้าหลวง" class="stock-input rounded-2xl px-4 py-3 font-semibold">
         </label>
         <label class="grid gap-2">
             <span class="text-sm font-black text-neutral-700"><i class="fa-solid fa-arrow-down-1-9 mr-2 text-red-600"></i>ลำดับการแสดงผล (sort_order)</span>
             <input type="number" name="sort_order" value="0" min="0" step="1" class="stock-input rounded-2xl px-4 py-3 font-semibold">
-            <span class="text-xs font-bold leading-6 text-neutral-500">ค่านี้เป็นตัวเลข config สำหรับจัดเรียงผลงาน: เลขน้อยจะแสดงก่อน เช่น 0, 1, 2, 3</span>
+            <span class="text-xs font-bold leading-6 text-neutral-500">ค่านี้เป็นตัวเลข config สำหรับจัดเรียงตัวอย่างงานถ่ายภาพ: เลขน้อยจะแสดงก่อน เช่น 0, 1, 2, 3</span>
         </label>
         <label class="grid gap-2 md:col-span-2">
-            <span class="text-sm font-black text-neutral-700"><i class="fa-solid fa-align-left mr-2 text-red-600"></i>คำอธิบายผลงาน</span>
+            <span class="text-sm font-black text-neutral-700"><i class="fa-solid fa-align-left mr-2 text-red-600"></i>คำอธิบายตัวอย่างงาน</span>
             <textarea name="description" placeholder="รายละเอียดสั้น ๆ ของงานนี้" class="stock-input rounded-2xl px-4 py-3 font-semibold"></textarea>
         </label>
         <label class="grid gap-2">
-            <span class="text-sm font-black text-neutral-700"><i class="fa-solid fa-image mr-2 text-red-600"></i>ไฟล์รูปผลงาน</span>
+            <span class="text-sm font-black text-neutral-700"><i class="fa-solid fa-image mr-2 text-red-600"></i>ไฟล์รูปตัวอย่างงาน</span>
             <input type="file" name="image" required accept="image/jpeg,image/png,image/webp" class="stock-input rounded-2xl px-4 py-3 font-semibold">
             <span class="text-xs font-bold leading-6 text-neutral-500"><?= h(UPLOAD_IMAGE_HELP_TEXT) ?></span>
         </label>
@@ -117,7 +161,7 @@ include __DIR__ . '/../includes/header.php';
                         <?= csrf_field() ?>
                         <input type="hidden" name="action" value="delete">
                         <input type="hidden" name="id" value="<?= (int)$item['id'] ?>">
-                        <button data-confirm="ลบผลงานนี้?" class="rounded-full bg-red-50 px-3 py-2 text-sm font-black text-red-700">
+                        <button data-confirm="ลบตัวอย่างงานนี้?" class="btn-danger btn-sm">
                             <i class="fa-solid fa-trash mr-1"></i>ลบ
                         </button>
                     </form>

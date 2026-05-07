@@ -124,7 +124,39 @@ body {
     color: #34343a;
     font-size: .82rem;
     font-weight: 900;
-    box-shadow: 0 12px 32px rgba(16, 16, 20, .07);
+    box-shadow: none;
+    cursor: default;
+}
+
+.info-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    border-radius: 999px;
+    border: 1px solid rgba(16, 16, 20, .08);
+    background: rgba(255, 255, 255, .74);
+    padding: .55rem .9rem;
+    color: #34343a;
+    font-size: .82rem;
+    font-weight: 900;
+    cursor: default;
+    box-shadow: none;
+}
+
+.info-tile,
+.info-row {
+    border: 1px solid rgba(16, 16, 20, .07);
+    background: #f7f7f8;
+    box-shadow: none;
+    cursor: default;
+}
+
+.info-tile:hover,
+.info-row:hover,
+.info-chip:hover,
+.premium-chip:hover {
+    transform: none;
+    box-shadow: none;
 }
 
 .metric-card {
@@ -135,6 +167,11 @@ body {
     box-shadow: 0 18px 48px rgba(16, 16, 20, .08);
 }
 
+.metric-card.info-tile {
+    background: #fff;
+    box-shadow: inset 0 0 0 1px rgba(16, 16, 20, .02);
+}
+
 .stock-card-hover {
     transition: transform .28s ease, box-shadow .28s ease, border-color .28s ease;
 }
@@ -143,6 +180,27 @@ body {
     transform: translateY(-4px);
     border-color: rgba(226, 27, 45, .28);
     box-shadow: 0 26px 70px rgba(16, 16, 20, .14);
+}
+
+[data-clickable-card] {
+    cursor: pointer;
+}
+
+[data-clickable-card] a,
+[data-clickable-card] button,
+[data-clickable-card] label {
+    cursor: pointer;
+}
+
+[data-clickable-card] input,
+[data-clickable-card] select,
+[data-clickable-card] textarea {
+    cursor: auto;
+}
+
+[data-clickable-card]:focus-visible {
+    outline: 4px solid rgba(226, 27, 45, .22);
+    outline-offset: 4px;
 }
 
 .stock-input {
@@ -169,6 +227,101 @@ body {
     background: #c91525;
     box-shadow: 0 20px 45px rgba(226, 27, 45, .35);
     transform: translateY(-1px);
+}
+
+.btn-primary,
+.btn-cta,
+.btn-success,
+.btn-warning,
+.btn-muted,
+.btn-danger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .45rem;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    font-weight: 900;
+    line-height: 1.25;
+    transition: transform .18s ease, background .18s ease, color .18s ease, border-color .18s ease, box-shadow .18s ease;
+}
+
+.btn-primary {
+    background: #101014;
+    color: #fff;
+    box-shadow: 0 14px 30px rgba(16, 16, 20, .18);
+}
+
+.btn-primary:hover {
+    background: #27272a;
+    transform: translateY(-1px);
+}
+
+.btn-cta,
+.btn-danger {
+    background: #e21b2d;
+    color: #fff;
+    box-shadow: 0 14px 30px rgba(226, 27, 45, .22);
+}
+
+.btn-cta:hover,
+.btn-danger:hover {
+    background: #c91525;
+    transform: translateY(-1px);
+}
+
+.btn-success {
+    background: #059669;
+    color: #fff;
+    box-shadow: 0 14px 30px rgba(5, 150, 105, .18);
+}
+
+.btn-success:hover {
+    background: #047857;
+    transform: translateY(-1px);
+}
+
+.btn-warning {
+    background: #f59e0b;
+    color: #111827;
+    box-shadow: 0 14px 30px rgba(245, 158, 11, .18);
+}
+
+.btn-warning:hover {
+    background: #d97706;
+    color: #fff;
+    transform: translateY(-1px);
+}
+
+.btn-muted {
+    border-color: rgba(16, 16, 20, .12);
+    background: #f4f4f5;
+    color: #3f3f46;
+    box-shadow: none;
+}
+
+.btn-muted:hover {
+    background: #e4e4e7;
+    color: #18181b;
+}
+
+.btn-sm {
+    padding: .45rem .8rem;
+    font-size: .86rem;
+}
+
+.btn-md {
+    padding: .7rem 1.05rem;
+}
+
+.btn-lg {
+    padding: .9rem 1.35rem;
+}
+
+.button-standard-note {
+    color: #71717a;
+    font-size: .82rem;
+    font-weight: 800;
 }
 
 .calendar-date {
@@ -721,4 +874,119 @@ body {
 
 table.dataTable tbody tr {
     background: transparent;
+}
+
+@media (min-width: 1024px) {
+    html {
+        font-size: 17px;
+    }
+
+    body {
+        font-size: 1rem;
+        line-height: 1.68;
+    }
+
+    .text-xs {
+        font-size: .86rem !important;
+        line-height: 1.35rem !important;
+    }
+
+    .text-sm {
+        font-size: .98rem !important;
+        line-height: 1.55rem !important;
+    }
+
+    .text-\[10px\],
+    [class*="text-[10px]"] {
+        font-size: .78rem !important;
+        line-height: 1.1rem !important;
+    }
+
+    .text-\[11px\],
+    [class*="text-[11px]"] {
+        font-size: .82rem !important;
+        line-height: 1.15rem !important;
+    }
+
+    .section-kicker {
+        font-size: .86rem;
+        line-height: 1.45rem;
+    }
+
+    .premium-chip {
+        font-size: .94rem;
+        line-height: 1.35rem;
+    }
+
+    .info-chip {
+        font-size: .94rem;
+        line-height: 1.35rem;
+    }
+
+    .stock-input,
+    input,
+    select,
+    textarea,
+    button {
+        font-size: 1rem;
+    }
+
+    table {
+        font-size: 1rem;
+    }
+
+    table th,
+    table td {
+        line-height: 1.55;
+    }
+
+    .stock-card table th,
+    .stock-card table td,
+    .dataTable th,
+    .dataTable td {
+        padding-top: .92rem;
+        padding-bottom: .92rem;
+    }
+
+    .workspace-nav-link {
+        font-size: 1.02rem;
+        line-height: 1.55rem;
+    }
+
+    .calendar-date-trigger b,
+    .calendar-date-label,
+    .hero-search-form .calendar-date-label {
+        font-size: 1rem;
+    }
+
+    .calendar-date-trigger small,
+    .calendar-date-selected,
+    .hero-search-form .calendar-date-selected,
+    .calendar-date-weekdays,
+    .calendar-date-legend {
+        font-size: .86rem;
+    }
+
+    .calendar-day,
+    .hero-search-form .calendar-day {
+        font-size: .96rem;
+    }
+}
+
+@media (min-width: 1280px) {
+    html {
+        font-size: 18px;
+    }
+
+    .workspace-shell {
+        grid-template-columns: 270px minmax(0, 1fr);
+    }
+
+    .stock-card table th,
+    .stock-card table td,
+    .dataTable th,
+    .dataTable td {
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+    }
 }

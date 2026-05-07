@@ -46,7 +46,7 @@ if ($me) {
             ['/photographer/profile.php', 'โปรไฟล์', 'fa-id-card'],
             ['/photographer/service_areas.php', 'พื้นที่ให้บริการ', 'fa-map-location-dot'],
             ['/photographer/services.php', 'ประเภทงานที่รับ', 'fa-list-check'],
-            ['/photographer/portfolio.php', 'ผลงาน', 'fa-images'],
+            ['/photographer/portfolio.php', 'ตัวอย่างงาน', 'fa-images'],
             ['/photographer/availability.php', 'วันว่าง', 'fa-calendar'],
             ['/photographer/bookings.php', 'คำขอจอง', 'fa-calendar-check'],
             ['/photographer/articles.php', 'บทความ', 'fa-newspaper'],

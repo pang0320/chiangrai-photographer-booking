@@ -90,7 +90,7 @@ include __DIR__ . '/../includes/header.php';
                                 <?= csrf_field() ?>
                                 <input type="hidden" name="action" value="delete">
                                 <input type="hidden" name="id" value="<?= (int)$banner['id'] ?>">
-                                <button data-confirm="ลบ banner นี้?" class="rounded-full bg-red-50 px-3 py-1.5 font-black text-red-700">
+                                <button data-confirm="ลบ banner นี้?" class="btn-danger btn-sm">
                                     <i class="fa-solid fa-trash mr-1"></i>ลบ
                                 </button>
                             </form>

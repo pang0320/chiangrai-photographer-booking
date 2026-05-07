@@ -73,6 +73,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   initBlockPagination();
   initCalendarDateInputs();
+  initClickableCards();
 
   if (window.jQuery && jQuery.fn.DataTable) {
     jQuery('.datatable').DataTable({
@@ -122,6 +123,41 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 });
+
+function initClickableCards() {
+  const interactiveSelector = 'a, button, input, select, textarea, label, form, [data-card-ignore]';
+
+  document.querySelectorAll('[data-clickable-card]').forEach(function (card) {
+    function openCard(event) {
+      if (event && event.defaultPrevented) return;
+
+      const target = event ? event.target : null;
+      if (target && target.closest(interactiveSelector)) {
+        return;
+      }
+
+      const formId = card.dataset.cardForm || '';
+      const form = formId ? document.getElementById(formId) : null;
+      if (!form) return;
+
+      if (typeof form.requestSubmit === 'function') {
+        form.requestSubmit();
+      } else {
+        form.submit();
+      }
+    }
+
+    card.addEventListener('click', openCard);
+    card.addEventListener('keydown', function (event) {
+      if (event.key !== 'Enter' && event.key !== ' ') {
+        return;
+      }
+
+      event.preventDefault();
+      openCard(null);
+    });
+  });
+}
 
 function initCalendarDateInputs() {
   const thaiMonths = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];

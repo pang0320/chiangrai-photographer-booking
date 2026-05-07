@@ -95,7 +95,7 @@ include __DIR__ . '/includes/header.php';
                 Chiang Rai Photographer Marketplace
             </div>
             <h1 class="mt-6 max-w-4xl text-4xl font-black leading-tight tracking-tight sm:text-6xl lg:text-7xl">ค้นหาช่างภาพมืออาชีพในจังหวัดเชียงราย</h1>
-            <p class="mt-5 max-w-2xl text-lg font-semibold leading-8 text-white/76">เลือกดูผลงานจริง ตรวจวันว่าง ส่งคำขอจอง และติดต่อช่างภาพโดยตรง ไม่มีระบบรับชำระเงินในเว็บไซต์</p>
+            <p class="mt-5 max-w-2xl text-lg font-semibold leading-8 text-white/76">เลือกดูตัวอย่างงานถ่ายภาพจริง ตรวจวันว่าง ส่งคำขอจอง และติดต่อช่างภาพโดยตรง ไม่มีระบบรับชำระเงินในเว็บไซต์</p>
 
             <form action="/photographers.php" class="hero-search-form glass-panel mt-9 grid gap-3 rounded-[2rem] p-3 text-neutral-950 lg:grid-cols-[1fr_1fr_minmax(330px,1.15fr)_auto]">
                 <select name="district_id" class="stock-input rounded-[1.4rem] px-5 py-4 font-bold">
@@ -153,9 +153,10 @@ include __DIR__ . '/includes/header.php';
                 </div>
             <?php endforeach; ?>
             <div class="absolute left-4 top-[46%] rounded-[2rem] bg-white p-5 text-neutral-950 shadow-2xl">
-                <p class="text-sm font-black text-neutral-500">เริ่มต้น</p>
-                <p class="text-3xl font-black text-red-600">1,800฿</p>
+                <p class="text-sm font-black text-neutral-500">ราคาเริ่มต้นโดยประมาณ</p>
+                <p class="text-3xl font-black text-red-600">1,800 บาท</p>
                 <p class="mt-1 text-sm font-bold text-neutral-600">ค้นหาไม่เกิน 3 ขั้นตอน</p>
+                <p class="mt-1 text-xs font-bold text-neutral-500">ตกลงราคาและชำระเงินกับช่างภาพโดยตรง</p>
             </div>
         </div>
     </div>
@@ -188,7 +189,7 @@ include __DIR__ . '/includes/header.php';
             <div>
                 <p class="section-kicker">ช่างภาพแนะนำ</p>
                 <h2 class="mt-2 text-3xl font-black tracking-tight text-neutral-950">ช่างภาพแนะนำ</h2>
-                <p class="mt-2 text-neutral-600">โปรไฟล์ที่ผ่านการอนุมัติ พร้อมผลงานและช่องทางติดต่อชัดเจน</p>
+                <p class="mt-2 text-neutral-600">โปรไฟล์ที่ผ่านการอนุมัติ พร้อมตัวอย่างงานถ่ายภาพและช่องทางติดต่อชัดเจน</p>
             </div>
             <a href="/photographers.php" class="stock-button rounded-full px-5 py-3 text-sm font-black"><i class="fa-solid fa-magnifying-glass mr-2"></i>ค้นหาช่างภาพ</a>
         </div>
@@ -205,7 +206,7 @@ include __DIR__ . '/includes/header.php';
         <div class="lg:sticky lg:top-24">
             <p class="section-kicker">คะแนนสูงสุด</p>
             <h2 class="mt-2 text-3xl font-black text-neutral-950">ช่างภาพคะแนนสูง</h2>
-            <p class="mt-3 leading-7 text-neutral-600">เลือกจากคะแนน รีวิว และผลงานจริง เหมาะกับลูกค้าที่ต้องการความมั่นใจตั้งแต่ก่อนส่งคำขอจอง</p>
+	            <p class="mt-3 leading-7 text-neutral-600">เลือกจากคะแนนเฉลี่ย จำนวนรีวิว และตัวอย่างงานถ่ายภาพจริง เหมาะกับลูกค้าที่ต้องการความมั่นใจตั้งแต่ก่อนส่งคำขอจอง</p>
         </div>
         <div class="flex gap-5 overflow-x-auto pb-4">
             <?php foreach ($topRated as $p): ?>
@@ -217,7 +218,7 @@ include __DIR__ . '/includes/header.php';
                     $topRatedImage = $p['cover_image'];
                 }
                 ?>
-                <?= clean_context_button('/photographer_detail.php', ['id' => (int)$p['id']], '<img class="h-48 w-full rounded-[1.35rem] object-cover" src="' . h(public_image($topRatedImage, '/assets/uploads/seed/photo-1492691527719-9d1e07e534b4.jpg')) . '" alt=""><div class="p-2"><div class="mt-4 flex items-start justify-between gap-3"><h3 class="font-black text-neutral-950">' . h($p['display_name']) . '</h3><span class="rounded-full bg-red-50 px-3 py-1 text-xs font-black text-red-600"><i class="fa-solid fa-star"></i> ' . number_format((float)$p['average_rating'], 1) . '</span></div><p class="mt-2 text-sm font-bold text-neutral-500">' . h($p['district_name']) . ' · ' . (int)$p['total_reviews'] . ' รีวิว</p></div>', 'stock-card stock-card-hover w-80 shrink-0 rounded-[1.75rem] p-4 text-left', 'contents') ?>
+	                <?= clean_context_button('/photographer_detail.php', ['id' => (int)$p['id']], '<img class="h-48 w-full rounded-[1.35rem] object-cover" src="' . h(public_image($topRatedImage, '/assets/uploads/seed/photo-1492691527719-9d1e07e534b4.jpg')) . '" alt=""><div class="p-2"><div class="mt-4 flex items-start justify-between gap-3"><h3 class="font-black text-neutral-950">' . h($p['display_name']) . '</h3><span class="rounded-full bg-red-50 px-3 py-1 text-xs font-black text-red-600"><i class="fa-solid fa-star mr-1"></i>คะแนนเฉลี่ย ' . number_format((float)$p['average_rating'], 1) . '</span></div><p class="mt-2 text-sm font-bold text-neutral-500">' . h($p['district_name']) . ' · จำนวนรีวิว ' . number_format((int)$p['total_reviews']) . ' รายการ</p></div>', 'stock-card stock-card-hover w-80 shrink-0 rounded-[1.75rem] p-4 text-left', 'contents') ?>
             <?php endforeach; ?>
         </div>
     </div>
@@ -231,7 +232,7 @@ include __DIR__ . '/includes/header.php';
             <p class="mt-4 leading-8 text-white/62">ระบบช่วยให้ค้นหาและส่งคำขอจองได้เร็ว ส่วนการคุยราคาและชำระเงินเป็นเรื่องระหว่างลูกค้ากับช่างภาพโดยตรง</p>
         </div>
         <div class="grid gap-4">
-            <?php foreach ([['fa-magnifying-glass','ค้นหาช่างภาพ','เลือกอำเภอ ประเภทงาน วันที่ คะแนน และงบประมาณ'],['fa-images','ดูผลงาน','ดูผลงาน รีวิว พื้นที่ให้บริการ และวันว่าง'],['fa-paper-plane','ส่งคำขอจอง','กรอกฟอร์มสั้น ๆ พร้อมรายละเอียดงาน'],['fa-comments','ติดต่อโดยตรง','โทร LINE Facebook Instagram หรือเว็บไซต์ของช่างภาพ']] as $step): ?>
+            <?php foreach ([['fa-magnifying-glass','ค้นหาช่างภาพ','เลือกอำเภอ ประเภทงาน วันที่ คะแนน และงบประมาณ'],['fa-images','ดูตัวอย่างงาน','ดูอัลบั้มตัวอย่างงาน รีวิว พื้นที่ให้บริการ และวันว่าง'],['fa-paper-plane','ส่งคำขอจอง','กรอกฟอร์มสั้น ๆ พร้อมรายละเอียดงาน'],['fa-comments','ติดต่อโดยตรง','โทร LINE Facebook Instagram หรือเว็บไซต์ของช่างภาพ']] as $step): ?>
                 <div class="timeline-dot flex gap-4 rounded-[1.5rem] bg-white/8 p-5">
                     <div class="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-red-600 text-white"><i class="fa-solid <?= h($step[0]) ?>"></i></div>
                     <div>
@@ -262,8 +263,8 @@ include __DIR__ . '/includes/header.php';
     <div class="stock-shell px-4 sm:px-6 lg:px-8">
         <div class="flex flex-wrap items-end justify-between gap-5">
             <div>
-                <p class="section-kicker">ตัวอย่างผลงาน</p>
-                <h2 class="mt-2 text-3xl font-black text-neutral-950">ผลงานล่าสุด</h2>
+                <p class="section-kicker">ตัวอย่างงานถ่ายภาพ</p>
+                <h2 class="mt-2 text-3xl font-black text-neutral-950">อัลบั้มตัวอย่างงานล่าสุด</h2>
             </div>
         </div>
         <div class="masonry-gallery mt-8">
@@ -288,7 +289,7 @@ include __DIR__ . '/includes/header.php';
                             <p class="text-sm font-bold text-neutral-500">รีวิว <?= h($review['display_name']) ?></p>
                         </div>
                     </div>
-                    <p class="mt-4 text-red-600"><?= str_repeat('★', (int)$review['rating_overall']) ?></p>
+	                    <p class="mt-4 text-red-600" title="คะแนนรวม <?= (int)$review['rating_overall'] ?> จาก 5"><?= str_repeat('★', (int)$review['rating_overall']) ?></p>
                     <p class="mt-3 line-clamp-3 text-sm leading-7 text-neutral-700"><?= h($review['comment']) ?></p>
                 </article>
             <?php endforeach; ?>
@@ -296,8 +297,8 @@ include __DIR__ . '/includes/header.php';
     </div>
     <div class="dashboard-hero rounded-[2rem] p-8 text-white">
         <p class="text-sm font-black uppercase tracking-[0.22em] text-white/58">Join as photographer</p>
-        <h2 class="mt-3 text-4xl font-black">มีผลงานดี ให้ลูกค้าเชียงรายค้นเจอ</h2>
-        <p class="mt-4 leading-8 text-white/68">สร้างโปรไฟล์ อัปโหลดผลงาน กำหนดพื้นที่ วันว่าง และรับคำขอจองผ่านระบบเดียว</p>
+        <h2 class="mt-3 text-4xl font-black">มีตัวอย่างงานถ่ายภาพดี ให้ลูกค้าเชียงรายค้นเจอ</h2>
+        <p class="mt-4 leading-8 text-white/68">สร้างโปรไฟล์ อัปโหลดตัวอย่างงานถ่ายภาพ กำหนดพื้นที่ วันว่าง และรับคำขอจองผ่านระบบเดียว</p>
         <?= clean_context_button('/register.php', ['role' => 'photographer'], '<i class="fa-solid fa-user-plus mr-2"></i>สมัครเป็นช่างภาพ', 'mt-8 inline-flex rounded-full bg-white px-6 py-3 font-black text-neutral-950 hover:bg-red-600 hover:text-white') ?>
     </div>
 </section>

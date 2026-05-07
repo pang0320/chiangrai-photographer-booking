@@ -64,8 +64,8 @@ include __DIR__ . '/../includes/header.php';
                             <form method="post" class="flex flex-wrap gap-2">
                                 <?= csrf_field() ?>
                                 <input type="hidden" name="id" value="<?= (int)$item['id'] ?>">
-                                <button name="status" value="read" class="rounded-full bg-sky-50 px-3 py-1.5 font-black text-sky-700"><i class="fa-solid fa-eye mr-1"></i>อ่านแล้ว</button>
-                                <button name="status" value="replied" class="rounded-full bg-emerald-50 px-3 py-1.5 font-black text-emerald-700"><i class="fa-solid fa-reply mr-1"></i>ตอบแล้ว</button>
+                                <button name="status" value="read" class="btn-muted btn-sm"><i class="fa-solid fa-eye"></i>อ่านแล้ว</button>
+                                <button name="status" value="replied" class="btn-success btn-sm"><i class="fa-solid fa-reply"></i>ตอบแล้ว</button>
                             </form>
                         </td>
                     </tr>

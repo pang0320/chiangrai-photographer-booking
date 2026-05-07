@@ -46,15 +46,19 @@ include __DIR__ . '/includes/header.php';
                 <img class="h-28 w-28 rounded-3xl object-cover" src="<?= h(public_image($p['profile_image'], '/assets/uploads/seed/photo-1500648767791-00dcc994a43e.jpg')) ?>" alt="">
                 <h2 class="mt-4 text-2xl font-black"><?= h($p['display_name']) ?></h2>
                 <div class="mt-4 grid gap-3 text-sm font-bold text-neutral-700">
-                    <p><i class="fa-solid fa-star mr-2 text-red-600"></i><?= number_format((float)$p['average_rating'], 1) ?> / <?= (int)$p['total_reviews'] ?> รีวิว</p>
-                    <p><i class="fa-solid fa-tag mr-2 text-red-600"></i><?= number_format((float)$p['starting_price']) ?> บาท</p>
+	                    <p><i class="fa-solid fa-star mr-2 text-red-600"></i>คะแนนเฉลี่ย <?= number_format((float)$p['average_rating'], 1) ?></p>
+	                    <p><i class="fa-solid fa-comment mr-2 text-red-600"></i>จำนวนรีวิว <?= number_format((int)$p['total_reviews']) ?> รายการ</p>
+                    <p><i class="fa-solid fa-tag mr-2 text-red-600"></i>ราคาเริ่มต้นโดยประมาณ <?= number_format((float)$p['starting_price']) ?> บาท</p>
                     <p><i class="fa-solid fa-location-dot mr-2 text-red-600"></i><?= h($p['areas']) ?></p>
                     <p><i class="fa-solid fa-camera mr-2 text-red-600"></i><?= h($p['services']) ?></p>
-                    <p><i class="fa-solid fa-images mr-2 text-red-600"></i><?= (int)$p['portfolio_count'] ?> ผลงาน</p>
+                    <p><i class="fa-solid fa-images mr-2 text-red-600"></i>อัลบั้มตัวอย่างงาน <?= (int)$p['portfolio_count'] ?> รูป</p>
                     <p><i class="fa-solid fa-phone mr-2 text-red-600"></i><?= h($p['phone_public']) ?></p>
                 </div>
             </article>
         <?php endforeach; ?>
+    </div>
+    <div class="mt-8 rounded-[1.5rem] bg-red-50 p-5 text-sm font-black leading-7 text-red-700">
+        <i class="fa-solid fa-circle-info mr-2"></i>ราคาเป็นราคาเริ่มต้นโดยประมาณ เว็บไซต์ไม่รับชำระเงิน ลูกค้าและช่างภาพตกลงราคาและชำระเงินกันเองภายนอกระบบ
     </div>
 </section>
 <?php include __DIR__ . '/includes/footer.php'; ?>

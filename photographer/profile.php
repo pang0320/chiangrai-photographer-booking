@@ -68,8 +68,9 @@ include __DIR__ . '/../includes/header.php';
                     <textarea name="bio" rows="5" class="rounded-2xl border px-4 py-3 font-semibold"><?= h($profile['bio']) ?></textarea>
                 </label>
                 <label class="grid gap-2 text-sm font-black text-slate-700 sm:col-span-2">
-                    <span><i class="fa-solid fa-tag mr-2 text-red-600"></i>ราคาเริ่มต้น</span>
+                    <span><i class="fa-solid fa-tag mr-2 text-red-600"></i>ราคาเริ่มต้นโดยประมาณ (บาท)</span>
                     <input type="number" min="0" step="0.01" name="starting_price" value="<?= h($profile['starting_price']) ?>" class="rounded-2xl border px-4 py-3 font-semibold">
+                    <span class="text-sm font-bold leading-6 text-slate-500">ราคานี้ใช้แสดงเป็นข้อมูลเริ่มต้นเท่านั้น เว็บไซต์ไม่รับชำระเงิน ลูกค้าและช่างภาพตกลงราคาและชำระเงินกันเองภายนอกระบบ</span>
                 </label>
             </div>
 

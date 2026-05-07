@@ -45,7 +45,7 @@ include __DIR__ . '/../includes/header.php';
             <b class="mt-2 block text-3xl"><?= table_count('bookings', 'deleted_at IS NULL') ?></b>
         </div>
         <div class="stock-card rounded-[1.5rem] p-5">
-            <p class="text-sm font-bold text-neutral-500">คะแนนรีวิวเฉลี่ย</p>
+            <p class="text-sm font-bold text-neutral-500">คะแนนเฉลี่ยจากรีวิว</p>
             <b class="mt-2 block text-3xl"><?= number_format((float)$avgReview, 1) ?></b>
         </div>
     </div>

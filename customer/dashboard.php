@@ -134,7 +134,7 @@ include __DIR__ . '/../includes/header.php';
                 <h2 class="mt-1 text-xl font-black text-neutral-950">สถานะการจอง</h2>
                 <div class="mt-4 grid gap-3">
                     <?php foreach ([['fa-paper-plane','ส่งคำขอจอง','pending'],['fa-handshake','ช่างภาพตอบรับ','accepted'],['fa-circle-check','ยืนยันงาน','confirmed'],['fa-star','รีวิวหลังงานเสร็จ','completed']] as $step): ?>
-                        <div class="flex items-center gap-3 rounded-2xl bg-neutral-50 p-3">
+                        <div class="info-row flex items-center gap-3 rounded-2xl p-3">
                             <div class="grid h-10 w-10 place-items-center rounded-xl bg-neutral-950 text-white"><i class="fa-solid <?= h($step[0]) ?>"></i></div>
                             <div><p class="font-black"><?= h($step[1]) ?></p><p class="text-xs font-bold text-neutral-500"><?= h(booking_status_label($step[2])) ?></p></div>
                         </div>

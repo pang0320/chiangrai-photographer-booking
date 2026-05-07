@@ -161,8 +161,8 @@ include __DIR__ . '/../includes/header.php';
                     <th>ชื่อ</th>
                     <th>อีเมล</th>
                     <th>อำเภอ</th>
-                    <th>ราคา</th>
-                    <th>คะแนน</th>
+                    <th>ราคาเริ่มต้นโดยประมาณ</th>
+	                    <th>คะแนนเฉลี่ย</th>
                     <th>ป้ายกำกับ</th>
                     <th>สถานะ</th>
                     <th>จัดการ</th>
@@ -176,8 +176,8 @@ include __DIR__ . '/../includes/header.php';
                         </td>
                         <td><?= h($photographer['email']) ?></td>
                         <td><?= h($photographer['district_name']) ?></td>
-                        <td><?= number_format((float)$photographer['starting_price']) ?></td>
-                        <td><?= h($photographer['average_rating']) ?></td>
+                        <td><?= number_format((float)$photographer['starting_price']) ?> บาท</td>
+	                        <td><?= number_format((float)$photographer['average_rating'], 1) ?> คะแนน</td>
                         <td>
                             <div class="flex flex-wrap gap-1">
                                 <?php if ((int)$photographer['is_verified'] === 1): ?>
@@ -196,12 +196,12 @@ include __DIR__ . '/../includes/header.php';
                                 <input name="rejection_reason" placeholder="เหตุผลปฏิเสธ" class="stock-input rounded-xl px-3 py-2 text-sm">
                                 <?= be_date_input('featured_until', '', 'stock-input rounded-xl px-3 py-2 text-sm', false, 'แนะนำถึง พ.ศ.') ?>
                                 <div class="flex flex-wrap gap-2">
-                                    <button data-confirm="ยืนยันอนุมัติช่างภาพนี้?" name="action" value="approve" class="rounded-full bg-emerald-50 px-3 py-1.5 font-black text-emerald-700"><i class="fa-solid fa-check mr-1"></i>อนุมัติ</button>
-                                    <button data-confirm="ยืนยันปฏิเสธช่างภาพนี้?" name="action" value="reject" class="rounded-full bg-red-50 px-3 py-1.5 font-black text-red-700"><i class="fa-solid fa-xmark mr-1"></i>ปฏิเสธ</button>
-                                    <button data-confirm="ยืนยันระงับช่างภาพนี้?" name="action" value="suspend" class="rounded-full bg-amber-50 px-3 py-1.5 font-black text-amber-700"><i class="fa-solid fa-ban mr-1"></i>ระงับ</button>
-                                    <button name="action" value="verify" class="rounded-full bg-sky-50 px-3 py-1.5 font-black text-sky-700"><i class="fa-solid fa-circle-check mr-1"></i>ยืนยัน</button>
-                                    <button name="action" value="feature" class="rounded-full bg-yellow-50 px-3 py-1.5 font-black text-yellow-700"><i class="fa-solid fa-award mr-1"></i>แนะนำ</button>
-                                    <button name="action" value="unfeature" class="rounded-full bg-slate-100 px-3 py-1.5 font-black text-slate-700"><i class="fa-solid fa-eye-slash mr-1"></i>เลิกแนะนำ</button>
+                                    <button data-confirm="ยืนยันอนุมัติช่างภาพนี้?" name="action" value="approve" class="btn-success btn-sm"><i class="fa-solid fa-check"></i>อนุมัติ</button>
+                                    <button data-confirm="ยืนยันปฏิเสธช่างภาพนี้?" name="action" value="reject" class="btn-danger btn-sm"><i class="fa-solid fa-xmark"></i>ปฏิเสธ</button>
+                                    <button data-confirm="ยืนยันระงับช่างภาพนี้?" name="action" value="suspend" class="btn-warning btn-sm"><i class="fa-solid fa-ban"></i>ระงับ</button>
+                                    <button name="action" value="verify" class="btn-success btn-sm"><i class="fa-solid fa-circle-check"></i>ยืนยัน</button>
+                                    <button name="action" value="feature" class="btn-warning btn-sm"><i class="fa-solid fa-award"></i>แนะนำ</button>
+                                    <button name="action" value="unfeature" class="btn-muted btn-sm"><i class="fa-solid fa-eye-slash"></i>เลิกแนะนำ</button>
                                 </div>
                             </form>
                         </td>

@@ -318,6 +318,7 @@ include __DIR__ . '/includes/header.php';
                         <p class="text-sm font-black text-red-600"><?= h($article['display_name']) ?></p>
                         <h3 class="mt-2 text-xl font-black text-neutral-950"><?= h($article['title']) ?></h3>
                         <p class="mt-3 line-clamp-3 text-sm leading-7 text-neutral-600"><?= h(strip_tags($article['content'])) ?></p>
+                        <?= clean_context_button('/article_detail.php', ['slug' => $article['slug']], '<i class="fa-solid fa-eye mr-2"></i>อ่านต่อ', 'mt-5 inline-flex rounded-full bg-neutral-950 px-4 py-2 text-sm font-black text-white hover:bg-red-600') ?>
                     </div>
                 </article>
             <?php endforeach; ?>

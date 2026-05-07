@@ -60,7 +60,13 @@ include __DIR__ . '/../includes/header.php';
             <tbody>
                 <?php foreach ($items as $article): ?>
                     <tr>
-                        <td class="font-black"><?= h($article['title']) ?></td>
+                        <td>
+                            <?php if ($article['status'] === 'published'): ?>
+                                <?= clean_context_button('/article_detail.php', ['slug' => $article['slug']], h($article['title']), 'font-black text-red-600 hover:text-neutral-950', 'inline', 'target="_blank"') ?>
+                            <?php else: ?>
+                                <span class="font-black"><?= h($article['title']) ?></span>
+                            <?php endif; ?>
+                        </td>
                         <td><?= h($article['display_name']) ?></td>
                         <td><?= status_badge($article['status']) ?></td>
                         <td><?= h(format_be_datetime($article['created_at'])) ?></td>

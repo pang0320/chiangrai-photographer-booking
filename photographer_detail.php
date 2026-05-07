@@ -414,6 +414,7 @@ include __DIR__ . '/includes/header.php';
                         <div class="rounded-2xl bg-neutral-50 p-4">
                             <b class="text-neutral-950"><?= h($a['title']) ?></b>
                             <p class="mt-1 line-clamp-2 text-sm leading-6 text-neutral-600"><?= h(strip_tags($a['content'])) ?></p>
+                            <?= clean_context_button('/article_detail.php', ['slug' => $a['slug']], '<i class="fa-solid fa-eye mr-1"></i>อ่านต่อ', 'mt-3 inline-flex rounded-full bg-white px-3 py-1.5 text-xs font-black text-red-600 hover:bg-neutral-950 hover:text-white') ?>
                         </div>
                     <?php endforeach; ?>
                 </div>

@@ -3,6 +3,10 @@ require_once __DIR__ . '/../includes/functions.php';
 requireRole('photographer');
 
 $profile = photographer_profile_by_user((int)current_user()['id']);
+if (!$profile) {
+    flash('error', 'ไม่พบโปรไฟล์ช่างภาพ');
+    redirect('/photographer/onboarding.php');
+}
 $pid = (int)$profile['id'];
 
 if (is_post()) {
@@ -22,20 +26,30 @@ if (is_post()) {
             $status = (string)($_POST['status'] ?? 'draft');
             $content = trim((string)($_POST['content'] ?? ''));
 
+            if (!in_array($status, ['draft', 'published', 'hidden'], true)) {
+                $status = 'draft';
+            }
+
+            if ($title === '' || $content === '') {
+                flash('error', 'กรุณากรอกหัวข้อและเนื้อหาบทความ');
+                redirect('/photographer/articles.php');
+            }
+
             $stmt = db()->prepare('INSERT INTO photographer_articles (photographer_id, title, slug, cover_image, content, status, published_at, created_at, updated_at)
                                    VALUES (?, ?, ?, ?, ?, ?, IF(? = "published", NOW(), NULL), NOW(), NOW())');
             $stmt->execute([$pid, $title, unique_slug('photographer_articles', $title), $cover, $content, $status, $status]);
+            $articleId = (int)db()->lastInsertId();
             flash('success', 'บันทึกบทความแล้ว');
         }
 
-        log_activity('manage_articles', 'photographer_articles', $pid);
+        log_activity('manage_articles', 'photographer_articles', $articleId ?? $pid);
         redirect('/photographer/articles.php');
     } catch (Throwable $e) {
         flash('error', $e->getMessage());
     }
 }
 
-$stmt = db()->prepare('SELECT * FROM photographer_articles WHERE photographer_id = ? AND deleted_at IS NULL ORDER BY created_at DESC');
+$stmt = db()->prepare('SELECT * FROM photographer_articles WHERE photographer_id = ? AND deleted_at IS NULL ORDER BY created_at DESC, id DESC');
 $stmt->execute([$pid]);
 $items = $stmt->fetchAll();
 

@@ -28,11 +28,11 @@ if (is_post()) {
     redirect('/admin/articles.php');
 }
 
-$stmt = db()->prepare('SELECT a.*, p.display_name
+$stmt = db()->prepare('SELECT a.*, COALESCE(p.display_name, CONCAT("Photographer #", a.photographer_id)) AS display_name
                        FROM photographer_articles a
-                       JOIN photographer_profiles p ON p.id = a.photographer_id
+                       LEFT JOIN photographer_profiles p ON p.id = a.photographer_id
                        WHERE a.deleted_at IS NULL
-                       ORDER BY a.created_at DESC');
+                       ORDER BY a.created_at DESC, a.id DESC');
 $stmt->execute();
 $items = $stmt->fetchAll();
 

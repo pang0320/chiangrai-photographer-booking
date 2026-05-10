@@ -159,7 +159,8 @@ include __DIR__ . '/../includes/header.php';
             <label class="mt-4 block text-sm font-black text-neutral-700" for="description">
                 <i class="fa-solid fa-pen mr-2 text-red-600"></i>รายละเอียดงานที่รับ
             </label>
-            <textarea id="description" name="description" rows="4" placeholder="เช่น ถ่ายรับปริญญา ครึ่งวัน/เต็มวัน ส่งไฟล์ภาพที่แต่งสีแล้ว พร้อมให้คำแนะนำก่อนถ่าย" class="stock-input mt-2 w-full rounded-2xl px-4 py-3 font-semibold"></textarea>
+            <textarea id="description" name="description" rows="4" maxlength="500" placeholder="เช่น ถ่ายรับปริญญา ครึ่งวัน/เต็มวัน ส่งไฟล์ภาพที่แต่งสีแล้ว พร้อมให้คำแนะนำก่อนถ่าย" class="stock-input mt-2 w-full rounded-2xl px-4 py-3 font-semibold"></textarea>
+            <p class="mt-2 text-sm font-bold text-neutral-500">แนะนำ 300-500 ตัวอักษร เขียนให้ชัดว่ารวมอะไรบ้างและเหมาะกับงานแบบไหน</p>
 
             <label class="mt-4 block text-sm font-black text-neutral-700" for="starting_price">
                 <i class="fa-solid fa-baht-sign mr-2 text-red-600"></i>ราคาเริ่มต้นโดยประมาณ
@@ -233,7 +234,8 @@ include __DIR__ . '/../includes/header.php';
                             </div>
 
                             <label class="mt-4 block text-sm font-black text-neutral-700" for="description_<?= (int)$service['id'] ?>">รายละเอียดประเภทงาน</label>
-                            <textarea id="description_<?= (int)$service['id'] ?>" name="description" rows="3" class="stock-input mt-2 w-full rounded-2xl px-4 py-3 font-semibold"><?= h($service['description']) ?></textarea>
+                            <textarea id="description_<?= (int)$service['id'] ?>" name="description" rows="3" maxlength="500" class="stock-input mt-2 w-full rounded-2xl px-4 py-3 font-semibold"><?= h($service['description']) ?></textarea>
+                            <p class="mt-2 text-sm font-bold text-neutral-500">แนะนำ 300-500 ตัวอักษร ถ้าข้อความยาว หน้าโปรไฟล์จะตัดแสดงบางส่วนเพื่อให้การ์ดอ่านง่าย</p>
 
                             <label class="mt-4 block text-sm font-black text-neutral-700" for="price_<?= (int)$service['id'] ?>">ราคาเริ่มต้นโดยประมาณ (บาท)</label>
                             <input id="price_<?= (int)$service['id'] ?>" type="number" step="0.01" min="0" name="starting_price" value="<?= h((string)$service['starting_price']) ?>" class="stock-input mt-2 w-full rounded-2xl px-4 py-3 font-semibold">

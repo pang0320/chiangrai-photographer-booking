@@ -60,6 +60,7 @@ include __DIR__ . '/../includes/header.php';
     <div>
         <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">สตูดิโอช่างภาพ</p>
         <h1 class="mt-1 text-3xl font-black text-neutral-950">พื้นที่ให้บริการ</h1>
+        <p class="mt-2 text-sm font-bold text-neutral-500">เลือกอำเภอที่รับงานได้ หรือใช้ “รับงานทุกอำเภอ” เพื่อเลือกทั้งจังหวัดเชียงรายในครั้งเดียว</p>
     </div>
 
     <form method="post" class="stock-card mt-6 rounded-[1.5rem] p-6">
@@ -77,6 +78,11 @@ include __DIR__ . '/../includes/header.php';
             </select>
         </label>
 
+        <label class="mt-5 flex items-center justify-between rounded-[1.35rem] border border-red-100 bg-red-50 px-4 py-3 font-black text-red-700">
+            <span><i class="fa-solid fa-map-location-dot mr-2"></i>รับงานทุกอำเภอในจังหวัดเชียงราย</span>
+            <input id="select-all-districts" type="checkbox" class="h-5 w-5 accent-red-600">
+        </label>
+
         <div class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <?php foreach ($districts as $district): ?>
                 <?php
@@ -89,7 +95,7 @@ include __DIR__ . '/../includes/header.php';
                 }
                 ?>
                 <label class="flex items-center gap-3 rounded-2xl border border-neutral-100 bg-white px-4 py-3 font-bold shadow-sm">
-                    <input type="checkbox" name="district_ids[]" value="<?= $districtId ?>" <?php if ($isChecked): ?>checked<?php endif; ?>>
+                    <input class="district-checkbox h-4 w-4 accent-red-600" type="checkbox" name="district_ids[]" value="<?= $districtId ?>" <?php if ($isChecked): ?>checked<?php endif; ?>>
                     <span><?= h($district['district_name']) ?></span>
                 </label>
             <?php endforeach; ?>
@@ -98,5 +104,31 @@ include __DIR__ . '/../includes/header.php';
         <button class="stock-button mt-6 rounded-full px-6 py-3 font-black"><i class="fa-solid fa-floppy-disk mr-2"></i>บันทึก</button>
     </form>
 </section>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var selectAll = document.getElementById('select-all-districts');
+    var checkboxes = Array.prototype.slice.call(document.querySelectorAll('.district-checkbox'));
+    if (!selectAll || !checkboxes.length) return;
+
+    function syncSelectAllState() {
+        selectAll.checked = checkboxes.every(function (checkbox) {
+            return checkbox.checked;
+        });
+    }
+
+    selectAll.addEventListener('change', function () {
+        checkboxes.forEach(function (checkbox) {
+            checkbox.checked = selectAll.checked;
+        });
+    });
+
+    checkboxes.forEach(function (checkbox) {
+        checkbox.addEventListener('change', syncSelectAllState);
+    });
+
+    syncSelectAllState();
+});
+</script>
 
 <?php include __DIR__ . '/../includes/footer.php'; ?>

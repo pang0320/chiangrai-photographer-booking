@@ -90,6 +90,13 @@ include __DIR__ . '/../includes/header.php';
     <div>
         <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">สตูดิโอช่างภาพ</p>
         <h1 class="mt-1 text-3xl font-black text-neutral-950">จัดการวันว่าง</h1>
+        <p class="mt-2 max-w-3xl text-sm font-bold leading-7 text-neutral-500">ถ้าต้องการรับงานให้เลือก “ว่าง” ถ้าต้องการปิดบางวันในปฏิทินให้เลือก “ไม่ว่าง” ส่วน “ถูกจองแล้ว” ใช้บันทึกวันที่มีงานแน่นอนหรือระบบพบคำขอที่ตอบรับ/ยืนยันแล้ว</p>
+    </div>
+
+    <div class="mt-5 grid gap-3 md:grid-cols-3">
+        <div class="rounded-[1.35rem] bg-emerald-50 p-4 text-sm font-bold leading-7 text-emerald-700"><i class="fa-solid fa-circle-check mr-2"></i>ว่าง = ลูกค้าส่งคำขอจองได้</div>
+        <div class="rounded-[1.35rem] bg-slate-100 p-4 text-sm font-bold leading-7 text-slate-700"><i class="fa-solid fa-circle-minus mr-2"></i>ไม่ว่าง = ปิดรับงานในวัน/ช่วงเวลานั้น</div>
+        <div class="rounded-[1.35rem] bg-indigo-50 p-4 text-sm font-bold leading-7 text-indigo-700"><i class="fa-solid fa-calendar-check mr-2"></i>ถูกจองแล้ว = มีงานหรือคำขอที่ตอบรับแล้ว</div>
     </div>
 
     <form method="post" class="stock-card mt-6 grid gap-4 rounded-[1.5rem] p-5 md:grid-cols-[1.4fr_1fr_1fr_1fr_auto]">
@@ -129,7 +136,7 @@ include __DIR__ . '/../includes/header.php';
                     <tr class="border-t">
                         <td class="py-3 font-bold"><?= h(format_be_date($item['available_date'])) ?></td>
                         <td><?= h(time_slot_label($item['time_slot'])) ?></td>
-                        <td><?= h(booking_status_label($item['status'])) ?></td>
+                        <td><?= status_badge((string)$item['status']) ?></td>
                         <td><?= h($item['note']) ?></td>
                         <td>
                             <form method="post">

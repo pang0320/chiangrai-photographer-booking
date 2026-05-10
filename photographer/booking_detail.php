@@ -70,14 +70,16 @@ include __DIR__ . '/../includes/header.php';
             </div>
         </div>
 
-        <a class="mt-6 inline-flex rounded-full bg-neutral-950 px-5 py-3 font-black text-white hover:bg-red-600" href="/photographer/bookings.php">
-            <i class="fa-solid fa-pen mr-2"></i>จัดการสถานะ
-        </a>
+        <?= clean_context_button('/photographer/bookings.php', ['tab' => 'active'], '<i class="fa-solid fa-pen mr-2"></i>จัดการสถานะ', 'mt-6 inline-flex rounded-full bg-neutral-950 px-5 py-3 font-black text-white hover:bg-red-600') ?>
     </div>
 
     <div class="stock-card mt-6 rounded-[1.5rem] p-6">
-        <h2 class="text-xl font-black">ประวัติสถานะ</h2>
-        <div class="mt-4 grid gap-3">
+        <div>
+            <p class="section-kicker"><i class="fa-solid fa-clock-rotate-left mr-2"></i>ประวัติสถานะต่าง ๆ</p>
+            <h2 class="mt-1 text-2xl font-black text-neutral-950">Timeline การเปลี่ยนสถานะ</h2>
+            <p class="mt-2 text-sm font-bold text-neutral-500">ทุกครั้งที่มีการเปลี่ยนสถานะ ระบบจะบันทึกผู้ดำเนินการ เวลา สถานะเดิม และสถานะใหม่</p>
+        </div>
+        <div class="mt-6 grid gap-4">
             <?php foreach ($logs as $log): ?>
                 <?php
                 $oldStatusText = '-';
@@ -89,14 +91,36 @@ include __DIR__ . '/../includes/header.php';
                     $changedByName = $log['name'];
                 }
                 ?>
-                <div class="rounded-2xl bg-neutral-50 p-4 text-sm">
-                    <?= h(format_be_datetime($log['created_at'])) ?>
-                    · <?= h($oldStatusText) ?>
-                    → <?= h($log['new_status']) ?>
-                    ผู้ดำเนินการ: <?= h($changedByName) ?>
-                    <?= h($log['note']) ?>
+                <div class="relative rounded-[1.5rem] border border-neutral-100 bg-neutral-50 p-5 pl-14">
+                    <span class="absolute left-5 top-5 grid h-8 w-8 place-items-center rounded-full bg-red-600 text-white">
+                        <i class="fa-solid fa-check"></i>
+                    </span>
+                    <div class="flex flex-wrap items-center justify-between gap-3">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <?php if (!empty($log['old_status'])): ?>
+                                <span class="rounded-full bg-white px-3 py-1 text-xs font-black text-neutral-500"><?= h($oldStatusText) ?></span>
+                                <i class="fa-solid fa-arrow-right text-neutral-300"></i>
+                            <?php endif; ?>
+                            <?= status_badge((string)$log['new_status']) ?>
+                        </div>
+                        <span class="text-sm font-black text-neutral-500"><i class="fa-solid fa-calendar-day mr-1 text-red-600"></i><?= h(format_be_datetime($log['created_at'])) ?></span>
+                    </div>
+                    <p class="mt-3 text-sm font-bold text-neutral-600">
+                        <i class="fa-solid fa-user mr-1 text-red-600"></i>ผู้ดำเนินการ: <?= h($changedByName) ?>
+                    </p>
+                    <?php if (!empty($log['note'])): ?>
+                        <p class="mt-2 rounded-2xl bg-white p-3 text-sm font-semibold leading-7 text-neutral-700">
+                            <i class="fa-solid fa-note-sticky mr-1 text-red-600"></i><?= nl2br(h($log['note'])) ?>
+                        </p>
+                    <?php endif; ?>
                 </div>
             <?php endforeach; ?>
+            <?php if (!$logs): ?>
+                <div class="empty-state rounded-[2rem] p-8 text-center">
+                    <i class="fa-solid fa-clipboard-list text-4xl text-red-600"></i>
+                    <h3 class="mt-3 text-xl font-black">ยังไม่มีประวัติสถานะ</h3>
+                </div>
+            <?php endif; ?>
         </div>
     </div>
 </section>

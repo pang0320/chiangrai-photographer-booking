@@ -84,17 +84,36 @@ $thaiMonths = [
     12 => 'ธ.ค.',
 ];
 
-$monthlyRows = db_fetch_all('SELECT DATE_FORMAT(created_at, "%Y-%m") AS ym, COUNT(*) AS total
+$monthlyRows = db_fetch_all('SELECT DATE_FORMAT(created_at, "%Y-%m") AS ym,
+                                    CASE
+                                        WHEN status IN ("pending", "accepted", "confirmed") THEN "active"
+                                        WHEN status = "completed" THEN "completed"
+                                        WHEN status IN ("rejected", "cancelled") THEN "closed"
+                                        ELSE "other"
+                                    END AS status_group,
+                                    COUNT(*) AS total
                              FROM bookings
                              WHERE photographer_id = ?
                                AND deleted_at IS NULL
                                AND created_at >= DATE_SUB(CURDATE(), INTERVAL 11 MONTH)
-                             GROUP BY ym
+                             GROUP BY ym, status_group
                              ORDER BY ym ASC', [$pid]);
 $monthlyMap = [];
 
 foreach ($monthlyRows as $row) {
-    $monthlyMap[(string)$row['ym']] = (int)$row['total'];
+    $ym = (string)$row['ym'];
+    $statusGroup = (string)$row['status_group'];
+
+    if (!isset($monthlyMap[$ym])) {
+        $monthlyMap[$ym] = [
+            'active' => 0,
+            'completed' => 0,
+            'closed' => 0,
+            'other' => 0,
+        ];
+    }
+
+    $monthlyMap[$ym][$statusGroup] = (int)$row['total'];
 }
 
 $monthlyChart = [];
@@ -110,11 +129,19 @@ for ($i = 11; $i >= 0; $i--) {
     $key = $date->format('Y-m');
     $monthNumber = (int)$date->format('n');
     $yearShort = substr((string)((int)$date->format('Y') + 543), -2);
-    $total = 0;
+    $activeTotal = 0;
+    $completedTotal = 0;
+    $closedTotal = 0;
+    $otherTotal = 0;
 
     if (isset($monthlyMap[$key])) {
-        $total = (int)$monthlyMap[$key];
+        $activeTotal = (int)$monthlyMap[$key]['active'];
+        $completedTotal = (int)$monthlyMap[$key]['completed'];
+        $closedTotal = (int)$monthlyMap[$key]['closed'];
+        $otherTotal = (int)$monthlyMap[$key]['other'];
     }
+
+    $total = $activeTotal + $completedTotal + $closedTotal + $otherTotal;
 
     if ($total > $maxMonthly) {
         $maxMonthly = $total;
@@ -123,6 +150,10 @@ for ($i = 11; $i >= 0; $i--) {
     $monthlyChart[] = [
         'label' => $thaiMonths[$monthNumber] . ' ' . $yearShort,
         'total' => $total,
+        'active' => $activeTotal,
+        'completed' => $completedTotal,
+        'closed' => $closedTotal,
+        'other' => $otherTotal,
     ];
 }
 
@@ -200,8 +231,10 @@ $bookings = db_fetch_all('SELECT b.*, u.name AS customer_name, sc.name AS catego
                           JOIN users u ON u.id = b.customer_id
                           JOIN service_categories sc ON sc.id = b.category_id
                           JOIN districts d ON d.id = b.district_id
-                          WHERE b.photographer_id = ? AND b.deleted_at IS NULL
-                          ORDER BY b.created_at DESC
+                          WHERE b.photographer_id = ?
+                            AND b.status IN ("pending", "accepted", "confirmed")
+                            AND b.deleted_at IS NULL
+                          ORDER BY FIELD(b.status, "pending", "accepted", "confirmed"), b.booking_date ASC, b.created_at DESC
                           LIMIT 8', [$pid]);
 
 $availability = db_fetch_all('SELECT *
@@ -304,6 +337,11 @@ include __DIR__ . '/../includes/header.php';
                 <h1 class="mt-2 text-3xl font-black sm:text-5xl">สวัสดี, <?= h($profile['display_name']) ?></h1>
                 <div class="mt-3 flex flex-wrap gap-2">
                     <?= status_badge($profile['approval_status']) ?>
+                    <?php if ((int)$profile['is_available'] === 1): ?>
+                        <span class="rounded-full bg-emerald-400/18 px-3 py-1 text-xs font-black text-emerald-100"><i class="fa-solid fa-toggle-on mr-1"></i>เปิดรับงาน</span>
+                    <?php else: ?>
+                        <span class="rounded-full bg-rose-400/18 px-3 py-1 text-xs font-black text-rose-100"><i class="fa-solid fa-toggle-off mr-1"></i>ปิดรับงาน</span>
+                    <?php endif; ?>
                     <?php if ((int)$profile['is_verified'] === 1): ?>
                         <span class="rounded-full bg-emerald-400/18 px-3 py-1 text-xs font-black text-emerald-100"><i class="fa-solid fa-circle-check mr-1"></i>ยืนยันตัวตนแล้ว</span>
                     <?php endif; ?>
@@ -372,9 +410,14 @@ include __DIR__ . '/../includes/header.php';
                 <div>
                     <p class="section-kicker">Booking Analytics</p>
                     <h2 class="mt-1 text-2xl font-black text-neutral-950"><i class="fa-solid fa-chart-column mr-2 text-red-600"></i>กราฟคำขอจอง 12 เดือนล่าสุด</h2>
-                    <p class="mt-2 text-sm font-bold text-neutral-500">วัดจำนวนคำขอจองที่เข้ามาในแต่ละเดือน</p>
+                    <p class="mt-2 text-sm font-bold text-neutral-500">แยกสีตามสถานะ: กำลังดำเนินการ, เสร็จสิ้น, ยกเลิก/ปฏิเสธ</p>
                 </div>
                 <span class="rounded-full bg-red-50 px-4 py-2 text-sm font-black text-red-700"><i class="fa-solid fa-calendar mr-2"></i>เดือนนี้ <?= number_format($stats['this_month']) ?> รายการ</span>
+            </div>
+            <div class="mt-5 flex flex-wrap gap-2 text-xs font-black">
+                <span class="rounded-full bg-sky-50 px-3 py-1.5 text-sky-700"><i class="fa-solid fa-square mr-1"></i>กำลังดำเนินการ</span>
+                <span class="rounded-full bg-emerald-50 px-3 py-1.5 text-emerald-700"><i class="fa-solid fa-square mr-1"></i>เสร็จสิ้น</span>
+                <span class="rounded-full bg-rose-50 px-3 py-1.5 text-rose-700"><i class="fa-solid fa-square mr-1"></i>ยกเลิก/ปฏิเสธ</span>
             </div>
             <div class="mt-8 flex h-72 items-end gap-2 sm:gap-3">
                 <?php foreach ($monthlyChart as $month): ?>
@@ -388,11 +431,24 @@ include __DIR__ . '/../includes/header.php';
                             $height = 14;
                         }
                     }
+                    $activeHeight = 0;
+                    $completedHeight = 0;
+                    $closedHeight = 0;
+
+                    if ((int)$month['total'] > 0) {
+                        $activeHeight = (float)$month['active'] / (float)$month['total'] * 100;
+                        $completedHeight = (float)$month['completed'] / (float)$month['total'] * 100;
+                        $closedHeight = (float)$month['closed'] / (float)$month['total'] * 100;
+                    }
                     ?>
                     <div class="flex min-w-0 flex-1 flex-col items-center justify-end gap-2">
                         <div class="text-xs font-black text-neutral-500"><?= (int)$month['total'] ?></div>
-                        <div class="relative h-52 w-full overflow-hidden rounded-b-lg rounded-t-2xl bg-neutral-100">
-                            <div class="absolute bottom-0 left-0 right-0 rounded-t-2xl bg-gradient-to-t from-red-600 via-red-500 to-amber-300 shadow-lg shadow-red-500/20 transition-all duration-500" style="height: <?= $height ?>%"></div>
+                        <div class="relative flex h-52 w-full items-end overflow-hidden rounded-b-lg rounded-t-2xl bg-neutral-100">
+                            <div class="flex w-full flex-col-reverse overflow-hidden rounded-t-2xl shadow-lg transition-all duration-500" style="height: <?= $height ?>%">
+                                <?php if ($activeHeight > 0): ?><div class="bg-sky-500" title="กำลังดำเนินการ <?= (int)$month['active'] ?>" style="height: <?= number_format($activeHeight, 2) ?>%"></div><?php endif; ?>
+                                <?php if ($completedHeight > 0): ?><div class="bg-emerald-500" title="เสร็จสิ้น <?= (int)$month['completed'] ?>" style="height: <?= number_format($completedHeight, 2) ?>%"></div><?php endif; ?>
+                                <?php if ($closedHeight > 0): ?><div class="bg-rose-500" title="ยกเลิก/ปฏิเสธ <?= (int)$month['closed'] ?>" style="height: <?= number_format($closedHeight, 2) ?>%"></div><?php endif; ?>
+                            </div>
                         </div>
                         <div class="w-full truncate text-center text-[11px] font-black text-neutral-500"><?= h($month['label']) ?></div>
                     </div>
@@ -578,10 +634,10 @@ include __DIR__ . '/../includes/header.php';
         <div class="stock-card rounded-[1.75rem] p-6">
             <div class="flex flex-wrap justify-between gap-4">
                 <div>
-                    <p class="section-kicker">Recent Bookings</p>
-                    <h2 class="mt-1 text-2xl font-black text-neutral-950"><i class="fa-solid fa-list-check mr-2 text-red-600"></i>รายการจองล่าสุด</h2>
+                    <p class="section-kicker">Active Bookings</p>
+                    <h2 class="mt-1 text-2xl font-black text-neutral-950"><i class="fa-solid fa-list-check mr-2 text-red-600"></i>รายการจองที่กำลังดำเนินการ</h2>
                 </div>
-                <a class="rounded-full border border-neutral-200 px-4 py-2 text-sm font-black transition hover:bg-neutral-950 hover:text-white" href="/photographer/bookings.php"><i class="fa-solid fa-eye mr-2"></i>ดูทั้งหมด</a>
+                <?= clean_context_button('/photographer/bookings.php', ['tab' => 'active'], '<i class="fa-solid fa-eye mr-2"></i>ดูทั้งหมด', 'rounded-full border border-neutral-200 px-4 py-2 text-sm font-black transition hover:bg-neutral-950 hover:text-white') ?>
             </div>
             <div class="mt-5 overflow-x-auto">
                 <?php if ($bookings): ?>

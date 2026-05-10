@@ -10,6 +10,32 @@ if (!$profile) {
 
 $pid = (int)$profile['id'];
 
+if (is_post()) {
+    verify_csrf();
+    $action = (string)($_POST['action'] ?? '');
+
+    if ($action === 'report_review') {
+        $reviewId = (int)($_POST['review_id'] ?? 0);
+        $reason = trim((string)($_POST['reason'] ?? ''));
+        $detail = trim((string)($_POST['detail'] ?? ''));
+
+        $reviewOwner = db_fetch_value('SELECT id FROM reviews WHERE id = ? AND photographer_id = ? AND deleted_at IS NULL LIMIT 1', [$reviewId, $pid]);
+
+        if (!$reviewOwner) {
+            flash('error', 'ไม่พบรีวิวที่ต้องการรายงาน');
+        } elseif ($reason === '' || $detail === '') {
+            flash('error', 'กรุณากรอกเหตุผลและรายละเอียดในการรายงานรีวิว');
+        } else {
+            $stmt = db()->prepare('INSERT INTO reports (reporter_id, target_type, target_id, reason, detail, status, created_at, updated_at) VALUES (?, "review", ?, ?, ?, "pending", NOW(), NOW())');
+            $stmt->execute([(int)current_user()['id'], $reviewId, $reason, $detail]);
+            log_activity('report_review', 'reports', (int)db()->lastInsertId());
+            flash('success', 'ส่งรายงานรีวิวให้ผู้ดูแลตรวจสอบแล้ว');
+        }
+
+        redirect('/photographer/reviews.php');
+    }
+}
+
 $reviews = db_fetch_all('SELECT r.*, u.name AS customer_name, u.avatar AS customer_avatar, b.booking_code, b.booking_date, sc.name AS category_name
                          FROM reviews r
                          JOIN users u ON u.id = r.customer_id
@@ -424,6 +450,25 @@ include __DIR__ . '/../includes/header.php';
                                 <?php endforeach; ?>
                             </div>
                         <?php endif; ?>
+
+                        <form method="post" class="mt-4 grid gap-3 rounded-2xl bg-neutral-50 p-4">
+                            <?= csrf_field() ?>
+                            <input type="hidden" name="action" value="report_review">
+                            <input type="hidden" name="review_id" value="<?= (int)$review['id'] ?>">
+                            <div class="grid gap-3 md:grid-cols-2">
+                                <label class="grid gap-1 text-xs font-black text-neutral-600">
+                                    <span><i class="fa-solid fa-triangle-exclamation mr-1 text-red-600"></i>เหตุผลในการรายงานรีวิว</span>
+                                    <input name="reason" required maxlength="180" placeholder="เช่น รีวิวไม่เหมาะสม หรือไม่ตรงข้อเท็จจริง" class="stock-input rounded-xl px-3 py-2 text-sm">
+                                </label>
+                                <label class="grid gap-1 text-xs font-black text-neutral-600">
+                                    <span><i class="fa-solid fa-pen-to-square mr-1 text-red-600"></i>รายละเอียดเพิ่มเติม</span>
+                                    <textarea name="detail" required maxlength="2000" rows="2" placeholder="อธิบายเหตุผลเพื่อให้ผู้ดูแลตรวจสอบ" class="stock-input rounded-xl px-3 py-2 text-sm"></textarea>
+                                </label>
+                            </div>
+                            <button data-confirm="ส่งรายงานรีวิวนี้ให้ผู้ดูแลตรวจสอบ?" class="btn-danger btn-sm justify-self-start rounded-xl">
+                                <i class="fa-solid fa-flag"></i>รายงานรีวิว
+                            </button>
+                        </form>
                     </article>
                 <?php endforeach; ?>
             </div>

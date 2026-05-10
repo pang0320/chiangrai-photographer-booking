@@ -25,6 +25,10 @@ if (!$article) {
 
 $pageTitle = $article['title'];
 include __DIR__ . '/includes/header.php';
+$allowedArticleTags = '<p><br><strong><b><em><i><u><ol><ul><li><h2><h3><blockquote>';
+$safeArticleContent = strip_tags((string)$article['content'], $allowedArticleTags);
+$safeArticleContent = preg_replace('/\s+on[a-z]+\s*=\s*("[^"]*"|\'[^\']*\'|[^\s>]+)/i', '', $safeArticleContent);
+$safeArticleContent = preg_replace('/\s+style\s*=\s*("[^"]*"|\'[^\']*\'|[^\s>]+)/i', '', $safeArticleContent);
 ?>
 
 <article class="stock-shell px-4 py-12 sm:px-6 lg:px-8">
@@ -38,7 +42,7 @@ include __DIR__ . '/includes/header.php';
                 <span class="text-neutral-500"><?= h(format_be_datetime($article['published_at'] ?: $article['created_at'])) ?></span>
             </div>
             <h1 class="mt-4 max-w-4xl text-3xl font-black leading-tight text-neutral-950 sm:text-5xl"><?= h($article['title']) ?></h1>
-            <div class="mt-8 max-w-4xl whitespace-pre-line text-base font-medium leading-8 text-neutral-700"><?= h($article['content']) ?></div>
+            <div class="prose prose-neutral mt-8 max-w-4xl text-base font-medium leading-8 text-neutral-700"><?= $safeArticleContent ?></div>
             <div class="mt-8">
                 <div class="flex flex-wrap gap-3">
                     <a href="/blog.php" class="rounded-full border border-neutral-200 px-5 py-3 font-black hover:bg-neutral-950 hover:text-white">

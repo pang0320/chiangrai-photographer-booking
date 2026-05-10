@@ -48,6 +48,11 @@ include __DIR__ . '/../includes/header.php';
                     <p class="text-sm font-black uppercase tracking-[0.22em] text-red-200"><i class="fa-solid fa-camera-retro mr-2"></i>โปรไฟล์ช่างภาพ</p>
                     <h1 class="mt-1 text-3xl font-black"><?= h($profile['display_name']) ?></h1>
                     <p class="mt-2 text-sm font-semibold text-white/70">รูปโปรไฟล์และรูปหน้าปกนี้จะแสดงในหน้าค้นหาและหน้าโปรไฟล์สาธารณะ</p>
+                    <?php if ((int)$profile['is_available'] === 1): ?>
+                        <span class="mt-3 inline-flex rounded-full bg-emerald-400/20 px-3 py-1 text-xs font-black text-emerald-100"><i class="fa-solid fa-toggle-on mr-1"></i>เปิดรับงาน</span>
+                    <?php else: ?>
+                        <span class="mt-3 inline-flex rounded-full bg-rose-400/20 px-3 py-1 text-xs font-black text-rose-100"><i class="fa-solid fa-toggle-off mr-1"></i>ปิดรับงาน</span>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -111,9 +116,17 @@ include __DIR__ . '/../includes/header.php';
                 </label>
             </div>
 
-            <label class="rounded-2xl bg-slate-50 p-4 font-bold">
-                <input type="checkbox" name="is_available" <?php if ($profile['is_available']): ?>checked<?php endif; ?>>
-                <i class="fa-solid fa-toggle-on mx-2 text-red-600"></i>เปิดรับงาน
+            <label class="flex items-center justify-between rounded-2xl bg-slate-50 p-4 font-bold">
+                <span>
+                    <i class="fa-solid <?= (int)$profile['is_available'] === 1 ? 'fa-toggle-on text-emerald-600' : 'fa-toggle-off text-rose-600' ?> mx-2"></i>
+                    สถานะรับงาน:
+                    <?php if ((int)$profile['is_available'] === 1): ?>
+                        <span class="text-emerald-700">เปิดรับงาน</span>
+                    <?php else: ?>
+                        <span class="text-rose-700">ปิดรับงาน</span>
+                    <?php endif; ?>
+                </span>
+                <input class="h-5 w-5 accent-red-600" type="checkbox" name="is_available" <?php if ($profile['is_available']): ?>checked<?php endif; ?>>
             </label>
             <button class="rounded-2xl bg-neutral-950 px-5 py-3 font-black text-white transition hover:bg-red-600"><i class="fa-solid fa-floppy-disk mr-2"></i>บันทึกโปรไฟล์ช่างภาพ</button>
         </form>

@@ -46,7 +46,7 @@ if (is_post()) {
 
 $status = (string)clean_context_value($cleanContext, 'status', '');
 $tab = (string)clean_context_value($cleanContext, 'tab', 'active');
-$allowedTabs = ['all', 'active', 'completed'];
+$allowedTabs = ['all', 'active', 'pending', 'accepted', 'completed', 'closed'];
 
 if (!in_array($tab, $allowedTabs, true)) {
     $tab = 'active';
@@ -60,8 +60,14 @@ if ($status !== '') {
     $params[] = $status;
 } elseif ($tab === 'active') {
     $where .= ' AND b.status IN ("pending", "accepted", "confirmed")';
+} elseif ($tab === 'pending') {
+    $where .= ' AND b.status = "pending"';
+} elseif ($tab === 'accepted') {
+    $where .= ' AND b.status IN ("accepted", "confirmed")';
 } elseif ($tab === 'completed') {
     $where .= ' AND b.status = "completed"';
+} elseif ($tab === 'closed') {
+    $where .= ' AND b.status IN ("rejected", "cancelled")';
 }
 
 $sql = "SELECT b.*, u.name AS customer_name, sc.name AS category_name, d.district_name
@@ -78,13 +84,19 @@ $bookings = $stmt->fetchAll();
 $bookingCounts = [
     'all' => 0,
     'active' => 0,
+    'pending' => 0,
+    'accepted' => 0,
     'completed' => 0,
+    'closed' => 0,
 ];
 
 $countStmt = db()->prepare('SELECT
     COUNT(*) AS total_all,
     SUM(CASE WHEN status IN ("pending", "accepted", "confirmed") THEN 1 ELSE 0 END) AS total_active,
-    SUM(CASE WHEN status = "completed" THEN 1 ELSE 0 END) AS total_completed
+    SUM(CASE WHEN status = "pending" THEN 1 ELSE 0 END) AS total_pending,
+    SUM(CASE WHEN status IN ("accepted", "confirmed") THEN 1 ELSE 0 END) AS total_accepted,
+    SUM(CASE WHEN status = "completed" THEN 1 ELSE 0 END) AS total_completed,
+    SUM(CASE WHEN status IN ("rejected", "cancelled") THEN 1 ELSE 0 END) AS total_closed
     FROM bookings
     WHERE photographer_id = ? AND deleted_at IS NULL');
 $countStmt->execute([$pid]);
@@ -93,7 +105,10 @@ $countRow = $countStmt->fetch();
 if ($countRow) {
     $bookingCounts['all'] = (int)$countRow['total_all'];
     $bookingCounts['active'] = (int)$countRow['total_active'];
+    $bookingCounts['pending'] = (int)$countRow['total_pending'];
+    $bookingCounts['accepted'] = (int)$countRow['total_accepted'];
     $bookingCounts['completed'] = (int)$countRow['total_completed'];
+    $bookingCounts['closed'] = (int)$countRow['total_closed'];
 }
 
 $pageTitle = 'คำขอจอง';
@@ -124,8 +139,11 @@ include __DIR__ . '/../includes/header.php';
 	    <?php
 	    $tabs = [
 	        'active' => ['กำลังดำเนินการ', 'fa-hourglass-half', $bookingCounts['active']],
+	        'pending' => ['คำขอใหม่', 'fa-bell', $bookingCounts['pending']],
+	        'accepted' => ['ตอบรับ/นัดหมาย', 'fa-calendar-check', $bookingCounts['accepted']],
 	        'completed' => ['เสร็จสิ้นแล้ว', 'fa-circle-check', $bookingCounts['completed']],
-	        'all' => ['ทั้งหมด', 'fa-list', $bookingCounts['all']],
+	        'closed' => ['ยกเลิก/ปฏิเสธ', 'fa-ban', $bookingCounts['closed']],
+	        'all' => ['ประวัติทั้งหมด', 'fa-list', $bookingCounts['all']],
 	    ];
 	    ?>
 	    <div class="mt-6 flex flex-wrap gap-2">
@@ -153,7 +171,7 @@ include __DIR__ . '/../includes/header.php';
 	                        <th>จัดการ</th>
 	                    </tr>
 	                </thead>
-	                <tbody>
+	                <tbody data-block-paginate="5">
 	                    <?php foreach ($bookings as $booking): ?>
 	                        <tr class="border-t align-top">
 	                            <td class="py-3 font-black">

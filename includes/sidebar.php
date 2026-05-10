@@ -62,6 +62,8 @@ if ($me) {
             ['/customer/dashboard.php', 'แดชบอร์ด', 'fa-gauge'],
             ['/customer/photographers.php', 'ค้นหาช่างภาพ', 'fa-magnifying-glass'],
             ['/customer/bookings.php', 'รายการจองของฉัน', 'fa-calendar-check'],
+            ['/customer/reviews.php', 'รีวิวของฉัน', 'fa-star'],
+            ['/customer/reports.php', 'รายงานปัญหาของฉัน', 'fa-shield-halved'],
             ['/customer/favorites.php', 'รายการโปรด', 'fa-heart'],
             ['/customer/recently_viewed.php', 'ช่างภาพที่เคยดู', 'fa-clock-rotate-left'],
             ['/customer/profile.php', 'โปรไฟล์', 'fa-id-card'],

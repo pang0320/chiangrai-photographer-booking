@@ -4,7 +4,7 @@ requireRole('customer');
 $user = current_user();
 
 $stats = [];
-foreach (['all' => '1=1', 'pending' => 'status="pending"', 'accepted' => 'status IN ("accepted","confirmed")', 'completed' => 'status="completed"'] as $key => $where) {
+foreach (['all' => '1=1', 'active' => 'status IN ("pending","accepted","confirmed")', 'pending' => 'status="pending"', 'accepted' => 'status IN ("accepted","confirmed")', 'completed' => 'status="completed"'] as $key => $where) {
     $stmt = db()->prepare("SELECT COUNT(*) FROM bookings WHERE customer_id = ? AND deleted_at IS NULL AND {$where}");
     $stmt->execute([(int)$user['id']]);
     $stats[$key] = (int)$stmt->fetchColumn();
@@ -15,7 +15,8 @@ $stmt = db()->prepare('SELECT b.*, p.display_name, sc.name category_name
                        JOIN photographer_profiles p ON p.id = b.photographer_id
                        JOIN service_categories sc ON sc.id = b.category_id
                        WHERE b.customer_id = ? AND b.deleted_at IS NULL
-                       ORDER BY b.created_at DESC
+                         AND b.status IN ("pending","accepted","confirmed")
+                       ORDER BY FIELD(b.status, "pending", "accepted", "confirmed"), b.created_at DESC
                        LIMIT 8');
 $stmt->execute([(int)$user['id']]);
 $bookings = $stmt->fetchAll();
@@ -66,15 +67,17 @@ include __DIR__ . '/../includes/header.php';
                 <div class="mt-6 flex flex-wrap gap-3">
                     <a href="/customer/photographers.php" class="rounded-full bg-white px-5 py-3 font-black text-neutral-950 hover:bg-red-600 hover:text-white"><i class="fa-solid fa-magnifying-glass mr-2"></i>ค้นหาช่างภาพ</a>
                     <a href="/customer/bookings.php" class="rounded-full bg-white/12 px-5 py-3 font-black text-white hover:bg-white hover:text-neutral-950"><i class="fa-solid fa-calendar-check mr-2"></i>ประวัติการจอง</a>
+                    <a href="/customer/reviews.php" class="rounded-full bg-white/12 px-5 py-3 font-black text-white hover:bg-white hover:text-neutral-950"><i class="fa-solid fa-star mr-2"></i>รีวิวของฉัน</a>
+                    <a href="/customer/reports.php" class="rounded-full bg-white/12 px-5 py-3 font-black text-white hover:bg-white hover:text-neutral-950"><i class="fa-solid fa-shield-halved mr-2"></i>รายงานปัญหาของฉัน</a>
                     <a href="/customer/profile.php" class="rounded-full bg-white/12 px-5 py-3 font-black text-white hover:bg-white hover:text-neutral-950"><i class="fa-solid fa-user-pen mr-2"></i>แก้ไขโปรไฟล์</a>
                     <a href="/customer/favorites.php" class="rounded-full bg-white/12 px-5 py-3 font-black text-white hover:bg-white hover:text-neutral-950"><i class="fa-solid fa-heart mr-2"></i>ช่างภาพโปรด</a>
                 </div>
             </div>
             <div class="grid grid-cols-2 gap-3">
-                <div class="stat-pill rounded-3xl p-4"><p class="text-3xl font-black"><?= (int)$stats['all'] ?></p><p class="text-sm font-bold text-white/68">คำขอทั้งหมด</p></div>
-                <div class="stat-pill rounded-3xl p-4"><p class="text-3xl font-black"><?= (int)$stats['pending'] ?></p><p class="text-sm font-bold text-white/68">รอตอบรับ</p></div>
-                <div class="stat-pill rounded-3xl p-4"><p class="text-3xl font-black"><?= (int)$stats['accepted'] ?></p><p class="text-sm font-bold text-white/68">ตอบรับแล้ว</p></div>
-                <div class="stat-pill rounded-3xl p-4"><p class="text-3xl font-black"><?= (int)$stats['completed'] ?></p><p class="text-sm font-bold text-white/68">เสร็จสิ้น</p></div>
+                <?= clean_context_button('/customer/bookings.php', ['tab' => 'active'], '<span class="block text-3xl font-black">' . number_format((int)$stats['active']) . '</span><span class="block text-sm font-bold text-white/68">กำลังดำเนินการ</span>', 'stat-pill w-full rounded-3xl p-4 text-left transition hover:-translate-y-1 hover:bg-white/20', 'contents') ?>
+                <?= clean_context_button('/customer/bookings.php', ['tab' => 'pending'], '<span class="block text-3xl font-black">' . number_format((int)$stats['pending']) . '</span><span class="block text-sm font-bold text-white/68">รอตอบรับ</span>', 'stat-pill w-full rounded-3xl p-4 text-left transition hover:-translate-y-1 hover:bg-white/20', 'contents') ?>
+                <?= clean_context_button('/customer/bookings.php', ['tab' => 'accepted'], '<span class="block text-3xl font-black">' . number_format((int)$stats['accepted']) . '</span><span class="block text-sm font-bold text-white/68">ตอบรับ/ยืนยันแล้ว</span>', 'stat-pill w-full rounded-3xl p-4 text-left transition hover:-translate-y-1 hover:bg-white/20', 'contents') ?>
+                <?= clean_context_button('/customer/bookings.php', ['tab' => 'completed'], '<span class="block text-3xl font-black">' . number_format((int)$stats['completed']) . '</span><span class="block text-sm font-bold text-white/68">เสร็จสิ้นแล้ว</span>', 'stat-pill w-full rounded-3xl p-4 text-left transition hover:-translate-y-1 hover:bg-white/20', 'contents') ?>
             </div>
         </div>
     </div>
@@ -83,10 +86,10 @@ include __DIR__ . '/../includes/header.php';
         <div class="stock-card rounded-[1.75rem] p-6">
             <div class="flex flex-wrap items-center justify-between gap-4">
                 <div>
-                    <p class="section-kicker">รายการจองล่าสุด</p>
-                    <h2 class="mt-1 text-2xl font-black text-neutral-950">รายการจองล่าสุด</h2>
+                    <p class="section-kicker">รายการจองที่กำลังดำเนินการ</p>
+                    <h2 class="mt-1 text-2xl font-black text-neutral-950">งานที่ยังไม่เสร็จ</h2>
                 </div>
-                <a class="rounded-full border border-neutral-200 px-4 py-2 text-sm font-black hover:bg-neutral-950 hover:text-white" href="/customer/bookings.php"><i class="fa-solid fa-eye mr-2"></i>ดูทั้งหมด</a>
+                <?= clean_context_button('/customer/bookings.php', ['tab' => 'active'], '<i class="fa-solid fa-eye mr-2"></i>ดูทั้งหมด', 'rounded-full border border-neutral-200 px-4 py-2 text-sm font-black hover:bg-neutral-950 hover:text-white') ?>
             </div>
             <div class="mt-5 overflow-x-auto">
                 <?php if ($bookings): ?>
@@ -108,8 +111,8 @@ include __DIR__ . '/../includes/header.php';
                 <?php else: ?>
                     <div class="empty-state rounded-[2rem] p-10 text-center">
                         <i class="fa-solid fa-calendar-plus text-4xl text-red-600"></i>
-                        <h3 class="mt-3 text-xl font-black">ยังไม่มีรายการจอง</h3>
-                        <p class="mt-2 text-neutral-600">เริ่มจากค้นหาช่างภาพและส่งคำขอจองแรกของคุณ</p>
+                        <h3 class="mt-3 text-xl font-black">ยังไม่มีงานที่กำลังดำเนินการ</h3>
+                        <p class="mt-2 text-neutral-600">งานที่เสร็จสิ้นแล้วจะแยกอยู่ในหน้าประวัติการจอง</p>
                     </div>
                 <?php endif; ?>
             </div>
@@ -127,6 +130,7 @@ include __DIR__ . '/../includes/header.php';
                         <div class="rounded-2xl bg-neutral-50 p-5 text-sm font-bold text-neutral-600">ยังไม่มีงานเสร็จสิ้นที่รอรีวิว</div>
                     <?php endif; ?>
                 </div>
+                <a href="/customer/reviews.php" class="btn-muted btn-md mt-4 w-full"><i class="fa-solid fa-star mr-2"></i>ดูรีวิวของฉัน</a>
             </div>
 
             <div class="stock-card rounded-[1.75rem] p-6">
@@ -139,6 +143,19 @@ include __DIR__ . '/../includes/header.php';
                             <div><p class="font-black"><?= h($step[1]) ?></p><p class="text-xs font-bold text-neutral-500"><?= h(booking_status_label($step[2])) ?></p></div>
                         </div>
                     <?php endforeach; ?>
+                </div>
+            </div>
+
+            <div class="stock-card rounded-[1.75rem] p-6">
+                <p class="section-kicker">ประวัติของฉัน</p>
+                <h2 class="mt-1 text-xl font-black text-neutral-950">รีวิวและรายงานปัญหา</h2>
+                <div class="mt-4 grid gap-3">
+                    <a href="/customer/reviews.php" class="rounded-2xl bg-amber-50 p-4 font-black text-amber-700 transition hover:bg-amber-500 hover:text-white">
+                        <i class="fa-solid fa-star mr-2"></i>รีวิวของฉัน
+                    </a>
+                    <a href="/customer/reports.php" class="rounded-2xl bg-red-50 p-4 font-black text-red-700 transition hover:bg-red-600 hover:text-white">
+                        <i class="fa-solid fa-shield-halved mr-2"></i>รายงานปัญหาของฉัน
+                    </a>
                 </div>
             </div>
         </div>

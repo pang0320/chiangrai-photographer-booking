@@ -84,4 +84,5 @@ export ENFORCE_HTTPS=1
 - ช่างภาพสมัครใหม่จะมีสถานะ `pending` และต้องให้ Admin อนุมัติก่อนจึงจะแสดงในหน้าค้นหา
 - ลูกค้าจองได้เฉพาะวันและช่วงเวลาที่ช่างภาพเปิดว่างใน `photographer_availability`
 - ลูกค้ารีวิวได้เฉพาะ booking ที่ `completed` และ 1 booking รีวิวได้ 1 ครั้ง
+- ตาราง `recently_viewed_photographers` ใช้เก็บประวัติช่างภาพที่ลูกค้า login แล้วเปิดดูโปรไฟล์ โดยบันทึก `user_id`, `photographer_id`, และ `viewed_at`; ถ้าดูช่างภาพคนเดิมซ้ำ ระบบอัปเดตเวลา `viewed_at` ให้เป็นล่าสุดผ่าน `record_recently_viewed()` แล้วนำไปแสดงใน dashboard และหน้า `customer/recently_viewed.php`
 - เว็บไซต์เป็นเพียงตัวกลางในการค้นหาและติดต่อช่างภาพเท่านั้น ไม่ได้เป็นตัวกลางรับชำระเงิน

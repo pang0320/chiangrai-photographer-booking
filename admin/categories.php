@@ -9,8 +9,21 @@ if (is_post()) {
 
     if ($action === 'delete') {
         $id = (int)($_POST['id'] ?? 0);
-        $stmt = db()->prepare('UPDATE service_categories SET is_active = 0 WHERE id = ?');
+        $stmt = db()->prepare('UPDATE service_categories SET is_active = 0, updated_at = NOW() WHERE id = ?');
         $stmt->execute([$id]);
+        flash('success', 'ปิดใช้งานหมวดหมู่งานแล้ว');
+    } elseif ($action === 'toggle') {
+        $id = (int)($_POST['id'] ?? 0);
+        $isActive = (int)($_POST['is_active'] ?? 0);
+        $nextStatus = 0;
+
+        if ($isActive === 0) {
+            $nextStatus = 1;
+        }
+
+        $stmt = db()->prepare('UPDATE service_categories SET is_active = ?, updated_at = NOW() WHERE id = ?');
+        $stmt->execute([$nextStatus, $id]);
+        flash('success', 'อัปเดตสถานะหมวดหมู่งานแล้ว');
     } else {
         $id = (int)($_POST['id'] ?? 0);
         $name = trim((string)($_POST['name'] ?? ''));
@@ -23,6 +36,16 @@ if (is_post()) {
         }
 
         $sortOrder = (int)($_POST['sort_order'] ?? 0);
+
+        if ($name === '') {
+            flash('error', 'กรุณากรอกชื่อหมวดหมู่งาน');
+            redirect('/admin/categories.php');
+        }
+
+        if ($icon === '') {
+            $icon = 'fa-camera';
+        }
+
         $slug = unique_slug('service_categories', $name, $id ?: null);
 
         if ($id > 0) {
@@ -35,72 +58,231 @@ if (is_post()) {
                                    VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())');
             $stmt->execute([$name, $slug, $icon, $description, $isActive, $sortOrder]);
         }
+
+        flash('success', 'บันทึกหมวดหมู่งานแล้ว');
     }
 
     log_activity('manage_categories', 'service_categories', (int)($_POST['id'] ?? 0));
-    flash('success', 'บันทึกหมวดหมู่แล้ว');
     redirect('/admin/categories.php');
 }
 
 $items = db_fetch_all('SELECT * FROM service_categories ORDER BY sort_order, name');
+$activeCount = 0;
+$inactiveCount = 0;
+
+foreach ($items as $item) {
+    if ((int)$item['is_active'] === 1) {
+        $activeCount++;
+    } else {
+        $inactiveCount++;
+    }
+}
 
 $pageTitle = 'ประเภทงาน';
 include __DIR__ . '/../includes/header.php';
 ?>
 
 <section class="px-4 py-8 sm:px-6 lg:px-8">
-    <div>
-        <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">ผู้ดูแลระบบ</p>
-        <h1 class="mt-1 text-3xl font-black text-neutral-950">ประเภทงาน</h1>
+    <div class="dashboard-hero overflow-hidden rounded-[2rem] p-6 text-white md:p-8">
+        <div class="grid gap-6 lg:grid-cols-[1fr_420px] lg:items-end">
+            <div>
+                <p class="text-sm font-black uppercase tracking-[0.22em] text-white/60">
+                    <i class="fa-solid fa-layer-group mr-2"></i>ผู้ดูแลระบบ
+                </p>
+                <h1 class="mt-2 text-3xl font-black md:text-4xl">จัดการหมวดหมู่งานถ่ายภาพ</h1>
+                <p class="mt-3 max-w-3xl text-base font-semibold leading-8 text-white/75 md:text-lg">
+                    หมวดหมู่นี้จะถูกใช้ในหน้าค้นหาช่างภาพ ฟอร์มคำขอจอง และหน้าช่างภาพเลือกประเภทงานที่รับ
+                </p>
+            </div>
+            <div class="grid grid-cols-3 gap-3">
+                <div class="rounded-3xl bg-white/12 p-4 text-center backdrop-blur">
+                    <i class="fa-solid fa-layer-group text-2xl text-red-200"></i>
+                    <div class="mt-2 text-2xl font-black"><?= number_format(count($items)) ?></div>
+                    <div class="text-xs font-black text-white/55">ทั้งหมด</div>
+                </div>
+                <div class="rounded-3xl bg-white/12 p-4 text-center backdrop-blur">
+                    <i class="fa-solid fa-circle-check text-2xl text-emerald-200"></i>
+                    <div class="mt-2 text-2xl font-black"><?= number_format($activeCount) ?></div>
+                    <div class="text-xs font-black text-white/55">เปิดใช้งาน</div>
+                </div>
+                <div class="rounded-3xl bg-white/12 p-4 text-center backdrop-blur">
+                    <i class="fa-solid fa-eye-slash text-2xl text-amber-200"></i>
+                    <div class="mt-2 text-2xl font-black"><?= number_format($inactiveCount) ?></div>
+                    <div class="text-xs font-black text-white/55">ปิดไว้</div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <form method="post" class="stock-card mt-6 grid gap-3 rounded-[1.5rem] p-5 md:grid-cols-6">
+    <form method="post" class="stock-card mt-6 rounded-[1.75rem] p-6">
         <?= csrf_field() ?>
-        <input name="name" required placeholder="ชื่อ" class="stock-input rounded-2xl px-4 py-3 font-semibold">
-        <input name="icon" placeholder="fa-camera" class="stock-input rounded-2xl px-4 py-3 font-semibold">
-        <input name="sort_order" type="number" value="0" class="stock-input rounded-2xl px-4 py-3 font-semibold">
-        <input name="description" placeholder="รายละเอียด" class="stock-input rounded-2xl px-4 py-3 font-semibold md:col-span-2">
-        <label class="rounded-2xl bg-neutral-50 px-4 py-3 font-bold">
-            <input type="checkbox" name="is_active" checked>
-            เปิดใช้งาน
+        <input type="hidden" name="action" value="save">
+
+        <div class="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+            <div>
+                <p class="section-kicker">
+                    <i class="fa-solid fa-plus mr-2"></i>เพิ่มหมวดหมู่งาน
+                </p>
+                <h2 class="mt-1 text-2xl font-black text-neutral-950">สร้างประเภทงานให้ช่างภาพเลือก</h2>
+                <p class="mt-2 text-base font-semibold leading-7 text-neutral-600">
+                    ตั้งชื่อให้ลูกค้าเข้าใจง่าย เช่น งานแต่งงาน รับปริญญา ครอบครัว หรือสินค้า
+                </p>
+            </div>
+            <button class="stock-button rounded-2xl px-5 py-3 font-black">
+                <i class="fa-solid fa-plus mr-2"></i>เพิ่มหมวดหมู่
+            </button>
+        </div>
+
+        <div class="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-6">
+            <div class="xl:col-span-2">
+                <label class="block text-sm font-black text-neutral-700" for="name">
+                    <i class="fa-solid fa-tag mr-2 text-red-600"></i>ชื่อหมวดหมู่งาน
+                </label>
+                <input id="name" name="name" required placeholder="เช่น งานแต่งงาน" class="stock-input mt-2 w-full rounded-2xl px-4 py-3 font-semibold">
+            </div>
+
+            <div>
+                <label class="block text-sm font-black text-neutral-700" for="icon">
+                    <i class="fa-solid fa-icons mr-2 text-red-600"></i>Font Awesome icon
+                </label>
+                <input id="icon" name="icon" placeholder="fa-camera" value="fa-camera" class="stock-input mt-2 w-full rounded-2xl px-4 py-3 font-semibold">
+            </div>
+
+            <div>
+                <label class="block text-sm font-black text-neutral-700" for="sort_order">
+                    <i class="fa-solid fa-arrow-down-1-9 mr-2 text-red-600"></i>ลำดับแสดงผล
+                </label>
+                <input id="sort_order" name="sort_order" type="number" value="0" class="stock-input mt-2 w-full rounded-2xl px-4 py-3 font-semibold">
+            </div>
+
+            <div class="xl:col-span-2">
+                <label class="block text-sm font-black text-neutral-700" for="description">
+                    <i class="fa-solid fa-align-left mr-2 text-red-600"></i>คำอธิบาย
+                </label>
+                <input id="description" name="description" placeholder="ใช้ในหน้าเว็บเพื่ออธิบายหมวดหมู่" class="stock-input mt-2 w-full rounded-2xl px-4 py-3 font-semibold">
+            </div>
+        </div>
+
+        <label class="mt-4 flex items-center justify-between rounded-2xl border border-neutral-100 bg-neutral-50 px-4 py-3 font-black text-neutral-800">
+            <span><i class="fa-solid fa-toggle-on mr-2 text-emerald-600"></i>เปิดให้แสดงในหน้าค้นหาและฟอร์มจอง</span>
+            <input type="checkbox" name="is_active" checked class="h-5 w-5 accent-red-600">
         </label>
-        <button class="stock-button rounded-2xl px-5 py-3 font-black md:col-span-6"><i class="fa-solid fa-plus mr-2"></i>เพิ่ม</button>
     </form>
 
-    <div class="stock-card mt-6 overflow-x-auto rounded-[1.5rem] p-5">
-        <table class="datatable w-full text-sm">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>ชื่อ</th>
-                    <th>Slug</th>
-                    <th>ไอคอน</th>
-                    <th>เปิดใช้งาน</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($items as $item): ?>
-                    <tr>
-                        <td><?= (int)$item['id'] ?></td>
-                        <td class="font-black"><?= h($item['name']) ?></td>
-                        <td><?= h($item['slug']) ?></td>
-                        <td><?= h($item['icon']) ?></td>
-                        <td><?= (int)$item['is_active'] ?></td>
-                        <td>
-                            <form method="post">
-                                <?= csrf_field() ?>
-                                <input type="hidden" name="action" value="delete">
-                                <input type="hidden" name="id" value="<?= (int)$item['id'] ?>">
-                                <button data-confirm="ปิดใช้งานหมวดหมู่นี้?" class="btn-muted btn-sm">
-                                    <i class="fa-solid fa-trash mr-1"></i>ลบ
-                                </button>
-                            </form>
-                        </td>
-                    </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
+    <div class="stock-card mt-6 rounded-[1.75rem] p-5">
+        <div class="mb-5 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+            <div>
+                <p class="section-kicker">
+                    <i class="fa-solid fa-pen-to-square mr-2"></i>แก้ไขหมวดหมู่งาน
+                </p>
+                <h2 class="mt-1 text-2xl font-black text-neutral-950">รายการหมวดหมู่ทั้งหมด</h2>
+            </div>
+            <div class="rounded-full bg-red-50 px-4 py-2 text-sm font-black text-red-700">
+                <i class="fa-solid fa-circle-info mr-1"></i>ตารางแสดงทีละ 5 รายการ
+            </div>
+        </div>
+
+        <?php if (!$items): ?>
+            <div class="empty-state rounded-[1.5rem] p-8 text-center">
+                <i class="fa-solid fa-layer-group text-4xl text-red-600"></i>
+                <h3 class="mt-3 text-xl font-black text-neutral-950">ยังไม่มีหมวดหมู่งาน</h3>
+                <p class="mt-2 text-base font-semibold text-neutral-600">เพิ่มหมวดหมู่แรกจากฟอร์มด้านบน</p>
+            </div>
+        <?php else: ?>
+            <?php foreach ($items as $item): ?>
+                <form id="category_form_<?= (int)$item['id'] ?>" method="post" class="hidden">
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="action" value="save">
+                    <input type="hidden" name="id" value="<?= (int)$item['id'] ?>">
+                </form>
+                <form id="category_toggle_<?= (int)$item['id'] ?>" method="post" class="hidden">
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="action" value="toggle">
+                    <input type="hidden" name="id" value="<?= (int)$item['id'] ?>">
+                    <input type="hidden" name="is_active" value="<?= (int)$item['is_active'] ?>">
+                </form>
+            <?php endforeach; ?>
+
+            <div class="overflow-x-auto">
+                <table class="datatable w-full text-base">
+                    <thead>
+                        <tr>
+                            <th>หมวดหมู่</th>
+                            <th>คำอธิบาย</th>
+                            <th>ลำดับ</th>
+                            <th>สถานะ</th>
+                            <th>จัดการ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($items as $item): ?>
+                            <?php
+                            $isActive = (int)$item['is_active'] === 1;
+                            $statusClass = 'bg-neutral-100 text-neutral-600';
+                            $statusIcon = 'fa-eye-slash';
+                            $statusText = 'ปิดใช้งาน';
+
+                            if ($isActive) {
+                                $statusClass = 'bg-emerald-50 text-emerald-700';
+                                $statusIcon = 'fa-circle-check';
+                                $statusText = 'เปิดใช้งาน';
+                            }
+                            ?>
+                            <tr>
+                                <td class="min-w-[280px]">
+                                    <div class="flex items-start gap-3">
+                                        <span class="mt-1 grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-red-50 text-red-600">
+                                            <i class="fa-solid <?= h($item['icon'] ?: 'fa-camera') ?>"></i>
+                                        </span>
+                                        <div class="grid gap-2">
+                                            <input form="category_form_<?= (int)$item['id'] ?>" name="name" required value="<?= h($item['name']) ?>" class="stock-input w-full rounded-2xl px-4 py-2 font-black">
+                                            <input form="category_form_<?= (int)$item['id'] ?>" name="icon" value="<?= h($item['icon']) ?>" class="stock-input w-full rounded-2xl px-4 py-2 font-semibold" placeholder="fa-camera">
+                                            <p class="text-sm font-bold text-neutral-500">Slug: <?= h($item['slug']) ?></p>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="min-w-[300px]">
+                                    <textarea form="category_form_<?= (int)$item['id'] ?>" name="description" rows="3" class="stock-input w-full rounded-2xl px-4 py-2 font-semibold" placeholder="คำอธิบายหมวดหมู่"><?= h($item['description']) ?></textarea>
+                                </td>
+                                <td class="min-w-[120px]">
+                                    <input form="category_form_<?= (int)$item['id'] ?>" name="sort_order" type="number" value="<?= (int)$item['sort_order'] ?>" class="stock-input w-full rounded-2xl px-4 py-2 font-black">
+                                </td>
+                                <td class="min-w-[170px]">
+                                    <label class="flex items-center gap-2 rounded-2xl bg-neutral-50 px-3 py-2 font-black">
+                                        <input form="category_form_<?= (int)$item['id'] ?>" type="checkbox" name="is_active" class="h-5 w-5 accent-red-600" <?= $isActive ? 'checked' : '' ?>>
+                                        <span class="inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-black <?= h($statusClass) ?>">
+                                            <i class="fa-solid <?= h($statusIcon) ?>"></i><?= h($statusText) ?>
+                                        </span>
+                                    </label>
+                                </td>
+                                <td class="min-w-[220px]">
+                                    <div class="flex flex-wrap gap-2">
+                                        <button form="category_form_<?= (int)$item['id'] ?>" class="btn-success btn-sm" type="submit">
+                                            <i class="fa-solid fa-floppy-disk"></i>บันทึก
+                                        </button>
+                                        <button form="category_toggle_<?= (int)$item['id'] ?>" class="<?= $isActive ? 'btn-warning' : 'btn-success' ?> btn-sm" type="submit">
+                                            <?php if ($isActive): ?>
+                                                <i class="fa-solid fa-eye-slash"></i>ปิด
+                                            <?php else: ?>
+                                                <i class="fa-solid fa-eye"></i>เปิด
+                                            <?php endif; ?>
+                                        </button>
+                                        <form method="post" class="inline">
+                                            <?= csrf_field() ?>
+                                            <input type="hidden" name="action" value="delete">
+                                            <input type="hidden" name="id" value="<?= (int)$item['id'] ?>">
+                                            <button data-confirm="ปิดใช้งานหมวดหมู่นี้?" data-confirm-text="หมวดนี้จะไม่แสดงให้ลูกค้าหรือช่างภาพเลือก แต่ข้อมูลเดิมจะยังอยู่" class="btn-danger btn-sm" type="submit">
+                                                <i class="fa-solid fa-ban"></i>ปิดใช้
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php endif; ?>
     </div>
 </section>
 

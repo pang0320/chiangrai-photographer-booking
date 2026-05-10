@@ -21,12 +21,12 @@ if (is_post()) {
     redirect('/contact.php');
 }
 
-$pageTitle = 'ติดต่อเรา';
+$pageTitle = 'ติดต่อเว็บไซต์';
 include __DIR__ . '/includes/header.php';
 ?>
 <section class="stock-shell grid gap-8 px-4 py-12 sm:px-6 lg:grid-cols-[.9fr_1.1fr] lg:px-8">
     <div class="dashboard-hero rounded-[2rem] p-8 text-white">
-        <p class="section-kicker text-red-300">ติดต่อเรา</p>
+        <p class="section-kicker text-red-300">ติดต่อเว็บไซต์</p>
         <h1 class="mt-3 text-4xl font-black">ติดต่อผู้ดูแลระบบ</h1>
         <p class="mt-4 leading-8 text-white/70">สอบถามการใช้งาน แจ้งปัญหา เสนอแนะระบบ หรือสนใจติดต่องานกับผู้พัฒนา</p>
 
@@ -54,7 +54,7 @@ include __DIR__ . '/includes/header.php';
         <form method="post" class="stock-card grid gap-4 rounded-[2rem] p-6">
             <?= csrf_field() ?>
             <div>
-                <p class="section-kicker">Contact Form</p>
+                <p class="section-kicker">ติดต่อเว็บไซต์</p>
                 <h2 class="mt-2 text-2xl font-black text-neutral-950"><i class="fa-solid fa-paper-plane mr-2 text-red-600"></i>ส่งข้อความถึงผู้ดูแลระบบ</h2>
             </div>
             <label class="icon-input block"><i class="fa-solid fa-user"></i><input name="name" required placeholder="ชื่อ" class="stock-input w-full rounded-2xl px-4 py-3 font-semibold"></label>
@@ -66,8 +66,8 @@ include __DIR__ . '/includes/header.php';
         </form>
 
         <div class="stock-card rounded-[2rem] p-6">
-            <p class="section-kicker">Quick Contact</p>
-            <h2 class="mt-2 text-2xl font-black text-neutral-950">ช่องทางติดต่อด่วน</h2>
+            <p class="section-kicker">ติดต่อผู้ดูแลระบบ</p>
+            <h2 class="mt-2 text-2xl font-black text-neutral-950">ช่องทางติดต่อเว็บไซต์</h2>
             <div class="mt-5 grid gap-3 sm:grid-cols-2">
                 <a href="tel:0994344335" class="rounded-2xl bg-red-50 p-4 font-black text-red-700 transition hover:bg-red-600 hover:text-white">
                     <i class="fa-solid fa-phone mb-3 block text-2xl"></i>099-4344335

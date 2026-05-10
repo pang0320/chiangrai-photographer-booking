@@ -28,7 +28,7 @@ include __DIR__ . '/../includes/header.php';
 <section class="px-4 py-8 sm:px-6 lg:px-8">
     <div>
             <p class="section-kicker">กล่องข้อความติดต่อ</p>
-            <h1 class="mt-1 text-3xl font-black text-neutral-950"><i class="fa-solid fa-envelope-open-text mr-2 text-red-600"></i>ข้อความจากหน้าติดต่อเรา</h1>
+            <h1 class="mt-1 text-3xl font-black text-neutral-950"><i class="fa-solid fa-envelope-open-text mr-2 text-red-600"></i>ข้อความจากหน้าติดต่อเว็บไซต์</h1>
     </div>
 
     <div class="mt-6 grid gap-4 md:grid-cols-3">

@@ -22,8 +22,13 @@ include __DIR__ . '/includes/header.php';
         <img src="<?= h(public_image($blog['cover_image'], '/assets/uploads/seed/photo-1516035069371-29a1b244cc32.jpg')) ?>" alt="">
         <div class="media-overlay opacity-100 p-8">
             <div>
-                <p class="section-kicker text-red-300">บทความ</p>
+                <p class="section-kicker text-red-300"><i class="fa-solid fa-user-shield mr-2"></i>บทความจากระบบ</p>
                 <h1 class="mt-3 max-w-4xl text-4xl font-black text-white sm:text-6xl"><?= h($blog['title']) ?></h1>
+                <p class="mt-4 text-sm font-black text-white/70">
+                    <i class="fa-solid fa-user mr-1"></i><?= h($blog['admin_name']) ?>
+                    <span class="mx-2 text-white/35">/</span>
+                    <i class="fa-solid fa-calendar-day mr-1"></i><?= h(format_be_datetime($blog['published_at'] ?: $blog['created_at'])) ?>
+                </p>
             </div>
         </div>
     </div>
@@ -35,6 +40,11 @@ include __DIR__ . '/includes/header.php';
         </div>
         <div class="stock-card mt-6 rounded-[1.75rem] p-8 leading-8 text-neutral-700">
             <?= nl2br(h($blog['content'])) ?>
+        </div>
+        <div class="mt-6">
+            <a href="/blog.php" class="inline-flex rounded-full border border-neutral-200 px-5 py-3 font-black hover:bg-neutral-950 hover:text-white">
+                <i class="fa-solid fa-newspaper mr-2"></i>กลับไปหน้ารวมบทความ
+            </a>
         </div>
     </div>
 </article>

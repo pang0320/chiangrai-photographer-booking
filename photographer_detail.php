@@ -162,6 +162,9 @@ include __DIR__ . '/includes/header.php';
                         <span class="rounded-full bg-white/14 px-3 py-1 text-xs font-black text-white"><i class="fa-solid fa-award mr-1 text-yellow-300"></i>คะแนนสูง</span>
                     <?php endif; ?>
                 </div>
+                <p class="mt-6 text-sm font-black uppercase tracking-[0.22em] text-red-300">
+                    <i class="fa-solid fa-id-card mr-2"></i>ข้อมูลช่างภาพ
+                </p>
                 <h1 class="mt-5 text-4xl font-black tracking-tight sm:text-6xl"><?= h($profile['display_name']) ?></h1>
                 <p class="mt-4 max-w-3xl text-lg leading-8 text-white/78"><?= nl2br(h($profile['bio'])) ?></p>
                 <div class="mt-6 flex flex-wrap gap-3 text-sm font-black">
@@ -196,37 +199,6 @@ include __DIR__ . '/includes/header.php';
                         <b><?= number_format((float)$profile['average_response_hours'], 1) ?> ชม.</b>
                         <p class="mt-1 text-xs font-bold leading-5 text-neutral-500">คำนวณจากเวลาที่ใช้ตอบรับหรือปฏิเสธคำขอจอง</p>
                     </div>
-                </div>
-                <div class="mt-4 grid grid-cols-2 gap-2">
-                    <?php if ($profile['phone_public']): ?>
-                        <a class="rounded-full bg-neutral-950 px-4 py-3 text-center text-sm font-black text-white hover:bg-red-600" href="tel:<?= h($profile['phone_public']) ?>">
-                            <i class="fa-solid fa-phone mr-1"></i>โทร
-                        </a>
-                    <?php endif; ?>
-
-                    <?php if ($profile['line_id']): ?>
-                        <a class="rounded-full bg-[#06c755] px-4 py-3 text-center text-sm font-black text-white" href="https://line.me/ti/p/~<?= h($profile['line_id']) ?>">
-                            <i class="fa-brands fa-line mr-1"></i>LINE
-                        </a>
-                    <?php endif; ?>
-
-                    <?php if ($profile['facebook_url']): ?>
-                        <a class="rounded-full bg-[#1877f2] px-4 py-3 text-center text-sm font-black text-white" href="<?= h($profile['facebook_url']) ?>" target="_blank">
-                            <i class="fa-brands fa-facebook mr-1"></i>Facebook
-                        </a>
-                    <?php endif; ?>
-
-                    <?php if ($profile['instagram_url']): ?>
-                        <a class="rounded-full bg-[#d62976] px-4 py-3 text-center text-sm font-black text-white" href="<?= h($profile['instagram_url']) ?>" target="_blank">
-                            <i class="fa-brands fa-instagram mr-1"></i>Instagram
-                        </a>
-                    <?php endif; ?>
-
-                    <?php if ($profile['website_url']): ?>
-                        <a class="rounded-full border border-neutral-200 px-4 py-3 text-center text-sm font-black hover:bg-neutral-950 hover:text-white" href="<?= h($profile['website_url']) ?>" target="_blank">
-                            <i class="fa-solid fa-globe mr-1"></i>Website
-                        </a>
-                    <?php endif; ?>
                 </div>
                 <div class="mt-4 grid gap-2">
                     <?= clean_context_button('/customer/create_booking.php', ['photographer_id' => (int)$profile['id']], '<i class="fa-solid fa-calendar-check mr-2"></i>ส่งคำขอจอง', 'btn-cta btn-lg block w-full text-center') ?>
@@ -273,7 +245,62 @@ include __DIR__ . '/includes/header.php';
 <section class="stock-shell px-4 py-12 sm:px-6 lg:px-8">
     <div class="grid gap-8 lg:grid-cols-[1fr_340px]">
         <div class="space-y-12">
-            <div>
+            <div id="services" class="scroll-mt-28">
+                <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600"><i class="fa-solid fa-layer-group mr-2"></i>ประเภทงาน</p>
+                <h2 class="mt-1 text-3xl font-black text-neutral-950">ประเภทงานที่รับและราคาเริ่มต้นโดยประมาณ</h2>
+                <div class="mt-6 grid gap-4 md:grid-cols-2">
+                    <?php foreach ($services as $s): ?>
+                        <?php
+                        $serviceIcon = 'fa-camera';
+                        if (!empty($s['icon'])) {
+                            $serviceIcon = $s['icon'];
+                        }
+                        ?>
+                        <div class="stock-card rounded-[1.5rem] p-6">
+                            <div class="flex items-start justify-between gap-4">
+                                <h3 class="font-black text-neutral-950"><i class="fa-solid <?= h($serviceIcon) ?> mr-2 text-red-600"></i><?= h($s['name']) ?></h3>
+                                <span class="rounded-full bg-neutral-950 px-3 py-1 text-xs font-black text-white">ราคาเริ่มต้นโดยประมาณ <?= number_format((float)$s['starting_price']) ?> บาท</span>
+                            </div>
+                            <p class="mt-3 text-sm leading-6 text-neutral-600"><?= h($s['description']) ?></p>
+                        </div>
+                    <?php endforeach; ?>
+                    <?php if (!$services): ?>
+                        <div class="empty-state rounded-[2rem] p-8 text-center md:col-span-2">
+                            <i class="fa-solid fa-layer-group text-4xl text-red-600"></i>
+                            <h3 class="mt-3 text-xl font-black">ยังไม่ได้ระบุประเภทงาน</h3>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <div id="availability" class="scroll-mt-28">
+                <div class="flex flex-wrap items-end justify-between gap-4">
+                    <div>
+                        <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600"><i class="fa-solid fa-calendar-days mr-2"></i>วันที่ต้องการจ้าง</p>
+                        <h2 class="mt-1 text-3xl font-black text-neutral-950">ปฏิทินวันว่างสำหรับส่งคำขอจอง</h2>
+                        <p class="mt-2 max-w-2xl text-base font-semibold leading-7 text-neutral-600">เลือกได้เฉพาะวันที่ช่างภาพเปิดว่าง ระบบจะตรวจซ้ำอีกครั้งตอนส่งคำขอจอง</p>
+                    </div>
+                    <?= clean_context_button('/customer/create_booking.php', ['photographer_id' => (int)$profile['id']], '<i class="fa-solid fa-calendar-check mr-2"></i>ส่งคำขอจอง', 'btn-cta btn-md rounded-full') ?>
+                </div>
+                <div class="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    <?php foreach ($availability as $a): ?>
+                        <div class="stock-card rounded-[1.35rem] p-5">
+                            <p class="font-black text-neutral-950"><i class="fa-solid fa-calendar-day mr-2 text-red-600"></i><?= h(format_be_date($a['available_date'])) ?></p>
+                            <p class="mt-2 text-sm font-bold text-neutral-600"><i class="fa-solid fa-clock mr-1 text-red-600"></i><?= h(time_slot_label($a['time_slot'])) ?></p>
+                            <div class="mt-3"><?= status_badge($a['status']) ?></div>
+                        </div>
+                    <?php endforeach; ?>
+                    <?php if (!$availability): ?>
+                        <div class="empty-state rounded-[2rem] p-10 text-center sm:col-span-2 lg:col-span-3">
+                            <i class="fa-solid fa-calendar-xmark text-4xl text-red-600"></i>
+                            <h3 class="mt-3 text-xl font-black">ยังไม่มีวันว่างที่เปิดไว้</h3>
+                            <p class="mt-2 text-neutral-600">ติดต่อช่างภาพโดยตรงเพื่อสอบถามวันว่างเพิ่มเติมได้</p>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <div id="portfolio" class="scroll-mt-28">
                 <div class="flex items-end justify-between gap-4">
                     <div>
                         <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">อัลบั้มตัวอย่างงาน</p>
@@ -308,36 +335,7 @@ include __DIR__ . '/includes/header.php';
                 </div>
             </div>
 
-            <div>
-                <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">บริการ</p>
-                <h2 class="mt-1 text-3xl font-black text-neutral-950">ข้อมูลบริการ</h2>
-                <div class="mt-6 grid gap-4 md:grid-cols-2">
-                    <?php foreach ($services as $s): ?>
-                        <?php
-                        $serviceIcon = 'fa-camera';
-                        if (!empty($s['icon'])) {
-                            $serviceIcon = $s['icon'];
-                        }
-                        ?>
-                        <div class="stock-card stock-card-hover rounded-[1.5rem] p-6">
-                            <div class="flex items-start justify-between gap-4">
-                                <h3 class="font-black text-neutral-950"><i class="fa-solid <?= h($serviceIcon) ?> mr-2 text-red-600"></i><?= h($s['name']) ?></h3>
-                                <span class="rounded-full bg-neutral-950 px-3 py-1 text-xs font-black text-white">ราคาเริ่มต้นโดยประมาณ <?= number_format((float)$s['starting_price']) ?> บาท</span>
-                            </div>
-                            <p class="mt-3 text-sm leading-6 text-neutral-600"><?= h($s['description']) ?></p>
-                        </div>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-
-            <div class="stock-card rounded-[1.75rem] p-7">
-                <p class="section-kicker">เกี่ยวกับช่างภาพ</p>
-                <h2 class="mt-1 text-3xl font-black text-neutral-950">แนะนำตัว</h2>
-                <p class="mt-4 leading-8 text-neutral-700"><?= nl2br(h($profile['bio'])) ?></p>
-                <div class="mt-5 rounded-[1.5rem] bg-red-50 p-5 text-sm font-black leading-7 text-red-700"><?= h(PAYMENT_DISCLAIMER) ?></div>
-            </div>
-
-            <div>
+            <div id="reviews" class="scroll-mt-28">
                 <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">รีวิว</p>
                 <h2 class="mt-1 text-3xl font-black text-neutral-950">รีวิวจากลูกค้า</h2>
                 <div class="stock-card mt-6 rounded-[1.75rem] p-6">
@@ -369,7 +367,7 @@ include __DIR__ . '/includes/header.php';
                             <?php foreach ([['คุณภาพงาน', $ratingQuality], ['การสื่อสาร', $ratingCommunication], ['ตรงเวลา', $ratingPunctuality], ['ความเป็นมืออาชีพ', $ratingProfessional]] as $ratingRow): ?>
                                 <?php $ratingPercent = min(100, max(0, ((float)$ratingRow[1] / 5) * 100)); ?>
                                 <div>
-	                                    <div class="mb-1 flex justify-between text-sm font-black"><span>คะแนน: <?= h($ratingRow[0]) ?></span><span><?= number_format((float)$ratingRow[1], 1) ?>/5</span></div>
+                                    <div class="mb-1 flex justify-between text-sm font-black"><span>คะแนน: <?= h($ratingRow[0]) ?></span><span><?= number_format((float)$ratingRow[1], 1) ?>/5</span></div>
                                     <div class="rating-bar"><span style="width: <?= number_format($ratingPercent, 0) ?>%"></span></div>
                                 </div>
                             <?php endforeach; ?>
@@ -414,50 +412,71 @@ include __DIR__ . '/includes/header.php';
                     <?php endif; ?>
                 </div>
             </div>
+
+            <div id="articles" class="scroll-mt-28">
+                <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">บทความ</p>
+                <h2 class="mt-1 text-3xl font-black text-neutral-950">บทความจากช่างภาพ</h2>
+                <div class="mt-6 grid gap-4 md:grid-cols-2">
+                    <?php foreach ($articles as $a): ?>
+                        <article class="stock-card rounded-[1.5rem] p-6">
+                            <h3 class="font-black text-neutral-950"><i class="fa-solid fa-newspaper mr-2 text-red-600"></i><?= h($a['title']) ?></h3>
+                            <p class="mt-3 line-clamp-3 text-sm leading-7 text-neutral-600"><?= h(strip_tags($a['content'])) ?></p>
+                            <?= clean_context_button('/article_detail.php', ['slug' => $a['slug']], '<i class="fa-solid fa-eye mr-1"></i>อ่านต่อ', 'mt-4 inline-flex rounded-full bg-neutral-950 px-4 py-2 text-xs font-black text-white hover:bg-red-600') ?>
+                        </article>
+                    <?php endforeach; ?>
+                    <?php if (!$articles): ?>
+                        <div class="empty-state rounded-[2rem] p-10 text-center md:col-span-2">
+                            <i class="fa-solid fa-newspaper text-4xl text-red-600"></i>
+                            <h3 class="mt-3 text-xl font-black">ยังไม่มีบทความจากช่างภาพ</h3>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <div id="booking-details-guide" class="scroll-mt-28">
+                <div class="stock-card rounded-[1.75rem] p-7">
+                    <p class="section-kicker"><i class="fa-solid fa-clipboard-list mr-2"></i>รายละเอียดคำขอจอง</p>
+                    <h2 class="mt-1 text-3xl font-black text-neutral-950">ข้อมูลที่ควรเตรียมก่อนส่งคำขอจอง</h2>
+                    <div class="mt-6 grid gap-4 md:grid-cols-2">
+                        <div class="rounded-[1.4rem] bg-neutral-50 p-5">
+                            <h3 class="font-black text-neutral-950"><i class="fa-solid fa-camera mr-2 text-red-600"></i>ลักษณะงาน</h3>
+                            <p class="mt-2 text-base font-semibold leading-7 text-neutral-600">ประเภทงาน สถานที่ จำนวนคน ช่วงเวลาที่ต้องการ และรูปแบบภาพที่อยากได้</p>
+                        </div>
+                        <div class="rounded-[1.4rem] bg-neutral-50 p-5">
+                            <h3 class="font-black text-neutral-950"><i class="fa-solid fa-phone mr-2 text-red-600"></i>ข้อมูลติดต่อกลับ</h3>
+                            <p class="mt-2 text-base font-semibold leading-7 text-neutral-600">ชื่อผู้ติดต่อ เบอร์โทร และช่องทางที่สะดวก เช่น LINE หรือ Facebook</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="contact" class="scroll-mt-28">
+                <div class="stock-card rounded-[1.75rem] p-7">
+                    <p class="section-kicker"><i class="fa-solid fa-address-book mr-2"></i>ช่องทางติดต่อ</p>
+                    <h2 class="mt-1 text-3xl font-black text-neutral-950">ช่องทางติดต่อช่างภาพโดยตรง</h2>
+                    <p class="mt-4 leading-7 text-neutral-600">ลูกค้าต้องเข้าสู่ระบบก่อนส่งคำขอจอง หลังจากช่างภาพตอบรับ สามารถติดต่อผ่านช่องทางภายนอกเพื่อตกลงรายละเอียด ราคา และการชำระเงินได้โดยตรง</p>
+                    <div class="mt-6 grid gap-3 sm:grid-cols-2">
+                        <?php if ($profile['phone_public']): ?><a class="rounded-2xl bg-neutral-50 px-4 py-3 font-black hover:bg-neutral-950 hover:text-white" href="tel:<?= h($profile['phone_public']) ?>"><i class="fa-solid fa-phone mr-2 text-red-600"></i><?= h($profile['phone_public']) ?></a><?php endif; ?>
+                        <?php if ($profile['line_id']): ?><a class="rounded-2xl bg-neutral-50 px-4 py-3 font-black hover:bg-[#06c755] hover:text-white" href="https://line.me/ti/p/~<?= h($profile['line_id']) ?>"><i class="fa-brands fa-line mr-2"></i><?= h($profile['line_id']) ?></a><?php endif; ?>
+                        <?php if ($profile['facebook_url']): ?><a class="rounded-2xl bg-neutral-50 px-4 py-3 font-black hover:bg-[#1877f2] hover:text-white" href="<?= h($profile['facebook_url']) ?>" target="_blank"><i class="fa-brands fa-facebook mr-2"></i>Facebook</a><?php endif; ?>
+                        <?php if ($profile['instagram_url']): ?><a class="rounded-2xl bg-neutral-50 px-4 py-3 font-black hover:bg-[#d62976] hover:text-white" href="<?= h($profile['instagram_url']) ?>" target="_blank"><i class="fa-brands fa-instagram mr-2"></i>Instagram</a><?php endif; ?>
+                        <?php if ($profile['website_url']): ?><a class="rounded-2xl bg-neutral-50 px-4 py-3 font-black hover:bg-neutral-950 hover:text-white" href="<?= h($profile['website_url']) ?>" target="_blank"><i class="fa-solid fa-globe mr-2 text-red-600"></i>Website</a><?php endif; ?>
+                    </div>
+                    <div class="mt-6 rounded-[1.5rem] bg-red-50 p-5 text-sm font-black leading-7 text-red-700"><?= h(PAYMENT_DISCLAIMER) ?></div>
+                    <?= clean_context_button('/customer/create_booking.php', ['photographer_id' => (int)$profile['id']], '<i class="fa-solid fa-calendar-check mr-2"></i>ส่งคำขอจอง', 'btn-cta btn-lg mt-6 block w-full text-center') ?>
+                </div>
+            </div>
         </div>
 
         <aside class="space-y-5">
             <div class="stock-card rounded-[1.5rem] p-6">
-                <h2 class="font-black text-neutral-950">พื้นที่ให้บริการ</h2>
+                <p class="section-kicker"><i class="fa-solid fa-location-dot mr-2"></i>พื้นที่รับงาน</p>
+                <h2 class="mt-1 font-black text-neutral-950">อำเภอที่ช่างภาพรับงาน</h2>
                 <div class="mt-4 flex flex-wrap gap-2">
                     <?php foreach ($areas as $area): ?>
                         <span class="rounded-full bg-neutral-100 px-3 py-1.5 text-sm font-bold text-neutral-700">
                             <?= h($area['district_name']) ?>
                         </span>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-            <div class="stock-card rounded-[1.5rem] p-6">
-                <h2 class="font-black text-neutral-950">วันว่าง</h2>
-                <div class="mt-4 grid gap-2">
-                    <?php foreach ($availability as $a): ?>
-                        <div class="rounded-2xl border border-neutral-100 bg-neutral-50 px-4 py-3 text-sm font-semibold">
-                            <?= h(format_be_date($a['available_date'])) ?> · <?= h(time_slot_label($a['time_slot'])) ?> · <?= h(booking_status_label($a['status'])) ?>
-                        </div>
-                    <?php endforeach; ?>
-                    <?php if (!$availability): ?>
-                        <div class="empty-state rounded-2xl p-5 text-center text-sm font-bold text-neutral-600">ยังไม่มีวันว่างที่เปิดไว้</div>
-                    <?php endif; ?>
-                </div>
-            </div>
-            <div class="stock-card rounded-[1.5rem] p-6">
-                <h2 class="font-black text-neutral-950">ช่องทางติดต่อ</h2>
-                <div class="mt-4 grid gap-2 text-sm font-black">
-                    <?php if ($profile['phone_public']): ?><a class="rounded-2xl bg-neutral-50 px-4 py-3 hover:bg-neutral-950 hover:text-white" href="tel:<?= h($profile['phone_public']) ?>"><i class="fa-solid fa-phone mr-2 text-red-600"></i><?= h($profile['phone_public']) ?></a><?php endif; ?>
-                    <?php if ($profile['line_id']): ?><a class="rounded-2xl bg-neutral-50 px-4 py-3 hover:bg-[#06c755] hover:text-white" href="https://line.me/ti/p/~<?= h($profile['line_id']) ?>"><i class="fa-brands fa-line mr-2"></i><?= h($profile['line_id']) ?></a><?php endif; ?>
-                    <?php if ($profile['facebook_url']): ?><a class="rounded-2xl bg-neutral-50 px-4 py-3 hover:bg-[#1877f2] hover:text-white" href="<?= h($profile['facebook_url']) ?>" target="_blank"><i class="fa-brands fa-facebook mr-2"></i>Facebook</a><?php endif; ?>
-                    <?php if ($profile['instagram_url']): ?><a class="rounded-2xl bg-neutral-50 px-4 py-3 hover:bg-[#d62976] hover:text-white" href="<?= h($profile['instagram_url']) ?>" target="_blank"><i class="fa-brands fa-instagram mr-2"></i>Instagram</a><?php endif; ?>
-                </div>
-            </div>
-            <div class="stock-card rounded-[1.5rem] p-6">
-                <h2 class="font-black text-neutral-950">บทความจากช่างภาพ</h2>
-                <div class="mt-4 grid gap-3">
-                    <?php foreach ($articles as $a): ?>
-                        <div class="rounded-2xl bg-neutral-50 p-4">
-                            <b class="text-neutral-950"><?= h($a['title']) ?></b>
-                            <p class="mt-1 line-clamp-2 text-sm leading-6 text-neutral-600"><?= h(strip_tags($a['content'])) ?></p>
-                            <?= clean_context_button('/article_detail.php', ['slug' => $a['slug']], '<i class="fa-solid fa-eye mr-1"></i>อ่านต่อ', 'mt-3 inline-flex rounded-full bg-white px-3 py-1.5 text-xs font-black text-red-600 hover:bg-neutral-950 hover:text-white') ?>
-                        </div>
                     <?php endforeach; ?>
                 </div>
             </div>

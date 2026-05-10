@@ -62,7 +62,7 @@ if ($me) {
                 <a class="rounded-full px-4 py-2 transition hover:bg-white hover:text-red-600 hover:shadow-sm" href="/photographers.php"><i class="fa-solid fa-magnifying-glass mr-2"></i>ค้นหาช่างภาพ</a>
                 <a class="rounded-full px-4 py-2 transition hover:bg-white hover:text-red-600 hover:shadow-sm" href="/blog.php"><i class="fa-solid fa-newspaper mr-2"></i>บทความ</a>
                 <a class="rounded-full px-4 py-2 transition hover:bg-white hover:text-red-600 hover:shadow-sm" href="/faq.php"><i class="fa-solid fa-circle-question mr-2"></i>คำถามที่พบบ่อย</a>
-                <a class="rounded-full px-4 py-2 transition hover:bg-white hover:text-red-600 hover:shadow-sm" href="/contact.php"><i class="fa-solid fa-envelope mr-2"></i>ติดต่อ</a>
+                <a class="rounded-full px-4 py-2 transition hover:bg-white hover:text-red-600 hover:shadow-sm" href="/contact.php"><i class="fa-solid fa-envelope mr-2"></i>ติดต่อเว็บไซต์</a>
             </div>
         </div>
 

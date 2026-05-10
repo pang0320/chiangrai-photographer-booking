@@ -58,7 +58,7 @@ $footerDistricts = db_fetch_all('SELECT district_name FROM districts WHERE is_ac
                     <a href="/about.php" class="hover:text-red-400"><i class="fa-solid fa-circle-info mr-2"></i>เกี่ยวกับเรา</a>
                     <a href="/blog.php" class="hover:text-red-400"><i class="fa-solid fa-newspaper mr-2"></i>บทความ</a>
                     <a href="/faq.php" class="hover:text-red-400"><i class="fa-solid fa-circle-question mr-2"></i>คำถามที่พบบ่อย</a>
-                    <a href="/contact.php" class="hover:text-red-400"><i class="fa-solid fa-envelope mr-2"></i>ติดต่อเรา</a>
+                    <a href="/contact.php" class="hover:text-red-400"><i class="fa-solid fa-envelope mr-2"></i>ติดต่อเว็บไซต์</a>
                     <?= clean_context_button('/register.php', ['role' => 'photographer'], '<i class="fa-solid fa-user-plus mr-2"></i>สมัครเป็นช่างภาพ', 'text-left hover:text-red-400') ?>
                     <a href="/login.php" class="hover:text-red-400"><i class="fa-solid fa-right-to-bracket mr-2"></i>เข้าสู่ระบบ</a>
                 </div>

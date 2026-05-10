@@ -58,6 +58,7 @@ $articles = db_fetch_all('SELECT a.*, p.display_name
                           WHERE a.status = "published" AND a.deleted_at IS NULL
                           ORDER BY a.published_at DESC
                           LIMIT 6');
+$homeFaqs = db_fetch_all('SELECT * FROM faqs WHERE is_active = 1 ORDER BY sort_order, id DESC LIMIT 6');
 $reviews = db_fetch_all('SELECT r.*, u.name customer_name, u.avatar, p.display_name
                          FROM reviews r
                          JOIN users u ON u.id = r.customer_id
@@ -307,9 +308,12 @@ include __DIR__ . '/includes/header.php';
     <div class="stock-shell px-4 sm:px-6 lg:px-8">
         <div class="flex flex-wrap items-end justify-between gap-5">
             <div>
-                <p class="section-kicker">Photo Articles</p>
+                <p class="section-kicker">บทความ</p>
                 <h2 class="mt-2 text-3xl font-black text-neutral-950">บทความแนะนำการถ่ายภาพ</h2>
             </div>
+            <a href="/blog.php" class="rounded-full border border-neutral-200 bg-white px-5 py-3 text-sm font-black text-neutral-700 shadow-sm transition hover:bg-neutral-950 hover:text-white">
+                <i class="fa-solid fa-newspaper mr-2"></i>ดูบทความทั้งหมด
+            </a>
         </div>
         <div class="mt-8 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
             <?php foreach ($articles as $article): ?>
@@ -330,16 +334,32 @@ include __DIR__ . '/includes/header.php';
 <section class="stock-shell px-4 py-16 sm:px-6 lg:px-8">
     <div class="grid gap-8 lg:grid-cols-[360px_1fr]">
         <div>
-            <p class="section-kicker">คำถามที่พบบ่อย</p>
+            <p class="section-kicker"><i class="fa-solid fa-circle-question mr-2"></i>คำถามที่พบบ่อย</p>
             <h2 class="mt-2 text-3xl font-black text-neutral-950">คำถามที่พบบ่อย</h2>
+            <p class="mt-3 text-base font-semibold leading-7 text-neutral-600">
+                คำถามเหล่านี้รวบรวมและจัดหมวดหมู่โดยผู้ดูแลระบบ แสดงเฉพาะบางข้อสำคัญบนหน้าแรก
+            </p>
+            <a href="/faq.php" class="mt-5 inline-flex rounded-full border border-neutral-200 bg-white px-5 py-3 text-sm font-black text-neutral-700 shadow-sm transition hover:bg-neutral-950 hover:text-white">
+                <i class="fa-solid fa-circle-question mr-2"></i>ดูคำถามทั้งหมด
+            </a>
         </div>
         <div class="grid gap-4 md:grid-cols-2">
-            <?php foreach ([['เว็บไซต์รับชำระเงินไหม','ไม่รับชำระเงิน เว็บไซต์เป็นเพียงตัวกลางค้นหาและติดต่อช่างภาพเท่านั้น'],['ติดต่อช่างภาพอย่างไร','กดโทร LINE Facebook Instagram หรือเว็บไซต์ในหน้าโปรไฟล์ช่างภาพ'],['รีวิวได้เมื่อไหร่','ลูกค้ารีวิวได้เฉพาะงานที่เสร็จสิ้นแล้ว และ 1 รายการจองรีวิวได้ 1 ครั้ง'],['ถ้าไม่พบช่างภาพในพื้นที่ทำอย่างไร','ระบบจะแนะนำช่างภาพอำเภอใกล้เคียงโดยคำนวณจากพิกัด latitude/longitude']] as $faq): ?>
+            <?php foreach ($homeFaqs as $faq): ?>
                 <div class="stock-card rounded-[1.5rem] p-6">
-                    <h3 class="font-black text-neutral-950"><?= h($faq[0]) ?></h3>
-                    <p class="mt-3 text-sm leading-7 text-neutral-600"><?= h($faq[1]) ?></p>
+                    <span class="rounded-full bg-red-50 px-3 py-1 text-xs font-black text-red-700">
+                        <i class="fa-solid fa-folder mr-1"></i><?= h($faq['category']) ?>
+                    </span>
+                    <h3 class="mt-3 font-black text-neutral-950"><?= h($faq['question']) ?></h3>
+                    <p class="mt-3 text-sm leading-7 text-neutral-600"><?= h($faq['answer']) ?></p>
                 </div>
             <?php endforeach; ?>
+            <?php if (!$homeFaqs): ?>
+                <div class="empty-state rounded-[1.5rem] p-8 text-center md:col-span-2">
+                    <i class="fa-solid fa-circle-question text-4xl text-red-600"></i>
+                    <h3 class="mt-3 text-xl font-black text-neutral-950">ยังไม่มีคำถามที่พบบ่อย</h3>
+                    <p class="mt-2 text-neutral-600">ผู้ดูแลระบบสามารถเพิ่ม FAQ จากหลังบ้านได้</p>
+                </div>
+            <?php endif; ?>
         </div>
     </div>
 </section>

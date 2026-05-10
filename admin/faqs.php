@@ -75,6 +75,9 @@ include __DIR__ . '/../includes/header.php';
         <div>
             <p class="section-kicker">จัดการคำถามที่พบบ่อย</p>
             <h1 class="mt-1 text-3xl font-black text-neutral-950"><i class="fa-solid fa-circle-question mr-2 text-red-600"></i>จัดการคำถามที่พบบ่อย</h1>
+            <p class="mt-2 max-w-3xl text-base font-semibold leading-7 text-neutral-600">
+                FAQ คือคำถามที่ผู้ดูแลระบบรวบรวมจากข้อสงสัยของลูกค้าและช่างภาพ แล้วจัดหมวดหมู่เองเพื่อแสดงในหน้าเว็บไซต์
+            </p>
         </div>
         <a href="/faq.php" target="_blank" class="rounded-full border border-neutral-200 px-5 py-3 text-sm font-black hover:bg-neutral-950 hover:text-white"><i class="fa-solid fa-eye mr-2"></i>ดูหน้าคำถาม</a>
     </div>

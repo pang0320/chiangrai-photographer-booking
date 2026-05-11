@@ -51,6 +51,10 @@ body {
     overflow: visible;
 }
 
+.stock-card:has(.calendar-date-open) {
+    z-index: 120;
+}
+
 .section-kicker {
     display: inline-flex;
     align-items: center;
@@ -104,7 +108,13 @@ body {
 }
 
 .hero-frame {
+    z-index: 20;
+    overflow: visible;
     min-height: calc(100vh - 5rem);
+}
+
+.hero-frame:has(.calendar-date-open) {
+    z-index: 120;
 }
 
 .stat-pill {
@@ -326,7 +336,11 @@ body {
 
 .calendar-date {
     position: relative;
-    z-index: 20;
+    z-index: 30;
+}
+
+.calendar-date-open {
+    z-index: 240;
 }
 
 .calendar-date-trigger {
@@ -387,9 +401,12 @@ body {
     position: absolute;
     top: calc(100% + .75rem);
     left: 0;
-    z-index: 80;
+    z-index: 260;
     display: none;
     width: min(23rem, calc(100vw - 2rem));
+    max-height: min(420px, calc(100vh - 7rem));
+    overflow-y: auto;
+    overscroll-behavior: contain;
     border: 1px solid rgba(16, 16, 20, .1);
     border-radius: 1.35rem;
     background: #fff;
@@ -706,11 +723,11 @@ body {
 .hero-search-form .calendar-date {
     width: 100%;
     min-width: 0;
-    z-index: 70;
+    z-index: 90;
 }
 
 .hero-search-form .calendar-date-open {
-    z-index: 120;
+    z-index: 280;
 }
 
 .hero-search-form .calendar-date-trigger {
@@ -719,8 +736,9 @@ body {
 }
 
 .hero-search-form .calendar-date-popover {
-    z-index: 130;
+    z-index: 300;
     width: 22rem;
+    max-height: min(390px, calc(100vh - 7rem));
 }
 
 .hero-search-form .calendar-date-label {
@@ -764,6 +782,22 @@ body {
     margin-top: .6rem;
     gap: .45rem;
     font-size: .7rem;
+}
+
+@media (max-width: 639px) {
+    .calendar-date-popover,
+    .hero-search-form .calendar-date-popover {
+        position: fixed;
+        top: 5.25rem;
+        right: 1rem;
+        left: 1rem;
+        width: auto;
+        max-height: calc(100vh - 6.5rem);
+    }
+
+    .calendar-date-popover::before {
+        display: none;
+    }
 }
 
 .workspace-shell {

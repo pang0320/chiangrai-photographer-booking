@@ -33,7 +33,7 @@ include __DIR__ . '/../includes/header.php';
 
     <div class="mt-6 grid gap-4 sm:grid-cols-4">
         <div class="stock-card rounded-[1.5rem] p-5">
-            <p class="text-sm font-bold text-neutral-500">ผู้ใช้งาน</p>
+            <p class="text-sm font-bold text-neutral-500">สมาชิก</p>
             <b class="mt-2 block text-3xl"><?= table_count('users', 'deleted_at IS NULL') ?></b>
         </div>
         <div class="stock-card rounded-[1.5rem] p-5">

@@ -141,6 +141,7 @@ include __DIR__ . '/../includes/header.php';
 	        <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">ผู้ดูแลระบบ</p>
 	        <h1 class="mt-1 text-3xl font-black text-neutral-950">จัดการคำขอจอง</h1>
 	        <p class="mt-2 text-sm font-bold text-neutral-500">แยกดูงานที่กำลังดำเนินการและงานที่เสร็จสิ้นแล้ว พร้อมตัวกรองละเอียดของแอดมิน</p>
+            <p class="mt-1 text-sm font-bold text-amber-700"><i class="fa-solid fa-circle-info mr-1"></i>โดยหลักแอดมินใช้ตรวจสอบข้อมูล หากต้องแก้สถานะจะใช้เฉพาะกรณีแก้ไขข้อมูลผิดพลาดหรือช่วยดูแลระบบ และทุกครั้งจะถูกบันทึกประวัติ</p>
 	    </div>
 
 	    <?php
@@ -173,8 +174,8 @@ include __DIR__ . '/../includes/header.php';
             <?php endforeach; ?>
         </select>
 
-        <input name="photographer_id" value="<?= h($selectedPhotographerId) ?>" placeholder="รหัสช่างภาพ" class="stock-input rounded-2xl px-4 py-3 font-semibold">
-        <input name="customer_id" value="<?= h($selectedCustomerId) ?>" placeholder="รหัสลูกค้า" class="stock-input rounded-2xl px-4 py-3 font-semibold">
+        <input name="photographer_id" value="<?= h($selectedPhotographerId) ?>" placeholder="รหัสอ้างอิงช่างภาพ" class="stock-input rounded-2xl px-4 py-3 font-semibold">
+        <input name="customer_id" value="<?= h($selectedCustomerId) ?>" placeholder="รหัสอ้างอิงลูกค้า" class="stock-input rounded-2xl px-4 py-3 font-semibold">
         <?= be_date_input('date', $selectedDate, 'stock-input rounded-2xl px-4 py-3 font-semibold', false, 'วันที่จอง พ.ศ.') ?>
         <button class="stock-button rounded-2xl px-5 py-3 font-black"><i class="fa-solid fa-magnifying-glass mr-2"></i>ค้นหา</button>
     </form>

@@ -62,7 +62,7 @@ function activity_table_label(?string $table): string
 {
     $table = (string)$table;
     $map = [
-        'users' => 'ผู้ใช้งาน',
+        'users' => 'สมาชิก',
         'photographer_profiles' => 'โปรไฟล์ช่างภาพ',
         'bookings' => 'คำขอจอง',
         'reviews' => 'รีวิว',
@@ -268,7 +268,7 @@ include __DIR__ . '/../includes/header.php';
             <div>
                 <p class="text-sm font-black uppercase tracking-[0.22em] text-white/58">ประวัติการใช้งาน</p>
                 <h1 class="mt-2 text-3xl font-black sm:text-5xl">แดชบอร์ดประวัติการใช้งาน</h1>
-                <p class="mt-3 max-w-2xl leading-8 text-white/68">ดูภาพรวมการใช้งานระบบ ตรวจจับกิจกรรมสำคัญ และติดตามเหตุการณ์ความปลอดภัยแบบอ่านง่าย</p>
+                <p class="mt-3 max-w-2xl leading-8 text-white/68">ดูภาพรวมการใช้งานระบบ ตรวจสอบว่าใครทำอะไรกับข้อมูลไหน เมื่อไหร่ และติดตามเหตุการณ์ความปลอดภัยแบบอ่านง่าย</p>
             </div>
             <a href="/admin/dashboard.php" class="rounded-full bg-white px-5 py-3 font-black text-neutral-950 transition hover:bg-red-600 hover:text-white">
                 <i class="fa-solid fa-gauge mr-2"></i>กลับแดชบอร์ด
@@ -293,7 +293,7 @@ include __DIR__ . '/../includes/header.php';
         </div>
         <div class="metric-card rounded-[1.5rem] p-5">
             <div class="flex items-center justify-between gap-4">
-                <p class="text-sm font-bold text-neutral-500">ผู้ใช้ที่เกี่ยวข้อง</p>
+                <p class="text-sm font-bold text-neutral-500">สมาชิกที่เกี่ยวข้อง</p>
                 <i class="fa-solid fa-users text-red-600"></i>
             </div>
             <p class="mt-3 text-3xl font-black text-neutral-950"><?= number_format($uniqueUsers) ?></p>
@@ -308,6 +308,9 @@ include __DIR__ . '/../includes/header.php';
     </div>
 
     <form method="post" action="/admin/activity_logs.php" class="stock-card mt-6 grid gap-3 rounded-[1.75rem] p-5 lg:grid-cols-6">
+        <div class="rounded-2xl bg-red-50 px-4 py-3 text-sm font-black leading-6 text-red-700 lg:col-span-6">
+            <i class="fa-solid fa-circle-info mr-2"></i>ข้อมูลเก็บจากตาราง activity_logs ผ่านฟังก์ชัน log_activity() ประกอบด้วย user_id, action, table_name, record_id, ip_address, user_agent, description และ created_at ตัวกรองหน้านี้เป็น server-side filter
+        </div>
         <?= clean_context_inputs([]) ?>
         <label class="icon-input block lg:col-span-2">
             <i class="fa-solid fa-magnifying-glass"></i>
@@ -355,7 +358,7 @@ include __DIR__ . '/../includes/header.php';
                     <h2 class="mt-1 text-2xl font-black text-neutral-950">กิจกรรม 14 วันล่าสุด</h2>
                 </div>
                 <span class="rounded-full bg-neutral-100 px-4 py-2 text-sm font-black text-neutral-600">
-                    <i class="fa-solid fa-chart-line mr-2 text-red-600"></i>สูงสุด <?= number_format($maxDaily) ?> log
+                    <i class="fa-solid fa-chart-line mr-2 text-red-600"></i>สูงสุด <?= number_format($maxDaily) ?> รายการ
                 </span>
             </div>
             <?php
@@ -453,8 +456,8 @@ include __DIR__ . '/../includes/header.php';
         </div>
 
         <div class="stock-card rounded-[1.75rem] p-6">
-            <p class="section-kicker">ผู้ใช้งานที่ active</p>
-            <h2 class="mt-1 text-xl font-black text-neutral-950">ผู้ใช้ที่มีกิจกรรมสูง</h2>
+            <p class="section-kicker">สมาชิกที่ใช้งานบ่อย</p>
+            <h2 class="mt-1 text-xl font-black text-neutral-950">สมาชิกที่มีกิจกรรมสูง</h2>
             <div class="mt-4 grid gap-3">
                 <?php foreach ($topUsers as $row): ?>
                     <div class="flex items-center justify-between gap-4 rounded-2xl bg-neutral-50 px-4 py-3 text-sm">
@@ -513,7 +516,7 @@ include __DIR__ . '/../includes/header.php';
                                 <h3 class="font-black text-neutral-950"><?= h(activity_action_label((string)$log['action'])) ?></h3>
                                 <span class="rounded-full bg-white px-3 py-1 text-xs font-black text-neutral-600"><?= h(activity_table_label($log['table_name'] ?? '')) ?></span>
                                 <?php if (!empty($log['record_id'])): ?>
-                                    <span class="rounded-full bg-white px-3 py-1 text-xs font-black text-neutral-600">#<?= (int)$log['record_id'] ?></span>
+                                    <span class="rounded-full bg-white px-3 py-1 text-xs font-black text-neutral-600">รหัสอ้างอิง <?= (int)$log['record_id'] ?></span>
                                 <?php endif; ?>
                             </div>
                             <div class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs font-bold text-neutral-500">

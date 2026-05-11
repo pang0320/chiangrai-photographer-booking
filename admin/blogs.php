@@ -3,7 +3,7 @@ require_once __DIR__ . '/../includes/functions.php';
 requireRole('admin');
 
 $adminUser = current_user();
-$cleanContext = clean_context_init(['edit']);
+$cleanContext = clean_context_init(['edit', 'q', 'status']);
 $editId = 0;
 if (isset($cleanContext['edit'])) {
     $editId = (int)$cleanContext['edit'];
@@ -133,12 +133,29 @@ if ($editId > 0) {
     }
 }
 
+$q = trim((string)clean_context_value($cleanContext, 'q', ''));
+$statusFilter = (string)clean_context_value($cleanContext, 'status', '');
+$where = ['b.deleted_at IS NULL'];
+$params = [];
+
+if ($q !== '') {
+    $where[] = '(b.title LIKE ? OR u.name LIKE ? OR b.status LIKE ?)';
+    $params[] = '%' . $q . '%';
+    $params[] = '%' . $q . '%';
+    $params[] = '%' . $q . '%';
+}
+
+if ($statusFilter !== '') {
+    $where[] = 'b.status = ?';
+    $params[] = $statusFilter;
+}
+
 $items = db_fetch_all('SELECT b.*, u.name AS admin_name,
                        (SELECT GROUP_CONCAT(t.name ORDER BY t.name SEPARATOR ", ") FROM blog_tags bt JOIN tags t ON t.id = bt.tag_id WHERE bt.blog_id = b.id) AS tags
                        FROM blogs b
                        JOIN users u ON u.id = b.admin_id
-                       WHERE b.deleted_at IS NULL
-                       ORDER BY b.created_at DESC');
+                       WHERE ' . implode(' AND ', $where) . '
+                       ORDER BY COALESCE(b.published_at, b.created_at) DESC', $params);
 
 $pageTitle = 'จัดการบทความเว็บ';
 include __DIR__ . '/../includes/header.php';
@@ -149,6 +166,7 @@ include __DIR__ . '/../includes/header.php';
         <div>
             <p class="section-kicker">บทความส่วนกลาง</p>
             <h1 class="mt-1 text-3xl font-black text-neutral-950"><i class="fa-solid fa-newspaper mr-2 text-red-600"></i>จัดการบทความเว็บ</h1>
+            <p class="mt-2 max-w-3xl text-sm font-bold leading-7 text-neutral-500">บทความจากระบบ แสดงลำดับ วันที่โพสต์ ผู้เขียน และแหล่งที่มาให้ชัดเจน ช่องค้นหาค้นจากหัวข้อ/ผู้เขียน/สถานะ</p>
         </div>
         <a href="/blog.php" target="_blank" class="rounded-full border border-neutral-200 px-5 py-3 text-sm font-black hover:bg-neutral-950 hover:text-white"><i class="fa-solid fa-eye mr-2"></i>ดูหน้าบทความ</a>
     </div>
@@ -182,6 +200,7 @@ include __DIR__ . '/../includes/header.php';
             <label class="grid gap-2 text-sm font-black text-neutral-700">
                 <span><i class="fa-solid fa-tags mr-1 text-red-600"></i>แท็ก คั่นด้วย comma</span>
                 <input name="tags" value="<?= h($editTags) ?>" class="stock-input rounded-2xl px-4 py-3 font-semibold" placeholder="งานแต่ง, พอร์ตเทรต, เชียงราย">
+                <span class="text-xs font-bold leading-6 text-neutral-500">แท็กเป็น shortcut ช่วยค้นหาและจัดกลุ่มบทความ ไม่ใช่ข้อมูลบังคับ</span>
             </label>
             <label class="grid gap-2 text-sm font-black text-neutral-700">
                 <span><i class="fa-solid fa-image mr-1 text-red-600"></i>รูปปก</span>
@@ -192,28 +211,50 @@ include __DIR__ . '/../includes/header.php';
         <button class="stock-button rounded-2xl px-5 py-3 font-black"><i class="fa-solid fa-floppy-disk mr-2"></i>บันทึกบทความ</button>
     </form>
 
+    <form method="post" action="/admin/blogs.php" class="stock-card mt-6 grid gap-3 rounded-[1.5rem] p-5 md:grid-cols-4">
+        <?= clean_context_inputs([]) ?>
+        <input name="q" value="<?= h($q) ?>" placeholder="ค้นหาหัวข้อ/ผู้เขียน/สถานะ" class="stock-input rounded-2xl px-4 py-3 font-semibold md:col-span-2">
+        <select name="status" class="stock-input rounded-2xl px-4 py-3 font-semibold">
+            <option value="">ทุกสถานะ</option>
+            <?php foreach (['draft', 'published', 'hidden'] as $statusName): ?>
+                <option value="<?= h($statusName) ?>" <?php if ($statusFilter === $statusName): ?>selected<?php endif; ?>><?= h(booking_status_label($statusName)) ?></option>
+            <?php endforeach; ?>
+        </select>
+        <button class="stock-button rounded-2xl px-5 py-3 font-black"><i class="fa-solid fa-magnifying-glass mr-2"></i>ค้นหา</button>
+    </form>
+
     <div class="stock-card mt-6 overflow-x-auto rounded-[1.75rem] p-5">
         <table class="datatable w-full text-sm">
             <thead>
                 <tr>
+                    <th>ลำดับ</th>
                     <th>หัวข้อ</th>
-                    <th>ผู้ดูแล</th>
+                    <th>ผู้เขียน</th>
+                    <th>แหล่งที่มา</th>
                     <th>แท็ก</th>
                     <th>สถานะ</th>
-                    <th>วันที่</th>
+                    <th>วันที่โพสต์</th>
                     <th>จัดการ</th>
                 </tr>
             </thead>
             <tbody>
-                <?php foreach ($items as $item): ?>
+                <?php foreach ($items as $index => $item): ?>
+                    <?php
+                    $blogDate = $item['published_at'];
+                    if (empty($blogDate)) {
+                        $blogDate = $item['created_at'];
+                    }
+                    ?>
                     <tr>
+                        <td class="font-black text-neutral-500"><?= $index + 1 ?></td>
                         <td>
                             <?= clean_context_button('/blog_detail.php', ['slug' => $item['slug']], h($item['title']), 'font-black text-red-600', 'inline', 'target="_blank"') ?>
                         </td>
                         <td><?= h($item['admin_name']) ?></td>
+                        <td><span class="rounded-full bg-neutral-950 px-3 py-1 text-xs font-black text-white"><i class="fa-solid fa-user-shield mr-1"></i>จากระบบ</span></td>
                         <td><?= h($item['tags']) ?></td>
                         <td><?= status_badge($item['status']) ?></td>
-                        <td><?= h(format_be_datetime($item['created_at'])) ?></td>
+                        <td><?= h(format_be_datetime($blogDate)) ?></td>
                         <td>
                             <div class="flex flex-wrap gap-2">
                                 <?= clean_context_button('/admin/blogs.php', ['edit' => (int)$item['id']], '<i class="fa-solid fa-pen"></i>แก้ไข', 'btn-warning btn-sm') ?>

@@ -129,6 +129,13 @@ $sql = "SELECT p.*, u.email, u.phone, d.district_name
 $stmt = db()->prepare($sql);
 $stmt->execute($params);
 $items = $stmt->fetchAll();
+$statusCounts = [
+    '' => (int)db_fetch_value('SELECT COUNT(*) FROM photographer_profiles WHERE deleted_at IS NULL'),
+    'pending' => (int)db_fetch_value('SELECT COUNT(*) FROM photographer_profiles WHERE approval_status = "pending" AND deleted_at IS NULL'),
+    'approved' => (int)db_fetch_value('SELECT COUNT(*) FROM photographer_profiles WHERE approval_status = "approved" AND deleted_at IS NULL'),
+    'rejected' => (int)db_fetch_value('SELECT COUNT(*) FROM photographer_profiles WHERE approval_status = "rejected" AND deleted_at IS NULL'),
+    'suspended' => (int)db_fetch_value('SELECT COUNT(*) FROM photographer_profiles WHERE approval_status = "suspended" AND deleted_at IS NULL'),
+];
 
 $pageTitle = 'จัดการช่างภาพ';
 include __DIR__ . '/../includes/header.php';
@@ -139,25 +146,33 @@ include __DIR__ . '/../includes/header.php';
         <div>
             <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">ผู้ดูแลระบบ</p>
             <h1 class="mt-1 text-3xl font-black text-neutral-950">จัดการช่างภาพ</h1>
+            <p class="mt-2 max-w-3xl text-sm font-bold leading-7 text-neutral-500">กรองสถานะการอนุมัติได้ชัดเจน ช่างภาพที่ยังรอตรวจสอบ/ถูกปฏิเสธ/ถูกระงับ จะไม่แสดงในหน้าค้นหาสาธารณะ</p>
         </div>
 
-        <form method="post" action="/admin/photographers.php">
-            <?= clean_context_inputs([]) ?>
-            <select name="status" onchange="this.form.submit()" class="stock-input rounded-2xl px-4 py-3 font-semibold">
-                <option value="">ทุกสถานะ</option>
-                <?php foreach (['pending', 'approved', 'rejected', 'suspended'] as $status): ?>
-                    <option value="<?= h($status) ?>" <?php if ($filter === $status): ?>selected<?php endif; ?>>
-                        <?= h(booking_status_label($status)) ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
-        </form>
+        <div class="rounded-2xl bg-red-50 px-4 py-3 text-sm font-black text-red-700">
+            <i class="fa-solid fa-filter mr-2"></i>ตัวกรองเป็น server-side filter และจะโหลดรายการใหม่หลังเลือก
+        </div>
+    </div>
+
+    <div class="mt-6 flex flex-wrap gap-2">
+        <?php foreach (['' => 'ทั้งหมด', 'pending' => 'รอตรวจสอบ', 'approved' => 'อนุมัติแล้ว', 'rejected' => 'ไม่อนุมัติ', 'suspended' => 'ระงับ'] as $statusValue => $statusLabel): ?>
+            <?php
+            $pillClass = 'rounded-full px-4 py-2 text-sm font-black transition ';
+            if ($filter === $statusValue) {
+                $pillClass .= 'bg-neutral-950 text-white';
+            } else {
+                $pillClass .= 'bg-white text-neutral-700 hover:bg-red-50 hover:text-red-700';
+            }
+            ?>
+            <?= clean_context_button('/admin/photographers.php', ['status' => $statusValue], '<i class="fa-solid fa-filter mr-1"></i>' . h($statusLabel) . ' <span class="rounded-full bg-white/20 px-2 py-0.5 text-xs">' . number_format($statusCounts[$statusValue] ?? 0) . '</span>', $pillClass) ?>
+        <?php endforeach; ?>
     </div>
 
     <div class="stock-card mt-6 overflow-x-auto rounded-[1.5rem] p-5">
         <table class="datatable w-full text-sm">
             <thead>
                 <tr>
+                    <th>ลำดับ</th>
                     <th>ชื่อ</th>
                     <th>อีเมล</th>
                     <th>อำเภอ</th>
@@ -169,8 +184,9 @@ include __DIR__ . '/../includes/header.php';
                 </tr>
             </thead>
             <tbody>
-                <?php foreach ($items as $photographer): ?>
+                <?php foreach ($items as $index => $photographer): ?>
                     <tr>
+                        <td class="font-black text-neutral-500"><?= $index + 1 ?></td>
                         <td>
                             <?= clean_context_button('/photographer_detail.php', ['id' => (int)$photographer['id']], h($photographer['display_name']), 'font-black text-red-600', 'inline', 'target="_blank"') ?>
                         </td>

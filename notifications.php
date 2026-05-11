@@ -50,8 +50,9 @@ include __DIR__ . '/includes/header.php';
 <section class="stock-shell px-4 py-10 sm:px-6 lg:px-8">
     <div class="flex flex-wrap items-end justify-between gap-4">
         <div>
-            <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">Notifications</p>
+            <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">ศูนย์รวมแจ้งเตือน</p>
             <h1 class="mt-1 text-3xl font-black text-neutral-950">แจ้งเตือน</h1>
+            <p class="mt-2 max-w-3xl text-sm font-bold leading-7 text-neutral-500">รวมแจ้งเตือนสำคัญ เช่น คำขอจองใหม่ การเปลี่ยนสถานะ รีวิว การอนุมัติช่างภาพ และการระงับบัญชี</p>
         </div>
 
         <form method="post">

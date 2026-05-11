@@ -40,50 +40,71 @@ if (is_post()) {
 
 $items = db_fetch_all('SELECT * FROM banners ORDER BY sort_order, id DESC');
 
-$pageTitle = 'Banner';
+$pageTitle = 'แบนเนอร์';
 include __DIR__ . '/../includes/header.php';
 ?>
 
 <section class="px-4 py-8 sm:px-6 lg:px-8">
     <div>
         <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">ผู้ดูแลระบบ</p>
-        <h1 class="mt-1 text-3xl font-black text-neutral-950">จัดการ Banner</h1>
+        <h1 class="mt-1 text-3xl font-black text-neutral-950">จัดการแบนเนอร์</h1>
+        <p class="mt-2 max-w-3xl text-sm font-bold leading-7 text-neutral-500">แบนเนอร์ใช้จัดภาพโปรโมตบนหน้าแรก เช่น ภาพ hero หรือ section โปรโมตพร้อมปุ่ม CTA ผู้ใช้จะเห็นตามลำดับแสดงผลที่ตั้งไว้</p>
     </div>
 
     <form method="post" enctype="multipart/form-data" class="stock-card mt-6 grid gap-3 rounded-[1.5rem] p-5 md:grid-cols-3">
         <?= csrf_field() ?>
-        <input name="title" required placeholder="Title" class="stock-input rounded-2xl px-4 py-3 font-semibold">
-        <input name="subtitle" placeholder="Subtitle" class="stock-input rounded-2xl px-4 py-3 font-semibold">
+        <input name="title" required placeholder="หัวข้อแบนเนอร์" class="stock-input rounded-2xl px-4 py-3 font-semibold">
+        <input name="subtitle" placeholder="คำอธิบายสั้น" class="stock-input rounded-2xl px-4 py-3 font-semibold">
         <label class="grid gap-2 text-sm font-black text-neutral-700">
-            <span><i class="fa-solid fa-image mr-2 text-red-600"></i>รูป Banner</span>
+            <span><i class="fa-solid fa-image mr-2 text-red-600"></i>รูปแบนเนอร์</span>
             <input type="file" name="image" accept="image/jpeg,image/png,image/webp" class="stock-input rounded-2xl px-4 py-3 font-semibold">
             <span class="text-xs font-bold leading-6 text-neutral-500"><?= h(UPLOAD_IMAGE_HELP_TEXT) ?></span>
         </label>
-        <input name="button_text" placeholder="Button text" class="stock-input rounded-2xl px-4 py-3 font-semibold">
-        <input name="button_url" placeholder="Button URL" class="stock-input rounded-2xl px-4 py-3 font-semibold">
-        <input type="number" name="sort_order" value="0" class="stock-input rounded-2xl px-4 py-3 font-semibold">
+        <input name="button_text" placeholder="ข้อความปุ่ม เช่น ค้นหาช่างภาพ" class="stock-input rounded-2xl px-4 py-3 font-semibold">
+        <input name="button_url" placeholder="ลิงก์ปุ่ม เช่น /photographers.php" class="stock-input rounded-2xl px-4 py-3 font-semibold">
+        <input type="number" name="sort_order" value="0" class="stock-input rounded-2xl px-4 py-3 font-semibold" placeholder="ลำดับแสดงผล">
         <label class="rounded-2xl bg-neutral-50 px-4 py-3 font-bold">
             <input type="checkbox" name="is_active" checked>
             เปิดใช้งาน
         </label>
-        <button class="stock-button rounded-2xl px-5 py-3 font-black md:col-span-2"><i class="fa-solid fa-plus mr-2"></i>เพิ่ม Banner</button>
+        <button class="stock-button rounded-2xl px-5 py-3 font-black md:col-span-2"><i class="fa-solid fa-plus mr-2"></i>เพิ่มแบนเนอร์</button>
     </form>
+
+    <div class="mt-6 grid gap-4 lg:grid-cols-[1fr_380px]">
+        <div class="stock-card rounded-[1.5rem] p-5">
+            <h2 class="text-xl font-black text-neutral-950"><i class="fa-solid fa-display mr-2 text-red-600"></i>ตัวอย่างตำแหน่งแสดงผล</h2>
+            <p class="mt-2 text-sm font-bold leading-7 text-neutral-500">แบนเนอร์ที่เปิดใช้งานจะถูกใช้เป็นภาพโปรโมตในหน้าแรก บริเวณ hero/section โปรโมต แล้วเรียงตามลำดับแสดงผล</p>
+            <div class="mt-4 rounded-[1.5rem] bg-gradient-to-r from-neutral-950 to-red-700 p-5 text-white">
+                <p class="text-xs font-black uppercase tracking-[0.2em] text-white/50">ตัวอย่างพื้นที่แบนเนอร์หน้าแรก</p>
+                <h3 class="mt-2 text-2xl font-black">ภาพโปรโมตหน้าแรก</h3>
+                <p class="mt-2 text-sm font-bold text-white/70">หัวข้อ คำอธิบาย และปุ่ม CTA จะแสดงในพื้นที่นี้</p>
+            </div>
+        </div>
+    </div>
 
     <div class="stock-card mt-6 overflow-x-auto rounded-[1.5rem] p-5">
         <table class="datatable w-full text-sm">
             <thead>
                 <tr>
-                    <th>Title</th>
-                    <th>Active</th>
-                    <th>Sort</th>
+                    <th>ลำดับ</th>
+                    <th>หัวข้อ</th>
+                    <th>สถานะ</th>
+                    <th>ลำดับแสดงผล</th>
                     <th></th>
                 </tr>
             </thead>
             <tbody>
-                <?php foreach ($items as $banner): ?>
+                <?php foreach ($items as $index => $banner): ?>
                     <tr>
+                        <td class="font-black text-neutral-500"><?= $index + 1 ?></td>
                         <td class="font-black"><?= h($banner['title']) ?></td>
-                        <td><?= (int)$banner['is_active'] ?></td>
+                        <td>
+                            <?php if ((int)$banner['is_active'] === 1): ?>
+                                <span class="rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700"><i class="fa-solid fa-circle-check mr-1"></i>เปิดใช้งาน</span>
+                            <?php else: ?>
+                                <span class="rounded-full bg-neutral-100 px-3 py-1 text-xs font-black text-neutral-600"><i class="fa-solid fa-eye-slash mr-1"></i>ปิดใช้งาน</span>
+                            <?php endif; ?>
+                        </td>
                         <td><?= (int)$banner['sort_order'] ?></td>
                         <td>
                             <form method="post">

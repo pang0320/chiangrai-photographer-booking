@@ -18,7 +18,7 @@ if ($me) {
         $roleIcon = 'fa-user-shield';
         $navItems = [
             ['/admin/dashboard.php', 'แดชบอร์ด', 'fa-gauge'],
-            ['/admin/users.php', 'ผู้ใช้งาน', 'fa-users'],
+            ['/admin/users.php', 'สมาชิก', 'fa-users'],
             ['/admin/photographers.php', 'ช่างภาพ', 'fa-camera'],
             ['/admin/categories.php', 'หมวดหมู่งาน', 'fa-layer-group'],
             ['/admin/districts.php', 'อำเภอ', 'fa-map'],

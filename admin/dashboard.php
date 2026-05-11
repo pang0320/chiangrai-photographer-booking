@@ -2,6 +2,37 @@
 require_once __DIR__ . '/../includes/functions.php';
 requireRole('admin');
 
+function dashboard_activity_action_label(string $action): string
+{
+    $map = [
+        'login' => 'เข้าสู่ระบบ',
+        'logout' => 'ออกจากระบบ',
+        'create_booking' => 'สร้างคำขอจอง',
+        'change_booking_status' => 'เปลี่ยนสถานะคำขอจอง',
+        'admin_change_booking' => 'ผู้ดูแลเปลี่ยนสถานะคำขอจอง',
+        'admin_approve_photographer' => 'อนุมัติช่างภาพ',
+        'admin_reject_photographer' => 'ปฏิเสธช่างภาพ',
+        'admin_suspend_photographer' => 'ระงับช่างภาพ',
+        'admin_activate_user' => 'เปิดใช้งานสมาชิก',
+        'admin_suspend_user' => 'ระงับสมาชิก',
+        'admin_delete_user' => 'ลบสมาชิก',
+        'admin_show_review' => 'แสดงรีวิว',
+        'admin_hide_review' => 'ซ่อนรีวิว',
+        'moderate_report' => 'ตรวจรายงานปัญหา',
+        'update_contact_message' => 'จัดการข้อความติดต่อ',
+        'manage_banners' => 'จัดการแบนเนอร์',
+        'manage_categories' => 'จัดการหมวดหมู่',
+        'manage_districts' => 'จัดการอำเภอ',
+        'update_settings' => 'แก้ไขตั้งค่า',
+    ];
+
+    if (isset($map[$action])) {
+        return $map[$action];
+    }
+
+    return str_replace('_', ' ', $action);
+}
+
 $cards = [
     ['ลูกค้า', 'users', 'role_id = 1 AND deleted_at IS NULL', 'fa-users'],
     ['ช่างภาพ', 'photographer_profiles', 'deleted_at IS NULL', 'fa-camera-retro'],
@@ -118,6 +149,7 @@ include __DIR__ . '/../includes/header.php';
             <div class="flex flex-wrap gap-3">
                 <a href="/admin/photographers.php" class="rounded-full bg-white px-5 py-3 font-black text-neutral-950 hover:bg-red-600 hover:text-white"><i class="fa-solid fa-camera-retro mr-2"></i>อนุมัติช่างภาพ</a>
                 <a href="/admin/bookings.php" class="rounded-full bg-white/12 px-5 py-3 font-black text-white hover:bg-white hover:text-neutral-950"><i class="fa-solid fa-calendar-check mr-2"></i>จัดการคำขอจอง</a>
+                <a href="/admin/reports_moderation.php" class="rounded-full bg-white/12 px-5 py-3 font-black text-white hover:bg-white hover:text-neutral-950"><i class="fa-solid fa-shield-halved mr-2"></i>ตรวจรายงานปัญหา</a>
                 <a href="/admin/reports.php" class="rounded-full bg-white/12 px-5 py-3 font-black text-white hover:bg-white hover:text-neutral-950"><i class="fa-solid fa-chart-line mr-2"></i>รายงาน</a>
             </div>
         </div>
@@ -200,7 +232,7 @@ include __DIR__ . '/../includes/header.php';
         </div>
     </div>
 
-    <div class="mt-6 grid gap-6 xl:grid-cols-2">
+    <div class="mt-6 grid gap-6 xl:grid-cols-[1.35fr_.65fr]">
         <div class="stock-card rounded-[1.75rem] p-6">
             <div class="flex justify-between gap-4"><div><p class="section-kicker">คำขอจองล่าสุด</p><h2 class="mt-1 text-2xl font-black">รายการจองล่าสุด</h2></div><a class="text-sm font-black text-red-600" href="/admin/bookings.php"><i class="fa-solid fa-eye mr-1"></i>ดูทั้งหมด</a></div>
             <div class="mt-4 overflow-x-auto">
@@ -251,6 +283,7 @@ include __DIR__ . '/../includes/header.php';
         <div class="stock-card rounded-[1.75rem] p-6">
             <p class="section-kicker">รีวิวล่าสุด</p>
             <h2 class="mt-1 text-2xl font-black text-neutral-950">รีวิวล่าสุด</h2>
+            <p class="mt-2 text-sm font-bold leading-6 text-neutral-500">พื้นที่นี้แสดงเฉพาะรีวิวล่าสุดแบบย่อ ส่วนรายละเอียดและการซ่อน/แสดงให้ไปที่เมนูรีวิว</p>
             <div class="mt-4 grid gap-3" data-block-paginate="5">
                 <?php foreach ($recentReviews as $review): ?>
                     <div class="rounded-[1.5rem] bg-neutral-50 p-4">
@@ -268,7 +301,10 @@ include __DIR__ . '/../includes/header.php';
             <h2 class="mt-1 text-xl font-black text-neutral-950">ช่างภาพเด่น</h2>
             <div class="mt-4 grid gap-3" data-block-paginate="5">
                 <?php foreach ($topPhotographers as $p): ?>
-                    <div class="info-row flex justify-between rounded-2xl p-3 text-sm"><b><?= h($p['display_name']) ?></b><span>คะแนนเฉลี่ย <?= number_format((float)$p['average_rating'], 1) ?></span></div>
+                    <div class="info-row flex justify-between gap-3 rounded-2xl p-3 text-sm">
+                        <b><?= h($p['display_name']) ?></b>
+                        <span><?= number_format((float)$p['average_rating'], 1) ?> คะแนน / <?= number_format((int)$p['total_reviews']) ?> รีวิว</span>
+                    </div>
                 <?php endforeach; ?>
             </div>
         </div>
@@ -284,6 +320,7 @@ include __DIR__ . '/../includes/header.php';
         <div class="stock-card rounded-[1.75rem] p-6">
             <p class="section-kicker">ข้อมูลการค้นหา</p>
             <h2 class="mt-1 text-xl font-black text-neutral-950">คำค้นยอดนิยม</h2>
+            <p class="mt-2 text-sm font-bold leading-6 text-neutral-500">ข้อมูลนี้เป็น shortcut ช่วยให้ผู้ดูแลเห็นว่าผู้ใช้ค้นหาอะไรบ่อย ไม่ใช่เมนูจัดการหลัก</p>
             <div class="mt-4 grid gap-3" data-block-paginate="5">
                 <?php foreach ($popularKeywords as $keyword): ?>
                     <div class="info-row flex justify-between rounded-2xl p-3 text-sm"><b><i class="fa-solid fa-magnifying-glass mr-1 text-red-600"></i><?= h($keyword['keyword']) ?></b><span>จำนวนครั้ง <?= (int)$keyword['total'] ?></span></div>
@@ -296,6 +333,7 @@ include __DIR__ . '/../includes/header.php';
         <div class="stock-card rounded-[1.75rem] p-6">
             <p class="section-kicker">ประวัติการใช้งาน</p>
             <h2 class="mt-1 text-xl font-black text-neutral-950">กิจกรรมล่าสุด</h2>
+            <p class="mt-2 text-sm font-bold leading-6 text-neutral-500">ใช้ตรวจสอบย้อนหลังว่าใครทำอะไรในระบบ เช่น login, จอง, รีวิว, เปลี่ยนสถานะ และ action ของผู้ดูแล</p>
             <div class="mt-4 grid gap-2" data-block-paginate="5">
                 <?php foreach ($logs as $log): ?>
                     <?php
@@ -305,8 +343,8 @@ include __DIR__ . '/../includes/header.php';
                     }
                     ?>
                     <div class="info-row rounded-2xl p-3 text-sm">
-                        <b><?= h($log['action']) ?></b>
-                        <p class="mt-1 text-xs font-bold text-neutral-500"><?= h(format_be_datetime($log['created_at'])) ?> · <?= h($logName) ?></p>
+                        <b><?= h(dashboard_activity_action_label((string)$log['action'])) ?></b>
+                        <p class="mt-1 text-xs font-bold text-neutral-500"><?= h(format_be_datetime($log['created_at'])) ?> · ผู้ดำเนินการ: <?= h($logName) ?></p>
                     </div>
                 <?php endforeach; ?>
             </div>

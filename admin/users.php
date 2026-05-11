@@ -109,7 +109,7 @@ $stmt = db()->prepare($sql);
 $stmt->execute($params);
 $users = $stmt->fetchAll();
 
-$pageTitle = 'จัดการผู้ใช้';
+$pageTitle = 'จัดการสมาชิก';
 include __DIR__ . '/../includes/header.php';
 ?>
 
@@ -117,7 +117,8 @@ include __DIR__ . '/../includes/header.php';
     <div class="flex flex-wrap items-end justify-between gap-4">
         <div>
             <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">ผู้ดูแลระบบ</p>
-            <h1 class="mt-1 text-3xl font-black text-neutral-950">จัดการผู้ใช้</h1>
+            <h1 class="mt-1 text-3xl font-black text-neutral-950">จัดการสมาชิก</h1>
+            <p class="mt-2 max-w-3xl text-sm font-bold leading-7 text-neutral-500">หน้านี้รวมสมาชิกทุกบทบาท ส่วนข้อมูลเชิงลึกของช่างภาพจะแยกไปที่เมนูช่างภาพโดยเฉพาะ</p>
         </div>
         <a href="/admin/dashboard.php" class="rounded-full bg-neutral-950 px-5 py-3 text-sm font-black text-white hover:bg-red-600">
             <i class="fa-solid fa-gauge mr-2"></i>แดชบอร์ด
@@ -126,7 +127,7 @@ include __DIR__ . '/../includes/header.php';
 
     <form method="post" action="/admin/users.php" class="stock-card mt-6 grid gap-3 rounded-[1.5rem] p-5 md:grid-cols-4">
         <?= clean_context_inputs([]) ?>
-        <input name="q" value="<?= h($q) ?>" placeholder="ค้นหา" class="stock-input rounded-2xl px-4 py-3 font-semibold">
+        <input name="q" value="<?= h($q) ?>" placeholder="ค้นหาชื่อหรืออีเมลสมาชิก" class="stock-input rounded-2xl px-4 py-3 font-semibold">
 
         <select name="role" class="stock-input rounded-2xl px-4 py-3 font-semibold">
             <option value="">ทุกบทบาท</option>
@@ -153,7 +154,7 @@ include __DIR__ . '/../includes/header.php';
         <table class="datatable w-full text-sm">
             <thead>
                 <tr>
-                    <th>ID</th>
+                    <th>ลำดับ</th>
                     <th>ชื่อ</th>
                     <th>อีเมล</th>
                     <th>บทบาท</th>
@@ -162,9 +163,9 @@ include __DIR__ . '/../includes/header.php';
                 </tr>
             </thead>
             <tbody>
-                <?php foreach ($users as $user): ?>
+                <?php foreach ($users as $index => $user): ?>
                     <tr>
-                        <td><?= (int)$user['id'] ?></td>
+                        <td class="font-black text-neutral-500"><?= $index + 1 ?></td>
                         <td class="font-bold"><?= h($user['name']) ?></td>
                         <td><?= h($user['email']) ?></td>
                         <td><?= h($user['role_display']) ?></td>

@@ -44,6 +44,7 @@ include __DIR__ . '/../includes/header.php';
         <div>
             <p class="section-kicker">ตรวจสอบรายงาน</p>
             <h1 class="mt-1 text-3xl font-black text-neutral-950"><i class="fa-solid fa-shield-halved mr-2 text-red-600"></i>รายงานปัญหา</h1>
+            <p class="mt-2 max-w-3xl text-sm font-bold leading-7 text-neutral-500">รายงานมาจากปุ่มรายงานในหน้าโปรไฟล์ช่างภาพและจุดที่แสดงรีวิว ผู้ใช้กรอกเหตุผลและรายละเอียดเอง แล้วผู้ดูแลตรวจสอบต่อที่หน้านี้</p>
         </div>
         <div class="rounded-full bg-red-50 px-5 py-3 text-sm font-black text-red-700"><i class="fa-solid fa-hourglass-half mr-2"></i><?= table_count('reports', 'status = "pending"') ?> รอตรวจสอบ</div>
     </div>
@@ -58,6 +59,7 @@ include __DIR__ . '/../includes/header.php';
         <table class="datatable w-full text-sm">
             <thead>
                 <tr>
+                    <th>ลำดับ</th>
                     <th>ผู้รายงาน</th>
                     <th>เป้าหมาย</th>
                     <th>เหตุผล</th>
@@ -67,13 +69,14 @@ include __DIR__ . '/../includes/header.php';
                 </tr>
             </thead>
             <tbody>
-                <?php foreach ($items as $item): ?>
+                <?php foreach ($items as $index => $item): ?>
                     <tr>
+                        <td class="font-black text-neutral-500"><?= $index + 1 ?></td>
                         <td>
                             <b><?php if ($item['reporter_name']): ?><?= h($item['reporter_name']) ?><?php else: ?>ผู้เยี่ยมชม<?php endif; ?></b>
                             <p class="text-xs text-neutral-500"><?= h($item['reporter_email']) ?></p>
                         </td>
-                        <td><span class="rounded-full bg-neutral-100 px-3 py-1 text-xs font-black"><i class="fa-solid fa-bullseye mr-1 text-red-600"></i><?= h($item['target_type']) ?> #<?= (int)$item['target_id'] ?></span></td>
+                        <td><span class="rounded-full bg-neutral-100 px-3 py-1 text-xs font-black"><i class="fa-solid fa-bullseye mr-1 text-red-600"></i><?= h($item['target_type']) ?> รหัสอ้างอิง <?= (int)$item['target_id'] ?></span></td>
                         <td class="font-black"><?= h($item['reason']) ?></td>
                         <td class="max-w-md"><?= nl2br(h($item['detail'])) ?></td>
                         <td><?= status_badge($item['status'] === 'pending' ? 'pending' : ($item['status'] === 'resolved' ? 'completed' : ($item['status'] === 'rejected' ? 'rejected' : 'visible'))) ?></td>

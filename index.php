@@ -85,7 +85,7 @@ $pageTitle = 'ค้นหาช่างภาพมืออาชีพใน
 include __DIR__ . '/includes/header.php';
 ?>
 
-<section class="hero-frame relative overflow-hidden bg-neutral-950 text-white">
+<section class="hero-frame relative bg-neutral-950 text-white">
     <div class="absolute inset-0">
         <img class="h-full w-full object-cover opacity-45" src="/assets/uploads/seed/photo-1511285560929-80b456fea0bc.jpg" alt="">
         <div class="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(226,27,45,.38),transparent_28rem),linear-gradient(110deg,rgba(0,0,0,.92),rgba(0,0,0,.62)_48%,rgba(0,0,0,.28))]"></div>

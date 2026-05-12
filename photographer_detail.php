@@ -284,11 +284,27 @@ include __DIR__ . '/includes/header.php';
                 </div>
                 <div class="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     <?php foreach ($availability as $a): ?>
-                        <div class="stock-card rounded-[1.35rem] p-5">
-                            <p class="font-black text-neutral-950"><i class="fa-solid fa-calendar-day mr-2 text-red-600"></i><?= h(format_be_date($a['available_date'])) ?></p>
-                            <p class="mt-2 text-sm font-bold text-neutral-600"><i class="fa-solid fa-clock mr-1 text-red-600"></i><?= h(time_slot_label($a['time_slot'])) ?></p>
-                            <div class="mt-3"><?= status_badge($a['status']) ?></div>
-                        </div>
+                        <?php
+                        $availabilityCard = '<p class="font-black text-neutral-950"><i class="fa-solid fa-calendar-day mr-2 text-red-600"></i>' . h(format_be_date($a['available_date'])) . '</p>'
+                            . '<p class="mt-2 text-sm font-bold text-neutral-600"><i class="fa-solid fa-clock mr-1 text-red-600"></i>' . h(time_slot_label($a['time_slot'])) . '</p>'
+                            . '<div class="mt-3">' . status_badge($a['status']) . '</div>';
+                        if ((string)$a['status'] === 'available') {
+                            $availabilityCard .= '<p class="mt-4 inline-flex items-center rounded-full bg-red-600 px-4 py-2 text-sm font-black text-white shadow-lg shadow-red-600/20"><i class="fa-solid fa-calendar-check mr-2"></i>เลือกวันนี้และจอง</p>';
+                            echo clean_context_button(
+                                '/customer/create_booking.php',
+                                [
+                                    'photographer_id' => (int)$profile['id'],
+                                    'booking_date' => (string)$a['available_date'],
+                                    'time_slot' => (string)$a['time_slot'],
+                                ],
+                                $availabilityCard,
+                                'stock-card stock-card-hover w-full rounded-[1.35rem] p-5 text-left transition hover:-translate-y-1 hover:shadow-2xl',
+                                'contents'
+                            );
+                        } else {
+                            echo '<div class="stock-card rounded-[1.35rem] p-5 opacity-75">' . $availabilityCard . '<p class="mt-4 text-sm font-bold text-neutral-500"><i class="fa-solid fa-circle-info mr-1 text-red-600"></i>ช่วงเวลานี้ยังไม่เปิดให้เลือกจอง</p></div>';
+                        }
+                        ?>
                     <?php endforeach; ?>
                     <?php if (!$availability): ?>
                         <div class="empty-state rounded-[2rem] p-10 text-center sm:col-span-2 lg:col-span-3">

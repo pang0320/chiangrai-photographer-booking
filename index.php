@@ -96,7 +96,6 @@ include __DIR__ . '/includes/header.php';
                 Chiang Rai Photographer Marketplace
             </div>
             <h1 class="mt-6 max-w-4xl text-4xl font-black leading-tight tracking-tight sm:text-6xl lg:text-7xl">ค้นหาช่างภาพมืออาชีพในจังหวัดเชียงราย</h1>
-            <p class="mt-5 max-w-2xl text-lg font-semibold leading-8 text-white/76">เลือกดูตัวอย่างงานถ่ายภาพจริง ตรวจวันว่าง ส่งคำขอจอง และติดต่อช่างภาพโดยตรง ไม่มีระบบรับชำระเงินในเว็บไซต์</p>
 
             <form action="/photographers.php" class="hero-search-form glass-panel mt-9 grid gap-3 rounded-[2rem] p-3 text-neutral-950 lg:grid-cols-[1fr_1fr_minmax(330px,1.15fr)_auto]">
                 <select name="district_id" class="stock-input rounded-[1.4rem] px-5 py-4 font-bold">
@@ -114,6 +113,10 @@ include __DIR__ . '/includes/header.php';
                 <?= be_date_input('available_date', '', 'stock-input rounded-[1.4rem] px-5 py-4 font-bold', false, 'วันที่ว่าง พ.ศ.') ?>
                 <button class="stock-button rounded-[1.4rem] px-8 py-4 text-base font-black"><i class="fa-solid fa-magnifying-glass mr-2"></i>ค้นหา</button>
             </form>
+            <div class="mt-5 max-w-3xl rounded-[1.5rem] border border-white/12 bg-black/28 px-5 py-4 text-base font-semibold leading-8 text-white/80 backdrop-blur">
+                <i class="fa-solid fa-circle-info mr-2 text-red-300"></i>
+                เลือกดูตัวอย่างงานถ่ายภาพจริง ตรวจวันว่าง ส่งคำขอจอง และติดต่อช่างภาพโดยตรง ไม่มีระบบรับชำระเงินในเว็บไซต์
+            </div>
 
             <div class="relative z-10 mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
                 <div class="stat-pill rounded-3xl p-4">

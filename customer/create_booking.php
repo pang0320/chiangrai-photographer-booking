@@ -1,9 +1,14 @@
 <?php
 require_once __DIR__ . '/../includes/functions.php';
+$cleanContext = clean_context_init(['photographer_id', 'booking_date', 'time_slot']);
 requireRole('customer');
 $user = current_user();
-$cleanContext = clean_context_init(['photographer_id']);
 $photographerId = (int)clean_context_value($cleanContext, 'photographer_id', ($_POST['photographer_id'] ?? 0));
+$selectedBookingDate = parse_be_date_to_iso((string)clean_context_value($cleanContext, 'booking_date', ''));
+$selectedTimeSlot = (string)clean_context_value($cleanContext, 'time_slot', '');
+if (!in_array($selectedTimeSlot, ['morning', 'afternoon', 'evening', 'full_day'], true)) {
+    $selectedTimeSlot = '';
+}
 $stmt = db()->prepare('SELECT p.*, u.id AS photographer_user_id
                        FROM photographer_profiles p
                        JOIN users u ON u.id = p.user_id
@@ -191,10 +196,10 @@ include __DIR__ . '/../includes/header.php';
                         <span class="text-sm font-black text-neutral-700"><i class="fa-solid fa-clock mr-2 text-red-600"></i>ช่วงเวลา</span>
                         <select name="time_slot" required class="stock-input mt-2 w-full rounded-2xl px-4 py-3 font-semibold">
                             <option value="">เลือกช่วงเวลา</option>
-                            <option value="morning">เช้า</option>
-                            <option value="afternoon">บ่าย</option>
-                            <option value="evening">เย็น</option>
-                            <option value="full_day">เต็มวัน</option>
+                            <option value="morning" <?php if ($selectedTimeSlot === 'morning'): ?>selected<?php endif; ?>>เช้า</option>
+                            <option value="afternoon" <?php if ($selectedTimeSlot === 'afternoon'): ?>selected<?php endif; ?>>บ่าย</option>
+                            <option value="evening" <?php if ($selectedTimeSlot === 'evening'): ?>selected<?php endif; ?>>เย็น</option>
+                            <option value="full_day" <?php if ($selectedTimeSlot === 'full_day'): ?>selected<?php endif; ?>>เต็มวัน</option>
                         </select>
                     </label>
 
@@ -202,7 +207,15 @@ include __DIR__ . '/../includes/header.php';
                         <label class="mb-2 block text-sm font-black text-neutral-700">
                             <i class="fa-solid fa-calendar-day mr-2 text-red-600"></i>วันที่ถ่ายงาน
                         </label>
-                        <?= be_date_input('booking_date', '', 'stock-input rounded-2xl px-4 py-3 font-semibold', true, 'วันที่ถ่าย พ.ศ. เช่น 05/05/2569') ?>
+                        <?= be_date_input('booking_date', $selectedBookingDate, 'stock-input rounded-2xl px-4 py-3 font-semibold', true, 'วันที่ถ่าย พ.ศ. เช่น 05/05/2569') ?>
+                        <?php if ($selectedBookingDate !== ''): ?>
+                            <p class="mt-2 rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-black text-emerald-700">
+                                <i class="fa-solid fa-circle-check mr-1"></i>เลือกวันที่จากปฏิทินวันว่างแล้ว: <?= h(format_be_date($selectedBookingDate)) ?>
+                                <?php if ($selectedTimeSlot !== ''): ?>
+                                    · <?= h(time_slot_label($selectedTimeSlot)) ?>
+                                <?php endif; ?>
+                            </p>
+                        <?php endif; ?>
                     </div>
                 </div>
             </section>

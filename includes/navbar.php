@@ -46,27 +46,27 @@ if ($me) {
     }
 }
 ?>
-<nav class="sticky top-0 z-40 border-b border-black/10 bg-white/90 shadow-sm backdrop-blur-xl">
-    <div class="stock-shell flex items-center gap-4 px-4 py-3 sm:px-6 lg:px-8">
-        <a href="/index.php" class="flex min-w-fit items-center gap-3 font-black tracking-tight text-neutral-950">
+<nav class="sticky top-0 z-40 border-b border-black/10 bg-white/92 shadow-sm backdrop-blur-xl">
+    <div class="mx-auto flex w-full max-w-[1880px] items-center gap-6 px-5 py-3 sm:px-7 lg:px-10">
+        <a href="/index.php" class="flex w-auto shrink-0 items-center gap-3 font-black tracking-tight text-neutral-950 xl:w-[255px]">
             <span class="grid h-11 w-11 place-items-center rounded-2xl bg-neutral-950 text-white shadow-lg shadow-neutral-950/15"><i class="fa-solid fa-camera-retro"></i></span>
             <span class="leading-tight">
                 <span class="block text-lg">Chiang Rai<span class="text-red-600">Photo</span></span>
-                <span class="hidden text-[10px] font-black uppercase tracking-[0.22em] text-neutral-400 lg:block">ตลาดช่างภาพ</span>
+                <span class="hidden text-[10px] font-black uppercase tracking-[0.22em] text-neutral-400 2xl:block">ตลาดช่างภาพ</span>
             </span>
         </a>
 
-        <div class="hidden min-w-0 flex-1 justify-center lg:flex">
-            <div class="flex items-center gap-1 rounded-full border border-neutral-200 bg-neutral-50/80 p-1 text-sm font-black text-neutral-600 shadow-inner">
-                <a class="rounded-full px-4 py-2 transition hover:bg-white hover:text-red-600 hover:shadow-sm" href="/index.php"><i class="fa-solid fa-home mr-2"></i>หน้าแรก</a>
-                <a class="rounded-full px-4 py-2 transition hover:bg-white hover:text-red-600 hover:shadow-sm" href="/photographers.php"><i class="fa-solid fa-magnifying-glass mr-2"></i>ค้นหาช่างภาพ</a>
-                <a class="rounded-full px-4 py-2 transition hover:bg-white hover:text-red-600 hover:shadow-sm" href="/blog.php"><i class="fa-solid fa-newspaper mr-2"></i>บทความ</a>
-                <a class="rounded-full px-4 py-2 transition hover:bg-white hover:text-red-600 hover:shadow-sm" href="/faq.php"><i class="fa-solid fa-circle-question mr-2"></i>คำถามที่พบบ่อย</a>
-                <a class="rounded-full px-4 py-2 transition hover:bg-white hover:text-red-600 hover:shadow-sm" href="/contact.php"><i class="fa-solid fa-envelope mr-2"></i>ติดต่อเว็บไซต์</a>
+        <div class="hidden min-w-0 flex-1 justify-center xl:flex">
+            <div class="flex max-w-full flex-nowrap items-center gap-1 overflow-hidden whitespace-nowrap rounded-full border border-neutral-200 bg-neutral-50/85 p-1.5 text-[15px] font-black leading-none text-neutral-700 shadow-inner 2xl:gap-2 2xl:text-base">
+                <a class="shrink-0 whitespace-nowrap rounded-full px-3.5 py-3 transition hover:bg-white hover:text-red-600 hover:shadow-sm 2xl:px-5" href="/index.php"><i class="fa-solid fa-home mr-2"></i>หน้าแรก</a>
+                <a class="shrink-0 whitespace-nowrap rounded-full px-3.5 py-3 transition hover:bg-white hover:text-red-600 hover:shadow-sm 2xl:px-5" href="/photographers.php"><i class="fa-solid fa-magnifying-glass mr-2"></i>ค้นหาช่างภาพ</a>
+                <a class="shrink-0 whitespace-nowrap rounded-full px-3.5 py-3 transition hover:bg-white hover:text-red-600 hover:shadow-sm 2xl:px-5" href="/blog.php"><i class="fa-solid fa-newspaper mr-2"></i>บทความ</a>
+                <a class="shrink-0 whitespace-nowrap rounded-full px-3.5 py-3 transition hover:bg-white hover:text-red-600 hover:shadow-sm 2xl:px-5" href="/faq.php"><i class="fa-solid fa-circle-question mr-2"></i>คำถามที่พบบ่อย</a>
+                <a class="shrink-0 whitespace-nowrap rounded-full px-3.5 py-3 transition hover:bg-white hover:text-red-600 hover:shadow-sm 2xl:px-5" href="/contact.php"><i class="fa-solid fa-envelope mr-2"></i>ติดต่อเว็บไซต์</a>
             </div>
         </div>
 
-        <div class="ml-auto hidden items-center gap-3 md:flex">
+        <div class="ml-auto hidden shrink-0 items-center gap-2 md:flex 2xl:gap-3">
             <?php if ($me): ?>
                 <a class="inline-flex h-11 items-center rounded-full bg-neutral-950 px-5 text-sm font-black text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-red-600 hover:shadow-lg" href="<?= h($workspacePath) ?>" title="<?= h($workspaceLabel) ?>">
                     <i class="fa-solid <?= h($workspaceIcon) ?> mr-2"></i><?= h($workspaceLabel) ?>
@@ -98,8 +98,8 @@ if ($me) {
                     <i class="fa-solid fa-right-from-bracket"></i>
                 </a>
             <?php else: ?>
-                <a class="rounded-full border border-neutral-200 bg-white px-5 py-2.5 text-sm font-black text-neutral-700 shadow-sm transition hover:bg-neutral-950 hover:text-white" href="/login.php"><i class="fa-solid fa-right-to-bracket mr-2"></i>เข้าสู่ระบบ</a>
-                <a class="rounded-full bg-neutral-950 px-5 py-2.5 text-sm font-black text-white shadow-sm transition hover:bg-red-600" href="/register.php"><i class="fa-solid fa-user-plus mr-2"></i>สมัครสมาชิก</a>
+                <a class="whitespace-nowrap rounded-full border border-neutral-200 bg-white px-4 py-3 text-base font-black text-neutral-700 shadow-sm transition hover:bg-neutral-950 hover:text-white 2xl:px-5" href="/login.php"><i class="fa-solid fa-right-to-bracket mr-2"></i>เข้าสู่ระบบ</a>
+                <a class="whitespace-nowrap rounded-full bg-neutral-950 px-4 py-3 text-base font-black text-white shadow-sm transition hover:bg-red-600 2xl:px-5" href="/register.php"><i class="fa-solid fa-user-plus mr-2"></i>สมัครสมาชิก</a>
             <?php endif; ?>
         </div>
 

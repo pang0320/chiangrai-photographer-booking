@@ -404,8 +404,8 @@ body {
     z-index: 260;
     display: none;
     width: min(23rem, calc(100vw - 2rem));
-    max-height: min(420px, calc(100vh - 7rem));
-    overflow-y: auto;
+    max-height: none;
+    overflow-y: visible;
     overscroll-behavior: contain;
     border: 1px solid rgba(16, 16, 20, .1);
     border-radius: 1.35rem;
@@ -738,7 +738,7 @@ body {
 .hero-search-form .calendar-date-popover {
     z-index: 300;
     width: 22rem;
-    max-height: min(390px, calc(100vh - 7rem));
+    max-height: none;
 }
 
 .hero-search-form .calendar-date-label {

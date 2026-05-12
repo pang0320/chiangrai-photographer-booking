@@ -9,10 +9,12 @@ $userAvatarUrl = '';
 $workspacePath = '/login.php';
 $workspaceLabel = 'เมนูของฉัน';
 $workspaceIcon = 'fa-gauge';
+$roleHomePath = '/login.php';
 
 if ($me) {
     $unreadCount = unread_notifications_count((int)$me['id']);
     $workspacePath = user_workspace_path($me);
+    $roleHomePath = dashboard_path((string)$me['role_name']);
     if ($workspacePath === '/photographer/onboarding.php') {
         $workspaceLabel = 'ตั้งค่าโปรไฟล์';
         $workspaceIcon = 'fa-list-check';
@@ -79,7 +81,7 @@ if ($me) {
                         </span>
                     <?php endif; ?>
                 </a>
-                <a class="flex min-w-0 items-center gap-3 rounded-full border border-neutral-200 bg-white py-1.5 pl-1.5 pr-4 shadow-sm transition hover:-translate-y-0.5 hover:border-neutral-300 hover:shadow-lg" href="<?= h($workspacePath) ?>" title="กลับไป<?= h($workspaceLabel) ?>">
+                <a class="flex min-w-0 items-center gap-3 rounded-full border border-neutral-200 bg-white py-1.5 pl-1.5 pr-4 shadow-sm transition hover:-translate-y-0.5 hover:border-neutral-300 hover:shadow-lg" href="<?= h($roleHomePath) ?>" title="กลับไปแดชบอร์ดหลัก">
                     <?php if ($userAvatarUrl !== ''): ?>
                         <img class="h-10 w-10 shrink-0 rounded-full object-cover ring-2 ring-neutral-100" src="<?= h($userAvatarUrl) ?>" alt="<?= h($me['name']) ?>">
                     <?php else: ?>
@@ -105,7 +107,7 @@ if ($me) {
 
         <div class="ml-auto md:hidden">
             <?php if ($me): ?>
-                <a class="inline-flex max-w-[300px] items-center gap-2 rounded-full bg-neutral-950 px-2 py-2 text-sm font-bold text-white shadow-sm" href="<?= h($workspacePath) ?>">
+                <a class="inline-flex max-w-[300px] items-center gap-2 rounded-full bg-neutral-950 px-2 py-2 text-sm font-bold text-white shadow-sm" href="<?= h($roleHomePath) ?>" title="กลับไปแดชบอร์ดหลัก">
                     <span class="grid h-7 w-7 place-items-center rounded-full bg-white text-xs font-black text-neutral-950"><i class="fa-solid <?= h($workspaceIcon) ?>"></i></span>
                     <span class="max-w-[100px] truncate"><?= h($workspaceLabel) ?></span>
                     <?php if ($userAvatarUrl !== ''): ?>

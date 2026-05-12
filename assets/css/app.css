@@ -253,7 +253,17 @@ body {
     border: 1px solid transparent;
     font-weight: 900;
     line-height: 1.25;
+    white-space: nowrap;
     transition: transform .18s ease, background .18s ease, color .18s ease, border-color .18s ease, box-shadow .18s ease;
+}
+
+.btn-primary i,
+.btn-cta i,
+.btn-success i,
+.btn-warning i,
+.btn-muted i,
+.btn-danger i {
+    flex-shrink: 0;
 }
 
 .btn-primary {

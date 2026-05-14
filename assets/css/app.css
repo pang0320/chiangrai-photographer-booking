@@ -810,6 +810,49 @@ body {
     }
 }
 
+.photographer-filter-form .calendar-date {
+    width: 100%;
+}
+
+.photographer-filter-form .calendar-date-popover {
+    position: static;
+    width: 100%;
+    max-width: 100%;
+    margin-top: .75rem;
+    padding: .85rem;
+    border-radius: 1.1rem;
+    box-shadow: inset 0 0 0 1px rgba(16, 16, 20, .04), 0 14px 34px rgba(16, 16, 20, .1);
+}
+
+.photographer-filter-form .calendar-date-popover::before {
+    display: none;
+}
+
+.photographer-filter-form .calendar-date-header {
+    gap: .75rem;
+}
+
+.photographer-filter-form .calendar-date-month {
+    margin-top: .75rem;
+    padding: .6rem .75rem;
+    border-radius: .85rem;
+}
+
+.photographer-filter-form .calendar-date-weekdays,
+.photographer-filter-form .calendar-date-grid {
+    gap: .28rem;
+}
+
+.photographer-filter-form .calendar-day {
+    min-height: 2.05rem;
+    border-radius: .65rem;
+}
+
+.photographer-filter-form .calendar-date-legend {
+    gap: .45rem .6rem;
+    font-size: .72rem;
+}
+
 .workspace-shell {
     display: grid;
     grid-template-columns: 250px minmax(0, 1fr);

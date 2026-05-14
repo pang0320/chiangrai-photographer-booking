@@ -1,3 +1,16 @@
+function hidePageLoader() {
+  const loader = document.getElementById('page-loader');
+  if (loader) loader.classList.add('hidden');
+}
+
+window.addEventListener('pageshow', hidePageLoader);
+
+document.addEventListener('visibilitychange', function () {
+  if (!document.hidden) {
+    hidePageLoader();
+  }
+});
+
 document.addEventListener('click', function (event) {
   const button = event.target.closest('[data-confirm]');
   if (!button) return;
@@ -33,6 +46,8 @@ document.addEventListener('click', function (event) {
 });
 
 document.addEventListener('DOMContentLoaded', function () {
+  hidePageLoader();
+
   const developerModal = document.getElementById('developer-modal');
   const developerOpenButtons = document.querySelectorAll('[data-developer-modal-open]');
   const developerCloseButtons = document.querySelectorAll('[data-developer-modal-close], [data-developer-modal-backdrop]');

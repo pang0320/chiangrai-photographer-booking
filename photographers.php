@@ -223,7 +223,7 @@ include __DIR__ . '/includes/header.php';
 <section class="stock-shell px-4 py-8 sm:px-6 lg:px-8">
     <div class="grid gap-8 lg:grid-cols-[320px_1fr]">
         <aside class="lg:sticky lg:top-24 lg:self-start">
-            <form method="post" action="<?= h($photographerSearchPath) ?>" class="stock-card rounded-[2rem] p-5">
+            <form method="post" action="<?= h($photographerSearchPath) ?>" class="photographer-filter-form stock-card rounded-[2rem] p-5">
                 <?= clean_context_inputs([]) ?>
                 <div class="flex items-center justify-between gap-4">
                     <h2 class="text-xl font-black text-neutral-950">ตัวกรอง</h2>

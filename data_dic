@@ -1,0 +1,1091 @@
+# Data Dictionary - Chiang Rai Photographer Booking
+
+อ้างอิงจากไฟล์: `database.sql`
+
+ฐานข้อมูล: `chiangrai_photographer_booking`
+
+Charset/Collation: `utf8mb4` / `utf8mb4_unicode_ci`
+
+Engine หลัก: `InnoDB`
+
+## 1. ภาพรวมระบบฐานข้อมูล
+
+ระบบนี้เป็นฐานข้อมูลสำหรับเว็บไซต์จองช่างภาพในจังหวัดเชียงราย รองรับผู้ใช้งาน 3 กลุ่มหลัก ได้แก่ ลูกค้า ช่างภาพ และผู้ดูแลระบบ โดยมีข้อมูลหลักเกี่ยวกับบัญชีผู้ใช้ โปรไฟล์ช่างภาพ หมวดหมู่บริการ พื้นที่ให้บริการ ผลงาน วันว่าง การจอง รีวิว บทความ บล็อก การแจ้งเตือน รายงาน และระบบ tag
+
+## 2. รายชื่อตารางทั้งหมด
+
+| ลำดับ | ชื่อตาราง | คำอธิบาย |
+|---:|---|---|
+| 1 | `roles` | เก็บบทบาทผู้ใช้ เช่น ลูกค้า ช่างภาพ ผู้ดูแลระบบ |
+| 2 | `users` | เก็บบัญชีผู้ใช้งานทั้งหมด |
+| 3 | `password_resets` | เก็บ token สำหรับรีเซ็ตรหัสผ่าน |
+| 4 | `login_attempts` | เก็บประวัติความพยายามเข้าสู่ระบบ |
+| 5 | `districts` | เก็บข้อมูลอำเภอในจังหวัดเชียงราย |
+| 6 | `service_categories` | เก็บหมวดหมู่บริการถ่ายภาพ |
+| 7 | `photographer_profiles` | เก็บโปรไฟล์ช่างภาพ |
+| 8 | `photographer_services` | ตารางกลางระหว่างช่างภาพกับหมวดหมู่บริการ |
+| 9 | `photographer_service_areas` | ตารางกลางระหว่างช่างภาพกับพื้นที่ให้บริการ |
+| 10 | `photographer_portfolios` | เก็บผลงาน/รูปภาพตัวอย่างของช่างภาพ |
+| 11 | `photographer_availability` | เก็บวันและช่วงเวลาว่างของช่างภาพ |
+| 12 | `bookings` | เก็บคำขอจองงานถ่ายภาพ |
+| 13 | `booking_status_logs` | เก็บประวัติการเปลี่ยนสถานะการจอง |
+| 14 | `reviews` | เก็บรีวิวจากลูกค้าหลังจบงาน |
+| 15 | `review_images` | เก็บรูปภาพประกอบรีวิว |
+| 16 | `photographer_articles` | เก็บบทความที่ช่างภาพเขียน |
+| 17 | `notifications` | เก็บการแจ้งเตือนของผู้ใช้ |
+| 18 | `activity_logs` | เก็บ log กิจกรรมในระบบ |
+| 19 | `banners` | เก็บ banner หน้าเว็บไซต์ |
+| 20 | `settings` | เก็บค่าตั้งค่าระบบแบบ key-value |
+| 21 | `favorite_photographers` | เก็บรายการช่างภาพที่ลูกค้ากดถูกใจ |
+| 22 | `faqs` | เก็บคำถามที่พบบ่อย |
+| 23 | `blogs` | เก็บบทความ/ข่าวสารจากผู้ดูแลระบบ |
+| 24 | `contact_messages` | เก็บข้อความติดต่อจากหน้า contact |
+| 25 | `reports` | เก็บรายงานปัญหาจากผู้ใช้ |
+| 26 | `search_logs` | เก็บประวัติการค้นหา |
+| 27 | `recently_viewed_photographers` | เก็บประวัติช่างภาพที่ผู้ใช้ดูล่าสุด |
+| 28 | `tags` | เก็บ tag กลางของระบบ |
+| 29 | `portfolio_tags` | ตารางกลางระหว่าง portfolio กับ tag |
+| 30 | `article_tags` | ตารางกลางระหว่าง photographer article กับ tag |
+| 31 | `blog_tags` | ตารางกลางระหว่าง blog กับ tag |
+
+## 3. รายละเอียด Data Dictionary
+
+## 3.1 ตาราง `roles`
+
+คำอธิบาย: เก็บข้อมูลบทบาทของผู้ใช้ ใช้กำหนดสิทธิ์พื้นฐานในระบบ
+
+| Field | Type | Null | Default | Key | Description |
+|---|---|---|---|---|---|
+| `id` | `INT UNSIGNED AUTO_INCREMENT` | No | - | PK | รหัสบทบาท |
+| `name` | `VARCHAR(50)` | No | - | UNIQUE | ชื่อบทบาทสำหรับระบบ เช่น `customer`, `photographer`, `admin` |
+| `display_name` | `VARCHAR(100)` | No | - | - | ชื่อบทบาทที่ใช้แสดงผล เช่น ลูกค้า ช่างภาพ ผู้ดูแลระบบ |
+| `created_at` | `TIMESTAMP` | Yes | `CURRENT_TIMESTAMP` | - | วันที่สร้างข้อมูล |
+| `updated_at` | `TIMESTAMP` | Yes | `CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP` | - | วันที่แก้ไขข้อมูลล่าสุด |
+
+Indexes/Constraints:
+
+| Name | Type | Field | Description |
+|---|---|---|---|
+| `PRIMARY` | Primary Key | `id` | ระบุบทบาทแบบไม่ซ้ำ |
+| `name` | Unique | `name` | ป้องกันชื่อบทบาทซ้ำ |
+
+ข้อมูลเริ่มต้น:
+
+| id | name | display_name |
+|---:|---|---|
+| 1 | `customer` | ลูกค้า |
+| 2 | `photographer` | ช่างภาพ |
+| 3 | `admin` | ผู้ดูแลระบบ |
+
+## 3.2 ตาราง `users`
+
+คำอธิบาย: เก็บบัญชีผู้ใช้ทุกประเภท ทั้งลูกค้า ช่างภาพ และผู้ดูแลระบบ
+
+| Field | Type | Null | Default | Key | Description |
+|---|---|---|---|---|---|
+| `id` | `INT UNSIGNED AUTO_INCREMENT` | No | - | PK | รหัสผู้ใช้ |
+| `role_id` | `INT UNSIGNED` | No | - | FK, IDX | อ้างอิงบทบาทจาก `roles.id` |
+| `name` | `VARCHAR(150)` | No | - | - | ชื่อผู้ใช้ |
+| `email` | `VARCHAR(190)` | No | - | UNIQUE | อีเมลสำหรับเข้าสู่ระบบ ต้องไม่ซ้ำ |
+| `phone` | `VARCHAR(50)` | Yes | `NULL` | - | เบอร์โทรศัพท์ |
+| `password` | `VARCHAR(255)` | No | - | - | รหัสผ่านที่เข้ารหัสด้วย `password_hash` |
+| `avatar` | `VARCHAR(255)` | Yes | `NULL` | - | path รูปโปรไฟล์ผู้ใช้ |
+| `status` | `ENUM('active','pending','suspended')` | No | `active` | IDX | สถานะบัญชี |
+| `email_verified_at` | `DATETIME` | Yes | `NULL` | - | วันที่ยืนยันอีเมล |
+| `last_login_at` | `DATETIME` | Yes | `NULL` | - | วันที่เข้าสู่ระบบล่าสุด |
+| `remember_token` | `VARCHAR(100)` | Yes | `NULL` | - | token สำหรับ remember me |
+| `created_at` | `TIMESTAMP` | Yes | `CURRENT_TIMESTAMP` | - | วันที่สร้างบัญชี |
+| `updated_at` | `TIMESTAMP` | Yes | `CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP` | - | วันที่แก้ไขบัญชีล่าสุด |
+| `deleted_at` | `DATETIME` | Yes | `NULL` | - | วันที่ลบแบบ soft delete |
+
+Indexes/Constraints:
+
+| Name | Type | Field | Description |
+|---|---|---|---|
+| `PRIMARY` | Primary Key | `id` | ระบุผู้ใช้แบบไม่ซ้ำ |
+| `uk_users_email` | Unique | `email` | ป้องกันอีเมลซ้ำ |
+| `idx_users_role` | Index | `role_id` | ช่วยค้นหาผู้ใช้ตามบทบาท |
+| `idx_users_status` | Index | `status` | ช่วยกรองผู้ใช้ตามสถานะ |
+| `fk_users_role` | Foreign Key | `role_id -> roles.id` | ผู้ใช้ 1 คนต้องมีบทบาท 1 บทบาท |
+
+## 3.3 ตาราง `password_resets`
+
+คำอธิบาย: เก็บ token สำหรับการขอรีเซ็ตรหัสผ่าน
+
+| Field | Type | Null | Default | Key | Description |
+|---|---|---|---|---|---|
+| `id` | `INT UNSIGNED AUTO_INCREMENT` | No | - | PK | รหัสรายการรีเซ็ตรหัสผ่าน |
+| `email` | `VARCHAR(190)` | No | - | IDX | อีเมลที่ขอรีเซ็ตรหัสผ่าน |
+| `token` | `VARCHAR(128)` | No | - | UNIQUE | token สำหรับยืนยันการรีเซ็ต |
+| `expires_at` | `DATETIME` | No | - | - | วันเวลาหมดอายุ token |
+| `created_at` | `TIMESTAMP` | Yes | `CURRENT_TIMESTAMP` | - | วันที่สร้าง token |
+
+Indexes/Constraints:
+
+| Name | Type | Field | Description |
+|---|---|---|---|
+| `PRIMARY` | Primary Key | `id` | ระบุรายการแบบไม่ซ้ำ |
+| `idx_password_resets_email` | Index | `email` | ค้นหา token ตามอีเมล |
+| `uk_password_resets_token` | Unique | `token` | token ต้องไม่ซ้ำ |
+
+หมายเหตุ: ตารางนี้ไม่ได้ผูก Foreign Key กับ `users.email` เพื่อให้รองรับการตรวจสอบ token ตามอีเมลแบบยืดหยุ่น
+
+## 3.4 ตาราง `login_attempts`
+
+คำอธิบาย: เก็บประวัติการพยายามเข้าสู่ระบบ เพื่อใช้ตรวจสอบความปลอดภัยและจำกัด brute force
+
+| Field | Type | Null | Default | Key | Description |
+|---|---|---|---|---|---|
+| `id` | `INT UNSIGNED AUTO_INCREMENT` | No | - | PK | รหัสรายการ attempt |
+| `email` | `VARCHAR(190)` | No | - | IDX | อีเมลที่ใช้พยายามเข้าสู่ระบบ |
+| `ip_address` | `VARCHAR(64)` | No | - | IDX | IP address ของผู้พยายามเข้าสู่ระบบ |
+| `success` | `TINYINT(1)` | No | `0` | - | ผลลัพธ์การเข้าสู่ระบบ 1 = สำเร็จ, 0 = ไม่สำเร็จ |
+| `user_agent` | `VARCHAR(255)` | Yes | `NULL` | - | browser/user agent |
+| `attempted_at` | `DATETIME` | No | - | IDX | วันเวลาที่พยายามเข้าสู่ระบบ |
+
+Indexes/Constraints:
+
+| Name | Type | Field | Description |
+|---|---|---|---|
+| `PRIMARY` | Primary Key | `id` | ระบุ attempt แบบไม่ซ้ำ |
+| `idx_login_attempts_email_ip_time` | Composite Index | `email`, `ip_address`, `attempted_at` | ใช้ตรวจจำนวนครั้งตามอีเมล/IP/ช่วงเวลา |
+| `idx_login_attempts_attempted_at` | Index | `attempted_at` | ใช้ค้นหาหรือลบ log เก่าตามเวลา |
+
+## 3.5 ตาราง `districts`
+
+คำอธิบาย: เก็บข้อมูลอำเภอในจังหวัดเชียงราย พร้อมพิกัด
+
+| Field | Type | Null | Default | Key | Description |
+|---|---|---|---|---|---|
+| `id` | `INT UNSIGNED AUTO_INCREMENT` | No | - | PK | รหัสอำเภอ |
+| `province_name` | `VARCHAR(100)` | No | `เชียงราย` | UNIQUE | ชื่อจังหวัด |
+| `district_name` | `VARCHAR(100)` | No | - | UNIQUE | ชื่ออำเภอ |
+| `latitude` | `DECIMAL(10,7)` | No | - | - | ละติจูดของอำเภอ |
+| `longitude` | `DECIMAL(10,7)` | No | - | - | ลองจิจูดของอำเภอ |
+| `is_active` | `TINYINT(1)` | No | `1` | IDX | สถานะเปิดใช้งานอำเภอ |
+| `created_at` | `TIMESTAMP` | Yes | `CURRENT_TIMESTAMP` | - | วันที่สร้างข้อมูล |
+| `updated_at` | `TIMESTAMP` | Yes | `CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP` | - | วันที่แก้ไขล่าสุด |
+
+Indexes/Constraints:
+
+| Name | Type | Field | Description |
+|---|---|---|---|
+| `PRIMARY` | Primary Key | `id` | ระบุอำเภอแบบไม่ซ้ำ |
+| `uk_district_name` | Unique | `province_name`, `district_name` | ป้องกันชื่ออำเภอซ้ำในจังหวัดเดียวกัน |
+| `idx_district_active` | Index | `is_active` | ใช้กรองเฉพาะอำเภอที่เปิดใช้งาน |
+
+ข้อมูลเริ่มต้น: มีอำเภอเชียงราย 18 อำเภอ เช่น เมืองเชียงราย เวียงชัย เชียงของ เทิง พาน แม่สาย แม่ฟ้าหลวง ดอยหลวง เป็นต้น
+
+## 3.6 ตาราง `service_categories`
+
+คำอธิบาย: เก็บหมวดหมู่บริการถ่ายภาพ
+
+| Field | Type | Null | Default | Key | Description |
+|---|---|---|---|---|---|
+| `id` | `INT UNSIGNED AUTO_INCREMENT` | No | - | PK | รหัสหมวดหมู่บริการ |
+| `name` | `VARCHAR(120)` | No | - | - | ชื่อหมวดหมู่ เช่น งานแต่งงาน รับปริญญา |
+| `slug` | `VARCHAR(160)` | No | - | UNIQUE | slug สำหรับ URL/filter |
+| `icon` | `VARCHAR(80)` | Yes | `NULL` | - | class icon เช่น Font Awesome |
+| `description` | `TEXT` | Yes | `NULL` | - | คำอธิบายหมวดหมู่ |
+| `is_active` | `TINYINT(1)` | No | `1` | IDX | สถานะเปิดใช้งานหมวดหมู่ |
+| `sort_order` | `INT` | No | `0` | IDX | ลำดับการแสดงผล |
+| `created_at` | `TIMESTAMP` | Yes | `CURRENT_TIMESTAMP` | - | วันที่สร้างข้อมูล |
+| `updated_at` | `TIMESTAMP` | Yes | `CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP` | - | วันที่แก้ไขล่าสุด |
+
+Indexes/Constraints:
+
+| Name | Type | Field | Description |
+|---|---|---|---|
+| `PRIMARY` | Primary Key | `id` | ระบุหมวดหมู่แบบไม่ซ้ำ |
+| `uk_service_categories_slug` | Unique | `slug` | ป้องกัน slug ซ้ำ |
+| `idx_service_categories_active` | Composite Index | `is_active`, `sort_order` | ใช้แสดงหมวดหมู่ที่เปิดใช้งานตามลำดับ |
+
+ข้อมูลเริ่มต้น:
+
+| id | name | slug |
+|---:|---|---|
+| 1 | งานแต่งงาน | `wedding` |
+| 2 | รับปริญญา | `graduation` |
+| 3 | ครอบครัว | `family` |
+| 4 | สินค้าและร้านค้า | `product` |
+| 5 | อีเวนต์ | `event` |
+| 6 | โปรไฟล์ส่วนตัว | `portrait` |
+
+## 3.7 ตาราง `photographer_profiles`
+
+คำอธิบาย: เก็บรายละเอียดโปรไฟล์ของผู้ใช้ที่เป็นช่างภาพ
+
+| Field | Type | Null | Default | Key | Description |
+|---|---|---|---|---|---|
+| `id` | `INT UNSIGNED AUTO_INCREMENT` | No | - | PK | รหัสโปรไฟล์ช่างภาพ |
+| `user_id` | `INT UNSIGNED` | No | - | FK, UNIQUE | อ้างอิงบัญชีผู้ใช้จาก `users.id` |
+| `display_name` | `VARCHAR(160)` | No | - | - | ชื่อร้าน/ชื่อแสดงผลของช่างภาพ |
+| `slug` | `VARCHAR(180)` | No | - | UNIQUE | slug สำหรับ URL หน้าโปรไฟล์ |
+| `bio` | `TEXT` | Yes | `NULL` | - | รายละเอียดแนะนำตัว |
+| `experience_years` | `INT UNSIGNED` | No | `0` | - | จำนวนปีประสบการณ์ |
+| `starting_price` | `DECIMAL(10,2)` | No | `0.00` | IDX | ราคาเริ่มต้น |
+| `profile_image` | `VARCHAR(255)` | Yes | `NULL` | - | path รูปโปรไฟล์ช่างภาพ |
+| `cover_image` | `VARCHAR(255)` | Yes | `NULL` | - | path รูป cover |
+| `phone_public` | `VARCHAR(50)` | Yes | `NULL` | - | เบอร์โทรที่เปิดเผยต่อสาธารณะ |
+| `line_id` | `VARCHAR(100)` | Yes | `NULL` | - | LINE ID |
+| `facebook_url` | `VARCHAR(255)` | Yes | `NULL` | - | URL Facebook |
+| `instagram_url` | `VARCHAR(255)` | Yes | `NULL` | - | URL Instagram |
+| `website_url` | `VARCHAR(255)` | Yes | `NULL` | - | URL เว็บไซต์ส่วนตัว |
+| `main_district_id` | `INT UNSIGNED` | Yes | `NULL` | FK, IDX | อำเภอหลักของช่างภาพ อ้างอิง `districts.id` |
+| `approval_status` | `ENUM('pending','approved','rejected','suspended')` | No | `pending` | IDX | สถานะอนุมัติโปรไฟล์ |
+| `rejection_reason` | `TEXT` | Yes | `NULL` | - | เหตุผลที่ถูกปฏิเสธ |
+| `is_available` | `TINYINT(1)` | No | `1` | IDX | สถานะพร้อมรับงาน |
+| `profile_views` | `INT UNSIGNED` | No | `0` | - | จำนวนครั้งที่ดูโปรไฟล์ |
+| `average_rating` | `DECIMAL(3,2)` | No | `0.00` | IDX | คะแนนรีวิวเฉลี่ย |
+| `total_reviews` | `INT UNSIGNED` | No | `0` | IDX | จำนวนรีวิวทั้งหมด |
+| `response_rate` | `DECIMAL(5,2)` | No | `0.00` | - | อัตราการตอบกลับเป็นเปอร์เซ็นต์ |
+| `average_response_hours` | `DECIMAL(8,2)` | No | `0.00` | - | เวลาเฉลี่ยในการตอบกลับ หน่วยชั่วโมง |
+| `is_verified` | `TINYINT(1)` | No | `0` | IDX | สถานะยืนยันตัวตน/ยืนยันโปรไฟล์ |
+| `verified_at` | `DATETIME` | Yes | `NULL` | - | วันที่ยืนยันโปรไฟล์ |
+| `is_featured` | `TINYINT(1)` | No | `0` | IDX | สถานะช่างภาพแนะนำ |
+| `featured_until` | `DATETIME` | Yes | `NULL` | IDX | วันที่สิ้นสุดการแนะนำ |
+| `created_at` | `TIMESTAMP` | Yes | `CURRENT_TIMESTAMP` | - | วันที่สร้างโปรไฟล์ |
+| `updated_at` | `TIMESTAMP` | Yes | `CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP` | - | วันที่แก้ไขโปรไฟล์ล่าสุด |
+| `deleted_at` | `DATETIME` | Yes | `NULL` | - | วันที่ลบแบบ soft delete |
+
+Indexes/Constraints:
+
+| Name | Type | Field | Description |
+|---|---|---|---|
+| `PRIMARY` | Primary Key | `id` | ระบุโปรไฟล์แบบไม่ซ้ำ |
+| `uk_photographer_user` | Unique | `user_id` | ผู้ใช้ 1 คนมีโปรไฟล์ช่างภาพได้ 1 โปรไฟล์ |
+| `uk_photographer_slug` | Unique | `slug` | slug ต้องไม่ซ้ำ |
+| `idx_photographer_approval` | Composite Index | `approval_status`, `is_available` | ใช้กรองช่างภาพที่อนุมัติและพร้อมรับงาน |
+| `idx_photographer_price` | Index | `starting_price` | ใช้เรียง/กรองตามราคา |
+| `idx_photographer_rating` | Composite Index | `average_rating`, `total_reviews` | ใช้เรียงตามคะแนนรีวิว |
+| `idx_photographer_district` | Index | `main_district_id` | ใช้ค้นหาตามอำเภอหลัก |
+| `idx_photographer_featured` | Composite Index | `is_featured`, `featured_until` | ใช้แสดงช่างภาพแนะนำ |
+| `idx_photographer_verified` | Index | `is_verified` | ใช้กรองช่างภาพที่ยืนยันแล้ว |
+| `fk_photographer_user` | Foreign Key | `user_id -> users.id` | ผูกโปรไฟล์กับบัญชีผู้ใช้ |
+| `fk_photographer_main_district` | Foreign Key | `main_district_id -> districts.id` | ผูกอำเภอหลักกับตารางอำเภอ |
+
+## 3.8 ตาราง `photographer_services`
+
+คำอธิบาย: ตารางกลางบันทึกว่าช่างภาพรับบริการหมวดหมู่ใดบ้าง พร้อมราคาต่อหมวดหมู่
+
+| Field | Type | Null | Default | Key | Description |
+|---|---|---|---|---|---|
+| `id` | `INT UNSIGNED AUTO_INCREMENT` | No | - | PK | รหัสบริการของช่างภาพ |
+| `photographer_id` | `INT UNSIGNED` | No | - | FK, UNIQUE | อ้างอิง `photographer_profiles.id` |
+| `category_id` | `INT UNSIGNED` | No | - | FK, UNIQUE | อ้างอิง `service_categories.id` |
+| `description` | `TEXT` | Yes | `NULL` | - | คำอธิบายบริการเฉพาะช่างภาพ |
+| `starting_price` | `DECIMAL(10,2)` | No | `0.00` | - | ราคาเริ่มต้นของบริการนี้ |
+| `is_active` | `TINYINT(1)` | No | `1` | IDX | สถานะเปิดบริการ |
+| `created_at` | `TIMESTAMP` | Yes | `CURRENT_TIMESTAMP` | - | วันที่สร้างข้อมูล |
+| `updated_at` | `TIMESTAMP` | Yes | `CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP` | - | วันที่แก้ไขล่าสุด |
+
+Indexes/Constraints:
+
+| Name | Type | Field | Description |
+|---|---|---|---|
+| `PRIMARY` | Primary Key | `id` | ระบุบริการแบบไม่ซ้ำ |
+| `uk_photographer_service` | Unique | `photographer_id`, `category_id` | ช่างภาพ 1 คนมีหมวดหมู่เดียวกันซ้ำไม่ได้ |
+| `idx_photographer_services_active` | Index | `is_active` | กรองบริการที่เปิดใช้งาน |
+| `fk_photographer_services_profile` | Foreign Key | `photographer_id -> photographer_profiles.id` | ผูกบริการกับโปรไฟล์ช่างภาพ |
+| `fk_photographer_services_category` | Foreign Key | `category_id -> service_categories.id` | ผูกบริการกับหมวดหมู่ |
+
+ความสัมพันธ์: `photographer_profiles` M:N `service_categories` ผ่านตาราง `photographer_services`
+
+## 3.9 ตาราง `photographer_service_areas`
+
+คำอธิบาย: ตารางกลางบันทึกพื้นที่อำเภอที่ช่างภาพให้บริการ
+
+| Field | Type | Null | Default | Key | Description |
+|---|---|---|---|---|---|
+| `id` | `INT UNSIGNED AUTO_INCREMENT` | No | - | PK | รหัสพื้นที่ให้บริการ |
+| `photographer_id` | `INT UNSIGNED` | No | - | FK, UNIQUE | อ้างอิง `photographer_profiles.id` |
+| `district_id` | `INT UNSIGNED` | No | - | FK, UNIQUE, IDX | อ้างอิง `districts.id` |
+| `is_primary` | `TINYINT(1)` | No | `0` | - | ระบุว่าเป็นพื้นที่หลักหรือไม่ |
+| `is_active` | `TINYINT(1)` | No | `1` | IDX | สถานะเปิดให้บริการพื้นที่นี้ |
+| `created_at` | `TIMESTAMP` | Yes | `CURRENT_TIMESTAMP` | - | วันที่สร้างข้อมูล |
+| `updated_at` | `TIMESTAMP` | Yes | `CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP` | - | วันที่แก้ไขล่าสุด |
+
+Indexes/Constraints:
+
+| Name | Type | Field | Description |
+|---|---|---|---|
+| `PRIMARY` | Primary Key | `id` | ระบุพื้นที่ให้บริการแบบไม่ซ้ำ |
+| `uk_photographer_area` | Unique | `photographer_id`, `district_id` | ช่างภาพ 1 คนลงพื้นที่เดิมซ้ำไม่ได้ |
+| `idx_service_areas_district` | Composite Index | `district_id`, `is_active` | ใช้ค้นหาช่างภาพตามอำเภอ |
+| `fk_service_areas_profile` | Foreign Key | `photographer_id -> photographer_profiles.id` | ผูกพื้นที่กับช่างภาพ |
+| `fk_service_areas_district` | Foreign Key | `district_id -> districts.id` | ผูกพื้นที่กับอำเภอ |
+
+ความสัมพันธ์: `photographer_profiles` M:N `districts` ผ่านตาราง `photographer_service_areas`
+
+## 3.10 ตาราง `photographer_portfolios`
+
+คำอธิบาย: เก็บผลงานภาพตัวอย่างของช่างภาพ
+
+| Field | Type | Null | Default | Key | Description |
+|---|---|---|---|---|---|
+| `id` | `INT UNSIGNED AUTO_INCREMENT` | No | - | PK | รหัสผลงาน |
+| `photographer_id` | `INT UNSIGNED` | No | - | FK, IDX | อ้างอิง `photographer_profiles.id` |
+| `title` | `VARCHAR(180)` | No | - | - | ชื่อผลงาน |
+| `description` | `TEXT` | Yes | `NULL` | - | รายละเอียดผลงาน |
+| `image_path` | `VARCHAR(255)` | No | - | - | path รูปภาพผลงาน |
+| `is_featured` | `TINYINT(1)` | No | `0` | IDX | สถานะผลงานเด่น |
+| `sort_order` | `INT` | No | `0` | IDX | ลำดับการแสดงผล |
+| `created_at` | `TIMESTAMP` | Yes | `CURRENT_TIMESTAMP` | - | วันที่สร้างข้อมูล |
+| `updated_at` | `TIMESTAMP` | Yes | `CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP` | - | วันที่แก้ไขล่าสุด |
+| `deleted_at` | `DATETIME` | Yes | `NULL` | - | วันที่ลบแบบ soft delete |
+
+Indexes/Constraints:
+
+| Name | Type | Field | Description |
+|---|---|---|---|
+| `PRIMARY` | Primary Key | `id` | ระบุผลงานแบบไม่ซ้ำ |
+| `idx_portfolios_photographer` | Composite Index | `photographer_id`, `is_featured`, `sort_order` | ใช้แสดงผลงานของช่างภาพตามลำดับ |
+| `fk_portfolios_profile` | Foreign Key | `photographer_id -> photographer_profiles.id` | ผูกผลงานกับช่างภาพ |
+
+## 3.11 ตาราง `photographer_availability`
+
+คำอธิบาย: เก็บวันว่างและช่วงเวลารับงานของช่างภาพ
+
+| Field | Type | Null | Default | Key | Description |
+|---|---|---|---|---|---|
+| `id` | `INT UNSIGNED AUTO_INCREMENT` | No | - | PK | รหัสวันว่าง |
+| `photographer_id` | `INT UNSIGNED` | No | - | FK, UNIQUE | อ้างอิง `photographer_profiles.id` |
+| `available_date` | `DATE` | No | - | UNIQUE, IDX | วันที่ที่กำหนดสถานะ |
+| `time_slot` | `ENUM('morning','afternoon','evening','full_day')` | No | - | UNIQUE | ช่วงเวลา |
+| `status` | `ENUM('available','unavailable','booked')` | No | `available` | IDX | สถานะช่วงเวลา |
+| `note` | `VARCHAR(255)` | Yes | `NULL` | - | หมายเหตุ |
+| `created_at` | `TIMESTAMP` | Yes | `CURRENT_TIMESTAMP` | - | วันที่สร้างข้อมูล |
+| `updated_at` | `TIMESTAMP` | Yes | `CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP` | - | วันที่แก้ไขล่าสุด |
+
+Indexes/Constraints:
+
+| Name | Type | Field | Description |
+|---|---|---|---|
+| `PRIMARY` | Primary Key | `id` | ระบุวันว่างแบบไม่ซ้ำ |
+| `uk_availability_slot` | Unique | `photographer_id`, `available_date`, `time_slot` | ป้องกันเวลาว่างซ้ำในวันเดียวกัน |
+| `idx_availability_date` | Composite Index | `available_date`, `status` | ใช้ค้นหาตามวันที่และสถานะ |
+| `fk_availability_profile` | Foreign Key | `photographer_id -> photographer_profiles.id` | ผูกวันว่างกับช่างภาพ |
+
+ค่า `time_slot`:
+
+| Value | ความหมาย |
+|---|---|
+| `morning` | ช่วงเช้า |
+| `afternoon` | ช่วงบ่าย |
+| `evening` | ช่วงเย็น |
+| `full_day` | เต็มวัน |
+
+ค่า `status`:
+
+| Value | ความหมาย |
+|---|---|
+| `available` | ว่าง |
+| `unavailable` | ไม่ว่าง |
+| `booked` | ถูกจองแล้ว |
+
+## 3.12 ตาราง `bookings`
+
+คำอธิบาย: เก็บคำขอจองงานถ่ายภาพ เป็นตารางธุรกรรมหลักของระบบ
+
+| Field | Type | Null | Default | Key | Description |
+|---|---|---|---|---|---|
+| `id` | `INT UNSIGNED AUTO_INCREMENT` | No | - | PK | รหัสการจอง |
+| `booking_code` | `VARCHAR(40)` | No | - | UNIQUE | รหัสการจองที่ใช้แสดง/ค้นหา |
+| `customer_id` | `INT UNSIGNED` | No | - | FK, IDX | ผู้จอง อ้างอิง `users.id` |
+| `photographer_id` | `INT UNSIGNED` | No | - | FK, IDX | ช่างภาพที่ถูกจอง อ้างอิง `photographer_profiles.id` |
+| `category_id` | `INT UNSIGNED` | No | - | FK, IDX | หมวดหมู่งานถ่ายภาพ อ้างอิง `service_categories.id` |
+| `district_id` | `INT UNSIGNED` | No | - | FK, IDX | พื้นที่จัดงาน อ้างอิง `districts.id` |
+| `booking_date` | `DATE` | No | - | IDX | วันที่ต้องการจอง |
+| `time_slot` | `ENUM('morning','afternoon','evening','full_day')` | No | - | IDX | ช่วงเวลาที่ต้องการจอง |
+| `contact_name` | `VARCHAR(160)` | No | - | - | ชื่อผู้ติดต่อ |
+| `contact_phone` | `VARCHAR(50)` | No | - | - | เบอร์ผู้ติดต่อ |
+| `contact_channel` | `VARCHAR(120)` | No | - | - | ช่องทางติดต่อ เช่น LINE, โทรศัพท์ |
+| `job_detail` | `TEXT` | No | - | - | รายละเอียดงาน |
+| `note` | `TEXT` | Yes | `NULL` | - | หมายเหตุเพิ่มเติม |
+| `status` | `ENUM('pending','accepted','rejected','cancelled','confirmed','completed')` | No | `pending` | IDX | สถานะการจอง |
+| `rejection_reason` | `TEXT` | Yes | `NULL` | - | เหตุผลการปฏิเสธ |
+| `completed_at` | `DATETIME` | Yes | `NULL` | - | วันที่งานเสร็จสิ้น |
+| `created_at` | `TIMESTAMP` | Yes | `CURRENT_TIMESTAMP` | - | วันที่สร้างคำขอ |
+| `updated_at` | `TIMESTAMP` | Yes | `CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP` | - | วันที่แก้ไขล่าสุด |
+| `deleted_at` | `DATETIME` | Yes | `NULL` | - | วันที่ลบแบบ soft delete |
+
+Indexes/Constraints:
+
+| Name | Type | Field | Description |
+|---|---|---|---|
+| `PRIMARY` | Primary Key | `id` | ระบุการจองแบบไม่ซ้ำ |
+| `uk_booking_code` | Unique | `booking_code` | รหัสการจองต้องไม่ซ้ำ |
+| `idx_bookings_customer` | Composite Index | `customer_id`, `status` | ใช้ดูรายการจองของลูกค้าตามสถานะ |
+| `idx_bookings_photographer` | Composite Index | `photographer_id`, `status` | ใช้ดูงานของช่างภาพตามสถานะ |
+| `idx_bookings_date_slot` | Composite Index | `photographer_id`, `booking_date`, `time_slot`, `status` | ใช้ตรวจตารางงาน/กันจองชนกัน |
+| `idx_bookings_category` | Index | `category_id` | ค้นหาตามหมวดหมู่ |
+| `idx_bookings_district` | Index | `district_id` | ค้นหาตามพื้นที่ |
+| `fk_bookings_customer` | Foreign Key | `customer_id -> users.id` | ผูกการจองกับลูกค้า |
+| `fk_bookings_photographer` | Foreign Key | `photographer_id -> photographer_profiles.id` | ผูกการจองกับช่างภาพ |
+| `fk_bookings_category` | Foreign Key | `category_id -> service_categories.id` | ผูกการจองกับหมวดหมู่ |
+| `fk_bookings_district` | Foreign Key | `district_id -> districts.id` | ผูกการจองกับอำเภอ |
+
+ลำดับสถานะที่ใช้ในระบบโดยทั่วไป:
+
+| Status | ความหมาย |
+|---|---|
+| `pending` | รอช่างภาพตอบรับ |
+| `accepted` | ช่างภาพตอบรับแล้ว |
+| `rejected` | ช่างภาพปฏิเสธ |
+| `cancelled` | ถูกยกเลิก |
+| `confirmed` | ยืนยันรายละเอียดแล้ว |
+| `completed` | งานเสร็จสิ้น |
+
+## 3.13 ตาราง `booking_status_logs`
+
+คำอธิบาย: เก็บประวัติการเปลี่ยนสถานะของการจองแต่ละครั้ง
+
+| Field | Type | Null | Default | Key | Description |
+|---|---|---|---|---|---|
+| `id` | `INT UNSIGNED AUTO_INCREMENT` | No | - | PK | รหัส log สถานะ |
+| `booking_id` | `INT UNSIGNED` | No | - | FK, IDX | อ้างอิง `bookings.id` |
+| `old_status` | `VARCHAR(40)` | Yes | `NULL` | - | สถานะเดิม |
+| `new_status` | `VARCHAR(40)` | No | - | - | สถานะใหม่ |
+| `changed_by` | `INT UNSIGNED` | Yes | `NULL` | FK, IDX | ผู้เปลี่ยนสถานะ อ้างอิง `users.id` |
+| `note` | `TEXT` | Yes | `NULL` | - | หมายเหตุการเปลี่ยนสถานะ |
+| `created_at` | `TIMESTAMP` | Yes | `CURRENT_TIMESTAMP` | - | วันที่เปลี่ยนสถานะ |
+
+Indexes/Constraints:
+
+| Name | Type | Field | Description |
+|---|---|---|---|
+| `PRIMARY` | Primary Key | `id` | ระบุ log แบบไม่ซ้ำ |
+| `idx_booking_logs_booking` | Index | `booking_id` | ใช้ดู timeline ของการจอง |
+| `idx_booking_logs_user` | Index | `changed_by` | ใช้ดูการเปลี่ยนสถานะโดยผู้ใช้ |
+| `fk_booking_logs_booking` | Foreign Key | `booking_id -> bookings.id` | ผูก log กับการจอง |
+| `fk_booking_logs_user` | Foreign Key | `changed_by -> users.id` | ผูก log กับผู้เปลี่ยนสถานะ |
+
+## 3.14 ตาราง `reviews`
+
+คำอธิบาย: เก็บรีวิวและคะแนนจากลูกค้าหลังการจองเสร็จสิ้น
+
+| Field | Type | Null | Default | Key | Description |
+|---|---|---|---|---|---|
+| `id` | `INT UNSIGNED AUTO_INCREMENT` | No | - | PK | รหัสรีวิว |
+| `booking_id` | `INT UNSIGNED` | No | - | FK, UNIQUE | อ้างอิง `bookings.id` |
+| `customer_id` | `INT UNSIGNED` | No | - | FK, IDX | ผู้รีวิว อ้างอิง `users.id` |
+| `photographer_id` | `INT UNSIGNED` | No | - | FK, IDX | ช่างภาพที่ถูกรีวิว |
+| `rating_overall` | `TINYINT UNSIGNED` | No | - | CHECK | คะแนนรวม 1-5 |
+| `rating_quality` | `TINYINT UNSIGNED` | No | - | CHECK | คะแนนคุณภาพภาพ 1-5 |
+| `rating_communication` | `TINYINT UNSIGNED` | No | - | CHECK | คะแนนการสื่อสาร 1-5 |
+| `rating_punctuality` | `TINYINT UNSIGNED` | No | - | CHECK | คะแนนตรงเวลา 1-5 |
+| `rating_professional` | `TINYINT UNSIGNED` | No | - | CHECK | คะแนนความเป็นมืออาชีพ 1-5 |
+| `comment` | `TEXT` | Yes | `NULL` | - | ข้อความรีวิว |
+| `status` | `ENUM('visible','hidden')` | No | `visible` | IDX | สถานะการแสดงผลรีวิว |
+| `created_at` | `TIMESTAMP` | Yes | `CURRENT_TIMESTAMP` | - | วันที่สร้างรีวิว |
+| `updated_at` | `TIMESTAMP` | Yes | `CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP` | - | วันที่แก้ไขรีวิวล่าสุด |
+| `deleted_at` | `DATETIME` | Yes | `NULL` | - | วันที่ลบแบบ soft delete |
+
+Indexes/Constraints:
+
+| Name | Type | Field | Description |
+|---|---|---|---|
+| `PRIMARY` | Primary Key | `id` | ระบุรีวิวแบบไม่ซ้ำ |
+| `uk_reviews_booking` | Unique | `booking_id` | การจอง 1 รายการมีรีวิวได้ 1 รายการ |
+| `idx_reviews_photographer` | Composite Index | `photographer_id`, `status` | ใช้แสดงรีวิวของช่างภาพที่เปิดเผย |
+| `idx_reviews_customer` | Index | `customer_id` | ใช้ดูรีวิวที่ลูกค้าเคยเขียน |
+| `fk_reviews_booking` | Foreign Key | `booking_id -> bookings.id` | ผูกรีวิวกับการจอง |
+| `fk_reviews_customer` | Foreign Key | `customer_id -> users.id` | ผูกรีวิวกับลูกค้า |
+| `fk_reviews_photographer` | Foreign Key | `photographer_id -> photographer_profiles.id` | ผูกรีวิวกับช่างภาพ |
+| `chk_reviews_rating` | Check | rating fields | คะแนนทุกช่องต้องอยู่ระหว่าง 1 ถึง 5 |
+
+## 3.15 ตาราง `review_images`
+
+คำอธิบาย: เก็บรูปภาพประกอบรีวิว
+
+| Field | Type | Null | Default | Key | Description |
+|---|---|---|---|---|---|
+| `id` | `INT UNSIGNED AUTO_INCREMENT` | No | - | PK | รหัสรูปรีวิว |
+| `review_id` | `INT UNSIGNED` | No | - | FK, IDX | อ้างอิง `reviews.id` |
+| `image_path` | `VARCHAR(255)` | No | - | - | path รูปภาพรีวิว |
+| `created_at` | `TIMESTAMP` | Yes | `CURRENT_TIMESTAMP` | - | วันที่เพิ่มรูป |
+
+Indexes/Constraints:
+
+| Name | Type | Field | Description |
+|---|---|---|---|
+| `PRIMARY` | Primary Key | `id` | ระบุรูปรีวิวแบบไม่ซ้ำ |
+| `idx_review_images_review` | Index | `review_id` | ใช้ดึงรูปทั้งหมดของรีวิว |
+| `fk_review_images_review` | Foreign Key | `review_id -> reviews.id` | ผูกรูปกับรีวิว |
+
+## 3.16 ตาราง `photographer_articles`
+
+คำอธิบาย: เก็บบทความที่ช่างภาพสร้าง เพื่อแสดงในหน้าโปรไฟล์หรือบทความช่างภาพ
+
+| Field | Type | Null | Default | Key | Description |
+|---|---|---|---|---|---|
+| `id` | `INT UNSIGNED AUTO_INCREMENT` | No | - | PK | รหัสบทความช่างภาพ |
+| `photographer_id` | `INT UNSIGNED` | No | - | FK, IDX | ผู้เขียน อ้างอิง `photographer_profiles.id` |
+| `title` | `VARCHAR(220)` | No | - | - | ชื่อบทความ |
+| `slug` | `VARCHAR(240)` | No | - | UNIQUE | slug สำหรับ URL |
+| `cover_image` | `VARCHAR(255)` | Yes | `NULL` | - | path รูปหน้าปก |
+| `content` | `MEDIUMTEXT` | No | - | - | เนื้อหาบทความ |
+| `status` | `ENUM('draft','published','hidden')` | No | `draft` | IDX | สถานะบทความ |
+| `published_at` | `DATETIME` | Yes | `NULL` | - | วันที่เผยแพร่ |
+| `created_at` | `TIMESTAMP` | Yes | `CURRENT_TIMESTAMP` | - | วันที่สร้างบทความ |
+| `updated_at` | `TIMESTAMP` | Yes | `CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP` | - | วันที่แก้ไขล่าสุด |
+| `deleted_at` | `DATETIME` | Yes | `NULL` | - | วันที่ลบแบบ soft delete |
+
+Indexes/Constraints:
+
+| Name | Type | Field | Description |
+|---|---|---|---|
+| `PRIMARY` | Primary Key | `id` | ระบุบทความแบบไม่ซ้ำ |
+| `uk_articles_slug` | Unique | `slug` | slug ต้องไม่ซ้ำ |
+| `idx_articles_photographer` | Composite Index | `photographer_id`, `status` | ใช้ดึงบทความของช่างภาพตามสถานะ |
+| `fk_articles_profile` | Foreign Key | `photographer_id -> photographer_profiles.id` | ผูกบทความกับช่างภาพ |
+
+## 3.17 ตาราง `notifications`
+
+คำอธิบาย: เก็บข้อความแจ้งเตือนของผู้ใช้ เช่น การจองใหม่ การเปลี่ยนสถานะ
+
+| Field | Type | Null | Default | Key | Description |
+|---|---|---|---|---|---|
+| `id` | `INT UNSIGNED AUTO_INCREMENT` | No | - | PK | รหัสแจ้งเตือน |
+| `user_id` | `INT UNSIGNED` | No | - | FK, IDX | ผู้รับแจ้งเตือน อ้างอิง `users.id` |
+| `title` | `VARCHAR(180)` | No | - | - | หัวข้อแจ้งเตือน |
+| `message` | `TEXT` | No | - | - | รายละเอียดแจ้งเตือน |
+| `type` | `VARCHAR(60)` | No | `info` | - | ประเภทแจ้งเตือน เช่น info, booking, warning |
+| `related_id` | `INT UNSIGNED` | Yes | `NULL` | - | รหัสข้อมูลที่เกี่ยวข้อง เช่น booking id |
+| `is_read` | `TINYINT(1)` | No | `0` | IDX | สถานะอ่านแล้ว |
+| `created_at` | `TIMESTAMP` | Yes | `CURRENT_TIMESTAMP` | - | วันที่สร้างแจ้งเตือน |
+
+Indexes/Constraints:
+
+| Name | Type | Field | Description |
+|---|---|---|---|
+| `PRIMARY` | Primary Key | `id` | ระบุแจ้งเตือนแบบไม่ซ้ำ |
+| `idx_notifications_user` | Composite Index | `user_id`, `is_read` | ใช้ดึงแจ้งเตือนของผู้ใช้และจำนวนยังไม่อ่าน |
+| `fk_notifications_user` | Foreign Key | `user_id -> users.id` | ผูกแจ้งเตือนกับผู้ใช้ |
+
+หมายเหตุ: `related_id` ไม่มี Foreign Key เพราะอาจอ้างอิงข้อมูลได้หลายประเภทตาม `type`
+
+## 3.18 ตาราง `activity_logs`
+
+คำอธิบาย: เก็บประวัติกิจกรรมสำคัญในระบบ ใช้ตรวจสอบย้อนหลัง
+
+| Field | Type | Null | Default | Key | Description |
+|---|---|---|---|---|---|
+| `id` | `INT UNSIGNED AUTO_INCREMENT` | No | - | PK | รหัส activity log |
+| `user_id` | `INT UNSIGNED` | Yes | `NULL` | FK, IDX | ผู้ทำรายการ อ้างอิง `users.id` |
+| `action` | `VARCHAR(120)` | No | - | - | ชื่อ action เช่น login, create_booking |
+| `table_name` | `VARCHAR(120)` | Yes | `NULL` | IDX | ชื่อตารางที่เกี่ยวข้อง |
+| `record_id` | `INT UNSIGNED` | Yes | `NULL` | IDX | รหัส record ที่เกี่ยวข้อง |
+| `ip_address` | `VARCHAR(64)` | Yes | `NULL` | - | IP address |
+| `user_agent` | `VARCHAR(255)` | Yes | `NULL` | - | browser/user agent |
+| `description` | `TEXT` | Yes | `NULL` | - | รายละเอียดเพิ่มเติม |
+| `created_at` | `TIMESTAMP` | Yes | `CURRENT_TIMESTAMP` | IDX | วันที่เกิดกิจกรรม |
+
+Indexes/Constraints:
+
+| Name | Type | Field | Description |
+|---|---|---|---|
+| `PRIMARY` | Primary Key | `id` | ระบุ log แบบไม่ซ้ำ |
+| `idx_activity_user` | Index | `user_id` | ใช้ดู log ตามผู้ใช้ |
+| `idx_activity_table` | Composite Index | `table_name`, `record_id` | ใช้ดู log ตามข้อมูลที่ถูกกระทำ |
+| `idx_activity_created` | Index | `created_at` | ใช้ค้นหาตามช่วงเวลา |
+| `fk_activity_user` | Foreign Key | `user_id -> users.id` | ผูก log กับผู้ใช้ |
+
+หมายเหตุ: `table_name` และ `record_id` ไม่ได้ทำ Foreign Key เพราะใช้เก็บ log แบบ generic ได้หลายตาราง
+
+## 3.19 ตาราง `banners`
+
+คำอธิบาย: เก็บ banner ที่ใช้แสดงบนหน้าเว็บไซต์
+
+| Field | Type | Null | Default | Key | Description |
+|---|---|---|---|---|---|
+| `id` | `INT UNSIGNED AUTO_INCREMENT` | No | - | PK | รหัส banner |
+| `title` | `VARCHAR(180)` | No | - | - | หัวข้อ banner |
+| `subtitle` | `VARCHAR(255)` | Yes | `NULL` | - | ข้อความรอง |
+| `image_path` | `VARCHAR(255)` | Yes | `NULL` | - | path รูป banner |
+| `button_text` | `VARCHAR(100)` | Yes | `NULL` | - | ข้อความปุ่ม |
+| `button_url` | `VARCHAR(255)` | Yes | `NULL` | - | URL ของปุ่ม |
+| `is_active` | `TINYINT(1)` | No | `1` | IDX | สถานะเปิดแสดงผล |
+| `sort_order` | `INT` | No | `0` | IDX | ลำดับแสดงผล |
+| `created_at` | `TIMESTAMP` | Yes | `CURRENT_TIMESTAMP` | - | วันที่สร้างข้อมูล |
+| `updated_at` | `TIMESTAMP` | Yes | `CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP` | - | วันที่แก้ไขล่าสุด |
+
+Indexes/Constraints:
+
+| Name | Type | Field | Description |
+|---|---|---|---|
+| `PRIMARY` | Primary Key | `id` | ระบุ banner แบบไม่ซ้ำ |
+| `idx_banners_active` | Composite Index | `is_active`, `sort_order` | ใช้แสดง banner ที่เปิดใช้งานตามลำดับ |
+
+## 3.20 ตาราง `settings`
+
+คำอธิบาย: เก็บค่าตั้งค่าระบบในรูปแบบ key-value
+
+| Field | Type | Null | Default | Key | Description |
+|---|---|---|---|---|---|
+| `id` | `INT UNSIGNED AUTO_INCREMENT` | No | - | PK | รหัส setting |
+| `setting_key` | `VARCHAR(120)` | No | - | UNIQUE | ชื่อ key ของการตั้งค่า |
+| `setting_value` | `TEXT` | Yes | `NULL` | - | ค่าของการตั้งค่า |
+| `created_at` | `TIMESTAMP` | Yes | `CURRENT_TIMESTAMP` | - | วันที่สร้างข้อมูล |
+| `updated_at` | `TIMESTAMP` | Yes | `CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP` | - | วันที่แก้ไขล่าสุด |
+
+Indexes/Constraints:
+
+| Name | Type | Field | Description |
+|---|---|---|---|
+| `PRIMARY` | Primary Key | `id` | ระบุ setting แบบไม่ซ้ำ |
+| `uk_settings_key` | Unique | `setting_key` | key ต้องไม่ซ้ำ |
+
+ตัวอย่างข้อมูลเริ่มต้น:
+
+| setting_key | ความหมาย |
+|---|---|
+| `site_name` | ชื่อเว็บไซต์ |
+| `footer_text` | ข้อความ footer |
+| `admin_email` | อีเมลผู้ดูแล |
+| `admin_phone` | เบอร์ผู้ดูแล |
+| `allow_photographer_registration` | เปิด/ปิดสมัครช่างภาพ |
+| `nearby_radius_km` | ระยะค้นหาช่างภาพใกล้เคียง |
+| `enforce_https` | บังคับใช้ HTTPS |
+| `login_attempt_limit` | จำนวนครั้งเข้าสู่ระบบผิดสูงสุด |
+
+## 3.21 ตาราง `favorite_photographers`
+
+คำอธิบาย: เก็บรายการช่างภาพที่ลูกค้ากดถูกใจหรือบันทึกไว้
+
+| Field | Type | Null | Default | Key | Description |
+|---|---|---|---|---|---|
+| `id` | `INT UNSIGNED AUTO_INCREMENT` | No | - | PK | รหัส favorite |
+| `customer_id` | `INT UNSIGNED` | No | - | FK, UNIQUE | ลูกค้าที่กดถูกใจ อ้างอิง `users.id` |
+| `photographer_id` | `INT UNSIGNED` | No | - | FK, UNIQUE, IDX | ช่างภาพที่ถูกใจ อ้างอิง `photographer_profiles.id` |
+| `created_at` | `TIMESTAMP` | Yes | `CURRENT_TIMESTAMP` | - | วันที่กดถูกใจ |
+
+Indexes/Constraints:
+
+| Name | Type | Field | Description |
+|---|---|---|---|
+| `PRIMARY` | Primary Key | `id` | ระบุ favorite แบบไม่ซ้ำ |
+| `uk_favorite_customer_photographer` | Unique | `customer_id`, `photographer_id` | ลูกค้ากดถูกใจช่างภาพคนเดิมซ้ำไม่ได้ |
+| `idx_favorite_photographer` | Index | `photographer_id` | ใช้นับ/ค้นหาผู้ที่ถูกใจช่างภาพ |
+| `fk_favorite_customer` | Foreign Key | `customer_id -> users.id` | ผูก favorite กับลูกค้า |
+| `fk_favorite_photographer` | Foreign Key | `photographer_id -> photographer_profiles.id` | ผูก favorite กับช่างภาพ |
+
+ความสัมพันธ์: `users` M:N `photographer_profiles` ผ่านตาราง `favorite_photographers`
+
+## 3.22 ตาราง `faqs`
+
+คำอธิบาย: เก็บคำถามที่พบบ่อย แยกตามหมวดหมู่
+
+| Field | Type | Null | Default | Key | Description |
+|---|---|---|---|---|---|
+| `id` | `INT UNSIGNED AUTO_INCREMENT` | No | - | PK | รหัส FAQ |
+| `category` | `VARCHAR(100)` | No | - | IDX | หมวดหมู่คำถาม |
+| `question` | `VARCHAR(255)` | No | - | - | คำถาม |
+| `answer` | `TEXT` | No | - | - | คำตอบ |
+| `is_active` | `TINYINT(1)` | No | `1` | IDX | สถานะเปิดแสดงผล |
+| `sort_order` | `INT` | No | `0` | IDX | ลำดับแสดงผล |
+| `created_at` | `TIMESTAMP` | Yes | `CURRENT_TIMESTAMP` | - | วันที่สร้างข้อมูล |
+| `updated_at` | `TIMESTAMP` | Yes | `CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP` | - | วันที่แก้ไขล่าสุด |
+
+Indexes/Constraints:
+
+| Name | Type | Field | Description |
+|---|---|---|---|
+| `PRIMARY` | Primary Key | `id` | ระบุ FAQ แบบไม่ซ้ำ |
+| `idx_faq_active` | Composite Index | `is_active`, `category`, `sort_order` | ใช้แสดง FAQ ที่เปิดใช้งานตามหมวดหมู่และลำดับ |
+
+## 3.23 ตาราง `blogs`
+
+คำอธิบาย: เก็บบทความ ข่าวสาร หรือเนื้อหาจากผู้ดูแลระบบ
+
+| Field | Type | Null | Default | Key | Description |
+|---|---|---|---|---|---|
+| `id` | `INT UNSIGNED AUTO_INCREMENT` | No | - | PK | รหัส blog |
+| `admin_id` | `INT UNSIGNED` | No | - | FK, IDX | ผู้ดูแลระบบที่เขียนบทความ อ้างอิง `users.id` |
+| `title` | `VARCHAR(220)` | No | - | - | ชื่อบทความ |
+| `slug` | `VARCHAR(240)` | No | - | UNIQUE | slug สำหรับ URL |
+| `cover_image` | `VARCHAR(255)` | Yes | `NULL` | - | path รูปหน้าปก |
+| `excerpt` | `TEXT` | Yes | `NULL` | - | บทคัดย่อ/คำโปรย |
+| `content` | `MEDIUMTEXT` | No | - | - | เนื้อหาบทความ |
+| `status` | `ENUM('draft','published','hidden')` | No | `draft` | IDX | สถานะบทความ |
+| `published_at` | `DATETIME` | Yes | `NULL` | IDX | วันที่เผยแพร่ |
+| `created_at` | `TIMESTAMP` | Yes | `CURRENT_TIMESTAMP` | - | วันที่สร้างบทความ |
+| `updated_at` | `TIMESTAMP` | Yes | `CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP` | - | วันที่แก้ไขล่าสุด |
+| `deleted_at` | `DATETIME` | Yes | `NULL` | - | วันที่ลบแบบ soft delete |
+
+Indexes/Constraints:
+
+| Name | Type | Field | Description |
+|---|---|---|---|
+| `PRIMARY` | Primary Key | `id` | ระบุ blog แบบไม่ซ้ำ |
+| `uk_blogs_slug` | Unique | `slug` | slug ต้องไม่ซ้ำ |
+| `idx_blogs_admin` | Index | `admin_id` | ใช้ดูบทความตามผู้เขียน |
+| `idx_blogs_status` | Composite Index | `status`, `published_at` | ใช้แสดงบทความที่เผยแพร่ตามเวลา |
+| `fk_blogs_admin` | Foreign Key | `admin_id -> users.id` | ผูก blog กับผู้ดูแลระบบ |
+
+## 3.24 ตาราง `contact_messages`
+
+คำอธิบาย: เก็บข้อความที่ผู้ใช้ส่งผ่านหน้าติดต่อ
+
+| Field | Type | Null | Default | Key | Description |
+|---|---|---|---|---|---|
+| `id` | `INT UNSIGNED AUTO_INCREMENT` | No | - | PK | รหัสข้อความติดต่อ |
+| `name` | `VARCHAR(160)` | No | - | - | ชื่อผู้ติดต่อ |
+| `email` | `VARCHAR(190)` | No | - | - | อีเมลผู้ติดต่อ |
+| `phone` | `VARCHAR(50)` | Yes | `NULL` | - | เบอร์โทรผู้ติดต่อ |
+| `subject` | `VARCHAR(220)` | No | - | - | หัวข้อ |
+| `message` | `TEXT` | No | - | - | ข้อความ |
+| `status` | `ENUM('unread','read','replied')` | No | `unread` | IDX | สถานะข้อความ |
+| `created_at` | `TIMESTAMP` | Yes | `CURRENT_TIMESTAMP` | IDX | วันที่ส่งข้อความ |
+| `updated_at` | `TIMESTAMP` | Yes | `CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP` | - | วันที่แก้ไขล่าสุด |
+
+Indexes/Constraints:
+
+| Name | Type | Field | Description |
+|---|---|---|---|
+| `PRIMARY` | Primary Key | `id` | ระบุข้อความแบบไม่ซ้ำ |
+| `idx_contact_status` | Composite Index | `status`, `created_at` | ใช้จัดการกล่องข้อความตามสถานะและเวลา |
+
+## 3.25 ตาราง `reports`
+
+คำอธิบาย: เก็บรายงานปัญหาจากผู้ใช้ เช่น รายงานช่างภาพ รีวิว การจอง หรือบทความ
+
+| Field | Type | Null | Default | Key | Description |
+|---|---|---|---|---|---|
+| `id` | `INT UNSIGNED AUTO_INCREMENT` | No | - | PK | รหัสรายงาน |
+| `reporter_id` | `INT UNSIGNED` | Yes | `NULL` | FK, IDX | ผู้รายงาน อ้างอิง `users.id` |
+| `target_type` | `ENUM('photographer','review','booking','article')` | No | - | IDX | ประเภทข้อมูลที่ถูกรายงาน |
+| `target_id` | `INT UNSIGNED` | No | - | IDX | รหัสข้อมูลที่ถูกรายงาน |
+| `reason` | `VARCHAR(180)` | No | - | - | เหตุผลหลักของการรายงาน |
+| `detail` | `TEXT` | Yes | `NULL` | - | รายละเอียดเพิ่มเติม |
+| `status` | `ENUM('pending','reviewed','resolved','rejected')` | No | `pending` | IDX | สถานะการตรวจสอบรายงาน |
+| `admin_note` | `TEXT` | Yes | `NULL` | - | หมายเหตุจากผู้ดูแลระบบ |
+| `created_at` | `TIMESTAMP` | Yes | `CURRENT_TIMESTAMP` | IDX | วันที่สร้างรายงาน |
+| `updated_at` | `TIMESTAMP` | Yes | `CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP` | - | วันที่แก้ไขล่าสุด |
+
+Indexes/Constraints:
+
+| Name | Type | Field | Description |
+|---|---|---|---|
+| `PRIMARY` | Primary Key | `id` | ระบุรายงานแบบไม่ซ้ำ |
+| `idx_reports_target` | Composite Index | `target_type`, `target_id` | ใช้ค้นหารายงานตามสิ่งที่ถูกรายงาน |
+| `idx_reports_status` | Composite Index | `status`, `created_at` | ใช้จัดคิวรายงานตามสถานะและเวลา |
+| `idx_reports_reporter` | Index | `reporter_id` | ใช้ดูรายงานตามผู้รายงาน |
+| `fk_reports_reporter` | Foreign Key | `reporter_id -> users.id` | ผูกรายงานกับผู้รายงาน |
+
+หมายเหตุ: `target_type` + `target_id` เป็น polymorphic reference ไม่มี Foreign Key ตรง เพราะอาจชี้ไปหลายตาราง ได้แก่ `photographer_profiles`, `reviews`, `bookings`, `photographer_articles`
+
+## 3.26 ตาราง `search_logs`
+
+คำอธิบาย: เก็บประวัติการค้นหา เพื่อใช้วิเคราะห์พฤติกรรมและคำค้นยอดนิยม
+
+| Field | Type | Null | Default | Key | Description |
+|---|---|---|---|---|---|
+| `id` | `INT UNSIGNED AUTO_INCREMENT` | No | - | PK | รหัส search log |
+| `user_id` | `INT UNSIGNED` | Yes | `NULL` | FK, IDX | ผู้ค้นหา อ้างอิง `users.id`; เป็น NULL ได้สำหรับ guest |
+| `keyword` | `VARCHAR(190)` | Yes | `NULL` | IDX | คำค้นหา |
+| `district_id` | `INT UNSIGNED` | Yes | `NULL` | FK, IDX | อำเภอที่ใช้กรอง อ้างอิง `districts.id` |
+| `category_id` | `INT UNSIGNED` | Yes | `NULL` | FK, IDX | หมวดหมู่ที่ใช้กรอง อ้างอิง `service_categories.id` |
+| `search_date` | `DATE` | No | - | - | วันที่ค้นหา |
+| `ip_address` | `VARCHAR(64)` | Yes | `NULL` | - | IP address ของผู้ค้นหา |
+| `created_at` | `TIMESTAMP` | Yes | `CURRENT_TIMESTAMP` | - | วันเวลาที่บันทึก log |
+
+Indexes/Constraints:
+
+| Name | Type | Field | Description |
+|---|---|---|---|
+| `PRIMARY` | Primary Key | `id` | ระบุ search log แบบไม่ซ้ำ |
+| `idx_search_user` | Index | `user_id` | ใช้ดูประวัติค้นหาตามผู้ใช้ |
+| `idx_search_district` | Index | `district_id` | วิเคราะห์การค้นหาตามอำเภอ |
+| `idx_search_category` | Index | `category_id` | วิเคราะห์การค้นหาตามหมวดหมู่ |
+| `idx_search_keyword` | Index | `keyword` | วิเคราะห์คำค้น |
+| `fk_search_user` | Foreign Key | `user_id -> users.id` | ผูก log กับผู้ใช้ |
+| `fk_search_district` | Foreign Key | `district_id -> districts.id` | ผูก log กับอำเภอ |
+| `fk_search_category` | Foreign Key | `category_id -> service_categories.id` | ผูก log กับหมวดหมู่ |
+
+## 3.27 ตาราง `recently_viewed_photographers`
+
+คำอธิบาย: เก็บรายชื่อช่างภาพที่ผู้ใช้ดูล่าสุด
+
+| Field | Type | Null | Default | Key | Description |
+|---|---|---|---|---|---|
+| `id` | `INT UNSIGNED AUTO_INCREMENT` | No | - | PK | รหัสรายการดูล่าสุด |
+| `user_id` | `INT UNSIGNED` | No | - | FK, UNIQUE, IDX | ผู้ใช้ที่ดูโปรไฟล์ อ้างอิง `users.id` |
+| `photographer_id` | `INT UNSIGNED` | No | - | FK, UNIQUE | ช่างภาพที่ถูกดู อ้างอิง `photographer_profiles.id` |
+| `viewed_at` | `DATETIME` | No | - | IDX | วันที่และเวลาที่ดูล่าสุด |
+
+Indexes/Constraints:
+
+| Name | Type | Field | Description |
+|---|---|---|---|
+| `PRIMARY` | Primary Key | `id` | ระบุรายการแบบไม่ซ้ำ |
+| `uk_recent_user_photographer` | Unique | `user_id`, `photographer_id` | ผู้ใช้ 1 คนมีรายการช่างภาพคนเดิมได้ครั้งเดียว โดย update `viewed_at` |
+| `idx_recent_user` | Composite Index | `user_id`, `viewed_at` | ใช้แสดงรายการล่าสุดของผู้ใช้ตามเวลา |
+| `fk_recent_user` | Foreign Key | `user_id -> users.id` | ผูกรายการกับผู้ใช้ |
+| `fk_recent_photographer` | Foreign Key | `photographer_id -> photographer_profiles.id` | ผูกรายการกับช่างภาพ |
+
+## 3.28 ตาราง `tags`
+
+คำอธิบาย: เก็บ tag กลางที่นำไปผูกกับ portfolio, photographer article และ blog
+
+| Field | Type | Null | Default | Key | Description |
+|---|---|---|---|---|---|
+| `id` | `INT UNSIGNED AUTO_INCREMENT` | No | - | PK | รหัส tag |
+| `name` | `VARCHAR(100)` | No | - | - | ชื่อ tag |
+| `slug` | `VARCHAR(120)` | No | - | UNIQUE | slug ของ tag |
+| `created_at` | `TIMESTAMP` | Yes | `CURRENT_TIMESTAMP` | - | วันที่สร้าง tag |
+
+Indexes/Constraints:
+
+| Name | Type | Field | Description |
+|---|---|---|---|
+| `PRIMARY` | Primary Key | `id` | ระบุ tag แบบไม่ซ้ำ |
+| `uk_tags_slug` | Unique | `slug` | slug ต้องไม่ซ้ำ |
+
+## 3.29 ตาราง `portfolio_tags`
+
+คำอธิบาย: ตารางกลางระหว่างผลงานช่างภาพกับ tag
+
+| Field | Type | Null | Default | Key | Description |
+|---|---|---|---|---|---|
+| `portfolio_id` | `INT UNSIGNED` | No | - | PK, FK | อ้างอิง `photographer_portfolios.id` |
+| `tag_id` | `INT UNSIGNED` | No | - | PK, FK | อ้างอิง `tags.id` |
+
+Indexes/Constraints:
+
+| Name | Type | Field | Description |
+|---|---|---|---|
+| `PRIMARY` | Composite Primary Key | `portfolio_id`, `tag_id` | ป้องกันการผูก portfolio กับ tag ซ้ำ |
+| `fk_portfolio_tags_portfolio` | Foreign Key | `portfolio_id -> photographer_portfolios.id` | ผูกกับผลงาน |
+| `fk_portfolio_tags_tag` | Foreign Key | `tag_id -> tags.id` | ผูกกับ tag |
+
+ความสัมพันธ์: `photographer_portfolios` M:N `tags` ผ่านตาราง `portfolio_tags`
+
+## 3.30 ตาราง `article_tags`
+
+คำอธิบาย: ตารางกลางระหว่างบทความช่างภาพกับ tag
+
+| Field | Type | Null | Default | Key | Description |
+|---|---|---|---|---|---|
+| `article_id` | `INT UNSIGNED` | No | - | PK, FK | อ้างอิง `photographer_articles.id` |
+| `tag_id` | `INT UNSIGNED` | No | - | PK, FK | อ้างอิง `tags.id` |
+
+Indexes/Constraints:
+
+| Name | Type | Field | Description |
+|---|---|---|---|
+| `PRIMARY` | Composite Primary Key | `article_id`, `tag_id` | ป้องกันการผูก article กับ tag ซ้ำ |
+| `fk_article_tags_article` | Foreign Key | `article_id -> photographer_articles.id` | ผูกกับบทความช่างภาพ |
+| `fk_article_tags_tag` | Foreign Key | `tag_id -> tags.id` | ผูกกับ tag |
+
+ความสัมพันธ์: `photographer_articles` M:N `tags` ผ่านตาราง `article_tags`
+
+## 3.31 ตาราง `blog_tags`
+
+คำอธิบาย: ตารางกลางระหว่าง blog กับ tag
+
+| Field | Type | Null | Default | Key | Description |
+|---|---|---|---|---|---|
+| `blog_id` | `INT UNSIGNED` | No | - | PK, FK | อ้างอิง `blogs.id` |
+| `tag_id` | `INT UNSIGNED` | No | - | PK, FK | อ้างอิง `tags.id` |
+
+Indexes/Constraints:
+
+| Name | Type | Field | Description |
+|---|---|---|---|
+| `PRIMARY` | Composite Primary Key | `blog_id`, `tag_id` | ป้องกันการผูก blog กับ tag ซ้ำ |
+| `fk_blog_tags_blog` | Foreign Key | `blog_id -> blogs.id` | ผูกกับ blog |
+| `fk_blog_tags_tag` | Foreign Key | `tag_id -> tags.id` | ผูกกับ tag |
+
+ความสัมพันธ์: `blogs` M:N `tags` ผ่านตาราง `blog_tags`
+
+## 4. ความสัมพันธ์ของข้อมูล
+
+## 4.1 ความสัมพันธ์หลักแบบ One-to-Many
+
+| Parent Table | Child Table | Relationship | Foreign Key | คำอธิบาย |
+|---|---|---|---|---|
+| `roles` | `users` | 1:M | `users.role_id -> roles.id` | 1 บทบาทมีผู้ใช้ได้หลายคน |
+| `users` | `photographer_profiles` | 1:1 | `photographer_profiles.user_id -> users.id` | ผู้ใช้ 1 คนมีโปรไฟล์ช่างภาพได้สูงสุด 1 โปรไฟล์ |
+| `districts` | `photographer_profiles` | 1:M | `photographer_profiles.main_district_id -> districts.id` | 1 อำเภอเป็นอำเภอหลักของช่างภาพได้หลายคน |
+| `photographer_profiles` | `photographer_portfolios` | 1:M | `photographer_portfolios.photographer_id -> photographer_profiles.id` | ช่างภาพ 1 คนมีผลงานได้หลายรายการ |
+| `photographer_profiles` | `photographer_availability` | 1:M | `photographer_availability.photographer_id -> photographer_profiles.id` | ช่างภาพ 1 คนมีวันว่างได้หลายรายการ |
+| `users` | `bookings` | 1:M | `bookings.customer_id -> users.id` | ลูกค้า 1 คนมีคำจองได้หลายรายการ |
+| `photographer_profiles` | `bookings` | 1:M | `bookings.photographer_id -> photographer_profiles.id` | ช่างภาพ 1 คนรับคำจองได้หลายรายการ |
+| `service_categories` | `bookings` | 1:M | `bookings.category_id -> service_categories.id` | หมวดหมู่ 1 หมวดมีคำจองได้หลายรายการ |
+| `districts` | `bookings` | 1:M | `bookings.district_id -> districts.id` | อำเภอ 1 แห่งเป็นพื้นที่งานได้หลายคำจอง |
+| `bookings` | `booking_status_logs` | 1:M | `booking_status_logs.booking_id -> bookings.id` | การจอง 1 รายการมีประวัติสถานะได้หลายรายการ |
+| `users` | `booking_status_logs` | 1:M | `booking_status_logs.changed_by -> users.id` | ผู้ใช้ 1 คนเปลี่ยนสถานะได้หลายครั้ง |
+| `bookings` | `reviews` | 1:1 | `reviews.booking_id -> bookings.id` | การจอง 1 รายการมีรีวิวได้ 1 รายการ |
+| `users` | `reviews` | 1:M | `reviews.customer_id -> users.id` | ลูกค้า 1 คนเขียนรีวิวได้หลายรายการ |
+| `photographer_profiles` | `reviews` | 1:M | `reviews.photographer_id -> photographer_profiles.id` | ช่างภาพ 1 คนมีรีวิวได้หลายรายการ |
+| `reviews` | `review_images` | 1:M | `review_images.review_id -> reviews.id` | รีวิว 1 รายการมีรูปประกอบได้หลายรูป |
+| `photographer_profiles` | `photographer_articles` | 1:M | `photographer_articles.photographer_id -> photographer_profiles.id` | ช่างภาพ 1 คนเขียนบทความได้หลายบทความ |
+| `users` | `notifications` | 1:M | `notifications.user_id -> users.id` | ผู้ใช้ 1 คนมีแจ้งเตือนได้หลายรายการ |
+| `users` | `activity_logs` | 1:M | `activity_logs.user_id -> users.id` | ผู้ใช้ 1 คนมี log ได้หลายรายการ |
+| `users` | `blogs` | 1:M | `blogs.admin_id -> users.id` | ผู้ดูแล 1 คนเขียน blog ได้หลายบทความ |
+| `users` | `reports` | 1:M | `reports.reporter_id -> users.id` | ผู้ใช้ 1 คนรายงานปัญหาได้หลายรายการ |
+| `users` | `search_logs` | 1:M | `search_logs.user_id -> users.id` | ผู้ใช้ 1 คนมีประวัติค้นหาได้หลายรายการ |
+| `districts` | `search_logs` | 1:M | `search_logs.district_id -> districts.id` | อำเภอ 1 แห่งถูกใช้เป็นตัวกรองค้นหาได้หลายครั้ง |
+| `service_categories` | `search_logs` | 1:M | `search_logs.category_id -> service_categories.id` | หมวดหมู่ 1 หมวดถูกใช้ค้นหาได้หลายครั้ง |
+| `users` | `recently_viewed_photographers` | 1:M | `recently_viewed_photographers.user_id -> users.id` | ผู้ใช้ 1 คนมีรายการดูล่าสุดได้หลายรายการ |
+| `photographer_profiles` | `recently_viewed_photographers` | 1:M | `recently_viewed_photographers.photographer_id -> photographer_profiles.id` | ช่างภาพ 1 คนถูกดูโดยผู้ใช้ได้หลายคน |
+
+## 4.2 ความสัมพันธ์แบบ Many-to-Many
+
+| Entity A | Junction Table | Entity B | Constraint | คำอธิบาย |
+|---|---|---|---|---|
+| `photographer_profiles` | `photographer_services` | `service_categories` | `UNIQUE(photographer_id, category_id)` | ช่างภาพ 1 คนรับได้หลายหมวดหมู่ และหมวดหมู่ 1 หมวดมีช่างภาพได้หลายคน |
+| `photographer_profiles` | `photographer_service_areas` | `districts` | `UNIQUE(photographer_id, district_id)` | ช่างภาพ 1 คนให้บริการได้หลายอำเภอ และอำเภอ 1 แห่งมีช่างภาพได้หลายคน |
+| `users` | `favorite_photographers` | `photographer_profiles` | `UNIQUE(customer_id, photographer_id)` | ลูกค้า 1 คนกดถูกใจช่างภาพได้หลายคน และช่างภาพ 1 คนถูกลูกค้าหลายคนกดถูกใจได้ |
+| `photographer_portfolios` | `portfolio_tags` | `tags` | `PRIMARY KEY(portfolio_id, tag_id)` | ผลงาน 1 รายการมีหลาย tag และ tag 1 tag ใช้กับหลายผลงานได้ |
+| `photographer_articles` | `article_tags` | `tags` | `PRIMARY KEY(article_id, tag_id)` | บทความช่างภาพ 1 บทความมีหลาย tag และ tag 1 tag ใช้กับหลายบทความได้ |
+| `blogs` | `blog_tags` | `tags` | `PRIMARY KEY(blog_id, tag_id)` | blog 1 บทความมีหลาย tag และ tag 1 tag ใช้กับหลาย blog ได้ |
+
+## 4.3 ความสัมพันธ์แบบ Polymorphic/Generic Reference
+
+| Table | Field | อ้างอิงแบบตรรกะ | คำอธิบาย |
+|---|---|---|---|
+| `reports` | `target_type`, `target_id` | `photographer_profiles`, `reviews`, `bookings`, `photographer_articles` | ใช้รายงานข้อมูลได้หลายประเภท จึงไม่ได้ทำ Foreign Key ตรง |
+| `notifications` | `type`, `related_id` | แล้วแต่ชนิดแจ้งเตือน | ใช้อ้างอิงข้อมูลที่เกี่ยวข้อง เช่น booking id โดยไม่มี Foreign Key ตรง |
+| `activity_logs` | `table_name`, `record_id` | ทุกตารางในระบบ | ใช้เก็บ log แบบกลาง จึงไม่ได้ทำ Foreign Key ตรง |
+
+## 5. ER Diagram แบบข้อความ
+
+```text
+roles
+  1 ───< users
+
+users
+  1 ─── 0..1 photographer_profiles
+  1 ───< bookings                      (as customer)
+  1 ───< booking_status_logs           (as changed_by)
+  1 ───< reviews                       (as customer)
+  1 ───< notifications
+  1 ───< activity_logs
+  1 ───< blogs                         (as admin)
+  1 ───< reports                       (as reporter)
+  1 ───< search_logs
+  1 ───< recently_viewed_photographers
+  M ───< favorite_photographers >─── M photographer_profiles
+
+districts
+  1 ───< photographer_profiles         (main district)
+  1 ───< bookings
+  1 ───< search_logs
+  M ───< photographer_service_areas >─── M photographer_profiles
+
+service_categories
+  1 ───< bookings
+  1 ───< search_logs
+  M ───< photographer_services >─── M photographer_profiles
+
+photographer_profiles
+  1 ───< photographer_portfolios
+  1 ───< photographer_availability
+  1 ───< bookings
+  1 ───< reviews
+  1 ───< photographer_articles
+  1 ───< recently_viewed_photographers
+
+bookings
+  1 ───< booking_status_logs
+  1 ─── 0..1 reviews
+
+reviews
+  1 ───< review_images
+
+tags
+  M ───< portfolio_tags >─── M photographer_portfolios
+  M ───< article_tags >───── M photographer_articles
+  M ───< blog_tags >──────── M blogs
+```
+
+## 6. Business Rules ที่สะท้อนจาก Database Schema
+
+| Rule | รายละเอียด |
+|---|---|
+| ผู้ใช้ต้องมีบทบาท | `users.role_id` เป็น `NOT NULL` และอ้างอิง `roles.id` |
+| อีเมลผู้ใช้ห้ามซ้ำ | `users.email` มี Unique Key |
+| ผู้ใช้ 1 คนเป็นช่างภาพได้ 1 โปรไฟล์ | `photographer_profiles.user_id` มี Unique Key |
+| URL slug ช่างภาพห้ามซ้ำ | `photographer_profiles.slug` มี Unique Key |
+| ช่างภาพลงบริการซ้ำหมวดเดิมไม่ได้ | `photographer_services` มี Unique Key ที่ `photographer_id`, `category_id` |
+| ช่างภาพลงพื้นที่ซ้ำอำเภอเดิมไม่ได้ | `photographer_service_areas` มี Unique Key ที่ `photographer_id`, `district_id` |
+| วันว่างซ้ำ slot เดิมไม่ได้ | `photographer_availability` มี Unique Key ที่ `photographer_id`, `available_date`, `time_slot` |
+| รหัสการจองห้ามซ้ำ | `bookings.booking_code` มี Unique Key |
+| การจอง 1 รายการมีรีวิวได้ 1 รายการ | `reviews.booking_id` มี Unique Key |
+| คะแนนรีวิวต้องอยู่ระหว่าง 1-5 | `chk_reviews_rating` ตรวจทุก rating field |
+| ลูกค้ากดถูกใจช่างภาพคนเดิมซ้ำไม่ได้ | `favorite_photographers` มี Unique Key ที่ `customer_id`, `photographer_id` |
+| ผู้ใช้มี recently viewed ของช่างภาพเดิมได้ 1 record | `recently_viewed_photographers` มี Unique Key ที่ `user_id`, `photographer_id` |
+| tag slug ห้ามซ้ำ | `tags.slug` มี Unique Key |
+| ตารางกลาง tag ห้ามข้อมูลซ้ำ | `portfolio_tags`, `article_tags`, `blog_tags` ใช้ Composite Primary Key |
+
+## 7. ตารางที่มี Soft Delete
+
+| Table | Field | Description |
+|---|---|---|
+| `users` | `deleted_at` | ลบบัญชีผู้ใช้แบบ soft delete |
+| `photographer_profiles` | `deleted_at` | ลบโปรไฟล์ช่างภาพแบบ soft delete |
+| `photographer_portfolios` | `deleted_at` | ลบผลงานแบบ soft delete |
+| `bookings` | `deleted_at` | ลบคำจองแบบ soft delete |
+| `reviews` | `deleted_at` | ลบรีวิวแบบ soft delete |
+| `photographer_articles` | `deleted_at` | ลบบทความช่างภาพแบบ soft delete |
+| `blogs` | `deleted_at` | ลบ blog แบบ soft delete |
+
+## 8. ตารางที่เกี่ยวกับ Security/Audit
+
+| Table | Purpose | รายละเอียด |
+|---|---|---|
+| `password_resets` | Password reset | เก็บ token และเวลาหมดอายุ |
+| `login_attempts` | Brute force protection | เก็บ email, IP, success, attempted time |
+| `activity_logs` | Audit log | เก็บ action, table, record, IP, user agent |
+| `reports` | User report | เก็บรายงานปัญหาและสถานะตรวจสอบ |
+| `notifications` | User notification | แจ้งเตือนผู้ใช้เรื่องที่เกี่ยวข้อง |
+
+## 9. ตารางข้อมูลอ้างอิง/ตั้งค่าระบบ
+
+| Table | Description |
+|---|---|
+| `roles` | ข้อมูลบทบาทหลักของระบบ |
+| `districts` | ข้อมูลอำเภอในเชียงราย |
+| `service_categories` | หมวดหมู่บริการถ่ายภาพ |
+| `settings` | ค่าตั้งค่าระบบ |
+| `tags` | tag กลาง |
+| `faqs` | คำถามที่พบบ่อย |
+| `banners` | banner หน้าเว็บไซต์ |
+
+## 10. ตารางธุรกรรมหลัก
+
+| Table | Description |
+|---|---|
+| `bookings` | คำขอจองงานถ่ายภาพ |
+| `booking_status_logs` | ประวัติสถานะการจอง |
+| `reviews` | รีวิวหลังจบงาน |
+| `review_images` | รูปภาพประกอบรีวิว |
+| `favorite_photographers` | รายการช่างภาพที่ลูกค้าบันทึก |
+| `recently_viewed_photographers` | ประวัติการดูช่างภาพ |
+| `search_logs` | ประวัติการค้นหา |
+| `contact_messages` | ข้อความติดต่อ |
+
+## 11. หมายเหตุด้าน Foreign Key
+
+Foreign Key ทั้งหมดใน `database.sql` ไม่ได้กำหนด `ON DELETE CASCADE` หรือ `ON UPDATE CASCADE` แบบชัดเจน ดังนั้น MySQL/MariaDB จะใช้ค่า default คือ:
+
+| Action | ค่า Default |
+|---|---|
+| `ON DELETE` | `RESTRICT` / `NO ACTION` |
+| `ON UPDATE` | `RESTRICT` / `NO ACTION` |
+
+ผลคือ ไม่สามารถลบข้อมูลแม่ได้หากยังมีข้อมูลลูกอ้างอิงอยู่ เว้นแต่จะลบ/แก้ข้อมูลลูกก่อน หรือใช้ soft delete ผ่าน `deleted_at`
+
+## 12. สรุปความสัมพันธ์สำคัญของระบบ
+
+1. `roles` กำหนดสิทธิ์ให้ `users`
+2. `users` ที่เป็นช่างภาพจะมีข้อมูลต่อใน `photographer_profiles`
+3. `photographer_profiles` เชื่อมกับบริการผ่าน `photographer_services`
+4. `photographer_profiles` เชื่อมกับพื้นที่ให้บริการผ่าน `photographer_service_areas`
+5. `bookings` เป็นตารางกลางของการทำธุรกรรม โดยเชื่อมลูกค้า ช่างภาพ หมวดหมู่ และอำเภอ
+6. `booking_status_logs` เก็บประวัติการเปลี่ยนสถานะของ `bookings`
+7. `reviews` ผูกกับ `bookings` แบบ 1 ต่อ 1 และผูกกับลูกค้า/ช่างภาพเพื่อสรุปคะแนน
+8. `tags` ใช้ร่วมกับผลงาน บทความช่างภาพ และ blog ผ่านตารางกลาง
+9. `reports`, `notifications`, `activity_logs` มีบาง field เป็น generic reference เพื่อรองรับข้อมูลหลายประเภท

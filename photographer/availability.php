@@ -5,7 +5,7 @@ requireRole('photographer');
 $profile = photographer_profile_by_user((int)current_user()['id']);
 $pid = (int)$profile['id'];
 $timeSlots = ['morning' => 'เช้า', 'afternoon' => 'บ่าย', 'evening' => 'เย็น', 'full_day' => 'เต็มวัน'];
-$statuses = ['available', 'unavailable', 'booked'];
+$statuses = ['available', 'unavailable'];
 
 if (is_post()) {
     verify_csrf();
@@ -25,6 +25,11 @@ if (is_post()) {
 
         if ($availableDate === '') {
             flash('error', 'รูปแบบวันที่ไม่ถูกต้อง กรุณากรอกแบบ วว/ดด/พ.ศ.');
+            redirect('/photographer/availability.php');
+        }
+
+        if ($availableDate < date('Y-m-d')) {
+            flash('error', 'ไม่สามารถป้อนวันย้อนหลังได้');
             redirect('/photographer/availability.php');
         }
 
@@ -49,7 +54,7 @@ if (is_post()) {
     redirect('/photographer/availability.php');
 }
 
-$stmt = db()->prepare('SELECT * FROM photographer_availability WHERE photographer_id = ? ORDER BY available_date DESC, time_slot');
+$stmt = db()->prepare('SELECT * FROM photographer_availability WHERE photographer_id = ? AND status <> "booked" ORDER BY available_date DESC, time_slot');
 $stmt->execute([$pid]);
 $items = $stmt->fetchAll();
 
@@ -90,13 +95,13 @@ include __DIR__ . '/../includes/header.php';
     <div>
         <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">สตูดิโอช่างภาพ</p>
         <h1 class="mt-1 text-3xl font-black text-neutral-950">จัดการวันว่าง</h1>
-        <p class="mt-2 max-w-3xl text-sm font-bold leading-7 text-neutral-500">ถ้าต้องการรับงานให้เลือก “ว่าง” ถ้าต้องการปิดบางวันในปฏิทินให้เลือก “ไม่ว่าง” ส่วน “ถูกจองแล้ว” ใช้บันทึกวันที่มีงานแน่นอนหรือระบบพบคำขอที่ตอบรับ/ยืนยันแล้ว</p>
+        <p class="mt-2 max-w-3xl text-sm font-bold leading-7 text-neutral-500">ถ้าต้องการรับงานให้เลือก “ว่าง” ถ้าต้องการปิดบางวันในปฏิทินให้เลือก “ไม่ว่าง” ส่วน “ถูกจองแล้ว” ระบบจะเปลี่ยนให้อัตโนมัติเมื่อมีคำขอจองที่ตอบรับหรือยืนยันแล้ว</p>
     </div>
 
     <div class="mt-5 grid gap-3 md:grid-cols-3">
         <div class="rounded-[1.35rem] bg-emerald-50 p-4 text-sm font-bold leading-7 text-emerald-700"><i class="fa-solid fa-circle-check mr-2"></i>ว่าง = ลูกค้าส่งคำขอจองได้</div>
         <div class="rounded-[1.35rem] bg-slate-100 p-4 text-sm font-bold leading-7 text-slate-700"><i class="fa-solid fa-circle-minus mr-2"></i>ไม่ว่าง = ปิดรับงานในวัน/ช่วงเวลานั้น</div>
-        <div class="rounded-[1.35rem] bg-indigo-50 p-4 text-sm font-bold leading-7 text-indigo-700"><i class="fa-solid fa-calendar-check mr-2"></i>ถูกจองแล้ว = มีงานหรือคำขอที่ตอบรับแล้ว</div>
+        <div class="rounded-[1.35rem] bg-indigo-50 p-4 text-sm font-bold leading-7 text-indigo-700"><i class="fa-solid fa-calendar-check mr-2"></i>ถูกจองแล้ว = ระบบอัปเดตจากสถานะการจอง</div>
     </div>
 
     <form method="post" class="stock-card mt-6 grid gap-4 rounded-[1.5rem] p-5 md:grid-cols-[1.4fr_1fr_1fr_1fr_auto]">

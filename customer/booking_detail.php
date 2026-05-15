@@ -22,6 +22,7 @@ if (is_post() && $postedAction === 'cancel') {
     if (!in_array($booking['status'], ['completed','cancelled'], true)) {
         db()->prepare('UPDATE bookings SET status="cancelled", updated_at=NOW() WHERE id=?')->execute([$id]);
         add_booking_status_log($id, $booking['status'], 'cancelled', (int)$user['id'], 'ลูกค้ายกเลิก');
+        sync_availability_after_booking_status($id);
         $ownerStmt = db()->prepare('SELECT user_id FROM photographer_profiles WHERE id = ?');
         $ownerStmt->execute([(int)$booking['photographer_id']]);
         notify_user((int)$ownerStmt->fetchColumn(), 'ลูกค้ายกเลิกคำขอจอง', $booking['booking_code'], 'booking', $id);
@@ -70,9 +71,10 @@ include __DIR__ . '/../includes/header.php';
                 <?php
                 $oldStatusText = '-';
                 if (!empty($log['old_status'])) {
-                    $oldStatusText = $log['old_status'];
+                    $oldStatusText = booking_status_label((string)$log['old_status']);
                 }
-                $changedByName = 'System';
+                $newStatusText = booking_status_label((string)$log['new_status']);
+                $changedByName = 'ระบบ';
                 if (!empty($log['name'])) {
                     $changedByName = $log['name'];
                 }
@@ -80,7 +82,7 @@ include __DIR__ . '/../includes/header.php';
                 <div class="rounded-2xl bg-slate-50 p-4 text-sm">
                     <?= h(format_be_datetime($log['created_at'])) ?>
                     · <?= h($oldStatusText) ?>
-                    → <?= h($log['new_status']) ?>
+                    → <?= h($newStatusText) ?>
                     ผู้ดำเนินการ: <?= h($changedByName) ?>
                     <?= h($log['note']) ?>
                 </div>

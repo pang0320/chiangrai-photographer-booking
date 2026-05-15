@@ -64,7 +64,22 @@ if ($categoryId > 0) {
     $params[] = $categoryId;
 }
 if ($availableDate !== '') {
-    $where[] = 'EXISTS (SELECT 1 FROM photographer_availability pa WHERE pa.photographer_id = p.id AND pa.available_date = ? AND pa.status = "available")';
+    $where[] = 'EXISTS (
+        SELECT 1
+        FROM photographer_availability pa
+        WHERE pa.photographer_id = p.id
+          AND pa.available_date = ?
+          AND pa.status = "available"
+          AND NOT EXISTS (
+            SELECT 1
+            FROM bookings b_filter
+            WHERE b_filter.photographer_id = pa.photographer_id
+              AND b_filter.booking_date = pa.available_date
+              AND b_filter.status IN ("pending","accepted","confirmed")
+              AND b_filter.deleted_at IS NULL
+              AND (b_filter.time_slot = pa.time_slot OR b_filter.time_slot = "full_day" OR pa.time_slot = "full_day")
+          )
+    )';
     $params[] = $availableDate;
 }
 if ($minRating > 0) {
@@ -80,13 +95,14 @@ if ($keyword !== '') {
     $params[] = '%' . $keyword . '%';
 }
 
+$rankingOrder = ranking_order_sql('p');
 $orderOptions = [
-    'reviews' => 'p.total_reviews DESC, p.average_rating DESC',
-    'newest' => 'p.created_at DESC',
-    'price_low' => 'p.starting_price ASC',
-    'rating' => 'p.average_rating DESC, p.total_reviews DESC',
+    'reviews' => 'p.total_reviews DESC, ' . $rankingOrder,
+    'newest' => 'p.created_at DESC, ' . $rankingOrder,
+    'price_low' => 'p.starting_price ASC, ' . $rankingOrder,
+    'rating' => $rankingOrder,
 ];
-$order = 'p.average_rating DESC, p.total_reviews DESC';
+$order = $rankingOrder;
 if (isset($orderOptions[$sort])) {
     $order = $orderOptions[$sort];
 }
@@ -149,7 +165,7 @@ if (!$photographers && $districtId > 0) {
         {$nearCategorySql}
         GROUP BY p.id
         HAVING distance_km <= ?
-        ORDER BY distance_km ASC, p.average_rating DESC
+        ORDER BY distance_km ASC, " . ranking_order_sql('p') . "
         LIMIT 6";
     $nearStmt = db()->prepare($nearSql);
     $nearStmt->execute($nearParams);
@@ -352,7 +368,7 @@ include __DIR__ . '/includes/header.php';
                 </div>
                 <?php if ($nearby): ?>
                     <div class="mt-10">
-                        <p class="section-kicker">Nearby recommendation</p>
+                        <p class="section-kicker">ช่างภาพใกล้เคียง</p>
                         <h2 class="mt-1 text-2xl font-black text-neutral-950">ช่างภาพใกล้เคียงที่แนะนำ</h2>
                         <div class="mt-4 flex flex-wrap gap-2">
                             <span class="info-chip"><i class="fa-solid fa-location-dot text-red-600"></i>อำเภอที่เลือก: <?= h($selectedDistrictName) ?></span>

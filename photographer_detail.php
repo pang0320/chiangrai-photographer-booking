@@ -101,7 +101,22 @@ $services = $services->fetchAll();
 $portfolio = db()->prepare('SELECT * FROM photographer_portfolios WHERE photographer_id = ? AND deleted_at IS NULL ORDER BY is_featured DESC, sort_order ASC, id DESC');
 $portfolio->execute([$id]);
 $portfolio = $portfolio->fetchAll();
-$availability = db()->prepare('SELECT * FROM photographer_availability WHERE photographer_id = ? AND available_date >= CURDATE() ORDER BY available_date, time_slot LIMIT 12');
+$availability = db()->prepare('SELECT pa.*
+                               FROM photographer_availability pa
+                               WHERE pa.photographer_id = ?
+                                 AND pa.available_date >= CURDATE()
+                                 AND pa.status = "available"
+                                 AND NOT EXISTS (
+                                    SELECT 1
+                                    FROM bookings b
+                                    WHERE b.photographer_id = pa.photographer_id
+                                      AND b.booking_date = pa.available_date
+                                      AND b.status IN ("pending","accepted","confirmed")
+                                      AND b.deleted_at IS NULL
+                                      AND (b.time_slot = pa.time_slot OR b.time_slot = "full_day" OR pa.time_slot = "full_day")
+                                 )
+                               ORDER BY pa.available_date, pa.time_slot
+                               LIMIT 12');
 $availability->execute([$id]);
 $availability = $availability->fetchAll();
 $articles = db()->prepare('SELECT * FROM photographer_articles WHERE photographer_id = ? AND status = "published" AND deleted_at IS NULL ORDER BY published_at DESC LIMIT 6');
@@ -132,7 +147,7 @@ $similarPhotographers = db_fetch_all('SELECT p.*, d.district_name,
                                         AND p.deleted_at IS NULL
                                         AND u.deleted_at IS NULL
                                         AND EXISTS (SELECT 1 FROM photographer_service_areas a WHERE a.photographer_id = p.id AND a.district_id = ? AND a.is_active = 1)
-                                      ORDER BY p.average_rating DESC, p.total_reviews DESC
+                                      ORDER BY ' . ranking_order_sql('p') . '
                                       LIMIT 3', [$id, (int)$profile['main_district_id']]);
 $shareUrl = APP_URL . '/photographer_detail.php';
 
@@ -201,7 +216,7 @@ include __DIR__ . '/includes/header.php';
                     </div>
                 </div>
                 <div class="mt-4 grid gap-2">
-                    <?= clean_context_button('/customer/create_booking.php', ['photographer_id' => (int)$profile['id']], '<i class="fa-solid fa-calendar-check mr-2"></i>ส่งคำขอจอง', 'btn-cta btn-lg block w-full text-center') ?>
+                    <a href="#availability" class="btn-cta btn-lg block w-full text-center"><i class="fa-solid fa-calendar-days mr-2"></i>เลือกวันว่างเพื่อจอง</a>
                     <?php if ($currentUser && $currentUser['role_name'] === 'customer'): ?>
                         <form method="post">
                             <?= csrf_field() ?>
@@ -280,30 +295,24 @@ include __DIR__ . '/includes/header.php';
                         <h2 class="mt-1 text-3xl font-black text-neutral-950">ปฏิทินวันว่างสำหรับส่งคำขอจอง</h2>
                         <p class="mt-2 max-w-2xl text-base font-semibold leading-7 text-neutral-600">เลือกได้เฉพาะวันที่ช่างภาพเปิดว่าง ระบบจะตรวจซ้ำอีกครั้งตอนส่งคำขอจอง</p>
                     </div>
-                    <?= clean_context_button('/customer/create_booking.php', ['photographer_id' => (int)$profile['id']], '<i class="fa-solid fa-calendar-check mr-2"></i>ส่งคำขอจอง', 'btn-cta btn-md rounded-full') ?>
                 </div>
                 <div class="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     <?php foreach ($availability as $a): ?>
                         <?php
                         $availabilityCard = '<p class="font-black text-neutral-950"><i class="fa-solid fa-calendar-day mr-2 text-red-600"></i>' . h(format_be_date($a['available_date'])) . '</p>'
                             . '<p class="mt-2 text-sm font-bold text-neutral-600"><i class="fa-solid fa-clock mr-1 text-red-600"></i>' . h(time_slot_label($a['time_slot'])) . '</p>'
-                            . '<div class="mt-3">' . status_badge($a['status']) . '</div>';
-                        if ((string)$a['status'] === 'available') {
-                            $availabilityCard .= '<p class="mt-4 inline-flex items-center rounded-full bg-red-600 px-4 py-2 text-sm font-black text-white shadow-lg shadow-red-600/20"><i class="fa-solid fa-calendar-check mr-2"></i>เลือกวันนี้และจอง</p>';
-                            echo clean_context_button(
-                                '/customer/create_booking.php',
-                                [
-                                    'photographer_id' => (int)$profile['id'],
-                                    'booking_date' => (string)$a['available_date'],
-                                    'time_slot' => (string)$a['time_slot'],
-                                ],
-                                $availabilityCard,
-                                'stock-card stock-card-hover w-full rounded-[1.35rem] p-5 text-left transition hover:-translate-y-1 hover:shadow-2xl',
-                                'contents'
-                            );
-                        } else {
-                            echo '<div class="stock-card rounded-[1.35rem] p-5 opacity-75">' . $availabilityCard . '<p class="mt-4 text-sm font-bold text-neutral-500"><i class="fa-solid fa-circle-info mr-1 text-red-600"></i>ช่วงเวลานี้ยังไม่เปิดให้เลือกจอง</p></div>';
-                        }
+                            . '<p class="mt-4 inline-flex items-center rounded-full bg-red-600 px-4 py-2 text-sm font-black text-white shadow-lg shadow-red-600/20"><i class="fa-solid fa-calendar-check mr-2"></i>เลือกวันนี้และจอง</p>';
+                        echo clean_context_button(
+                            '/customer/create_booking.php',
+                            [
+                                'photographer_id' => (int)$profile['id'],
+                                'booking_date' => (string)$a['available_date'],
+                                'time_slot' => (string)$a['time_slot'],
+                            ],
+                            $availabilityCard,
+                            'stock-card stock-card-hover w-full rounded-[1.35rem] p-5 text-left transition hover:-translate-y-1 hover:shadow-2xl',
+                            'contents'
+                        );
                         ?>
                     <?php endforeach; ?>
                     <?php if (!$availability): ?>
@@ -435,6 +444,10 @@ include __DIR__ . '/includes/header.php';
                 <div class="mt-6 grid gap-4 md:grid-cols-2">
                     <?php foreach ($articles as $a): ?>
                         <article class="stock-card rounded-[1.5rem] p-6">
+                            <div class="mb-2 flex flex-wrap items-center gap-2">
+                                <?= new_content_badge($a['published_at'] ?: $a['created_at']) ?>
+                                <span class="text-xs font-black text-neutral-400"><i class="fa-solid fa-calendar-day mr-1 text-red-600"></i><?= h(format_be_datetime($a['published_at'] ?: $a['created_at'])) ?></span>
+                            </div>
                             <h3 class="font-black text-neutral-950"><i class="fa-solid fa-newspaper mr-2 text-red-600"></i><?= h($a['title']) ?></h3>
                             <p class="mt-3 line-clamp-3 text-sm leading-7 text-neutral-600"><?= h(strip_tags($a['content'])) ?></p>
                             <?= clean_context_button('/article_detail.php', ['slug' => $a['slug']], '<i class="fa-solid fa-eye mr-1"></i>อ่านต่อ', 'mt-4 inline-flex rounded-full bg-neutral-950 px-4 py-2 text-xs font-black text-white hover:bg-red-600') ?>
@@ -479,7 +492,6 @@ include __DIR__ . '/includes/header.php';
                         <?php if ($profile['website_url']): ?><a class="rounded-2xl bg-neutral-50 px-4 py-3 font-black hover:bg-neutral-950 hover:text-white" href="<?= h($profile['website_url']) ?>" target="_blank"><i class="fa-solid fa-globe mr-2 text-red-600"></i>Website</a><?php endif; ?>
                     </div>
                     <div class="mt-6 rounded-[1.5rem] bg-red-50 p-5 text-sm font-black leading-7 text-red-700"><?= h(PAYMENT_DISCLAIMER) ?></div>
-                    <?= clean_context_button('/customer/create_booking.php', ['photographer_id' => (int)$profile['id']], '<i class="fa-solid fa-calendar-check mr-2"></i>ส่งคำขอจอง', 'btn-cta btn-lg mt-6 block w-full text-center') ?>
                 </div>
             </div>
         </div>

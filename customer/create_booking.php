@@ -30,6 +30,13 @@ $districts = db()->prepare('SELECT d.* FROM photographer_service_areas psa JOIN 
 $districts->execute([$photographerId]);
 $districts = $districts->fetchAll();
 
+$lockedBookingDate = '';
+$lockedTimeSlot = '';
+if ($selectedBookingDate !== '' && $selectedTimeSlot !== '' && can_book_slot($photographerId, $selectedBookingDate, $selectedTimeSlot)) {
+    $lockedBookingDate = $selectedBookingDate;
+    $lockedTimeSlot = $selectedTimeSlot;
+}
+
 $calendarRows = db_fetch_all('SELECT pa.available_date, pa.status,
                               (SELECT b.status
                                FROM bookings b
@@ -44,6 +51,7 @@ $calendarRows = db_fetch_all('SELECT pa.available_date, pa.status,
                                 AND pa.available_date >= CURDATE()', [$photographerId]);
 $GLOBALS['calendar_date_statuses']['booking_date'] = [];
 $GLOBALS['calendar_date_default_status']['booking_date'] = 'unavailable';
+$GLOBALS['calendar_date_selectable_statuses']['booking_date'] = ['available'];
 $calendarStatusPriority = ['unavailable' => 0, 'available' => 1, 'pending' => 2, 'booked' => 3];
 foreach ($calendarRows as $row) {
     $dateKey = (string)$row['available_date'];
@@ -192,28 +200,40 @@ include __DIR__ . '/../includes/header.php';
                         </select>
                     </label>
 
-                    <label class="block">
-                        <span class="text-sm font-black text-neutral-700"><i class="fa-solid fa-clock mr-2 text-red-600"></i>ช่วงเวลา</span>
-                        <select name="time_slot" required class="stock-input mt-2 w-full rounded-2xl px-4 py-3 font-semibold">
-                            <option value="">เลือกช่วงเวลา</option>
-                            <option value="morning" <?php if ($selectedTimeSlot === 'morning'): ?>selected<?php endif; ?>>เช้า</option>
-                            <option value="afternoon" <?php if ($selectedTimeSlot === 'afternoon'): ?>selected<?php endif; ?>>บ่าย</option>
-                            <option value="evening" <?php if ($selectedTimeSlot === 'evening'): ?>selected<?php endif; ?>>เย็น</option>
-                            <option value="full_day" <?php if ($selectedTimeSlot === 'full_day'): ?>selected<?php endif; ?>>เต็มวัน</option>
-                        </select>
-                    </label>
+                    <?php if ($lockedTimeSlot !== ''): ?>
+                        <div class="block">
+                            <span class="text-sm font-black text-neutral-700"><i class="fa-solid fa-lock mr-2 text-red-600"></i>ช่วงเวลาที่เลือกไว้</span>
+                            <input type="hidden" name="time_slot" value="<?= h($lockedTimeSlot) ?>">
+                            <div class="mt-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 font-black text-emerald-700"><?= h(time_slot_label($lockedTimeSlot)) ?></div>
+                        </div>
+                    <?php else: ?>
+                        <label class="block">
+                            <span class="text-sm font-black text-neutral-700"><i class="fa-solid fa-clock mr-2 text-red-600"></i>ช่วงเวลา</span>
+                            <select name="time_slot" required class="stock-input mt-2 w-full rounded-2xl px-4 py-3 font-semibold">
+                                <option value="">เลือกช่วงเวลา</option>
+                                <option value="morning" <?php if ($selectedTimeSlot === 'morning'): ?>selected<?php endif; ?>>เช้า</option>
+                                <option value="afternoon" <?php if ($selectedTimeSlot === 'afternoon'): ?>selected<?php endif; ?>>บ่าย</option>
+                                <option value="evening" <?php if ($selectedTimeSlot === 'evening'): ?>selected<?php endif; ?>>เย็น</option>
+                                <option value="full_day" <?php if ($selectedTimeSlot === 'full_day'): ?>selected<?php endif; ?>>เต็มวัน</option>
+                            </select>
+                        </label>
+                    <?php endif; ?>
 
                     <div class="sm:col-span-2">
                         <label class="mb-2 block text-sm font-black text-neutral-700">
                             <i class="fa-solid fa-calendar-day mr-2 text-red-600"></i>วันที่ถ่ายงาน
                         </label>
-                        <?= be_date_input('booking_date', $selectedBookingDate, 'stock-input rounded-2xl px-4 py-3 font-semibold', true, 'วันที่ถ่าย พ.ศ. เช่น 05/05/2569') ?>
-                        <?php if ($selectedBookingDate !== ''): ?>
+                        <?php if ($lockedBookingDate !== ''): ?>
+                            <input type="hidden" name="booking_date" value="<?= h($lockedBookingDate) ?>">
+                            <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 font-black text-emerald-700">
+                                <i class="fa-solid fa-lock mr-1"></i><?= h(format_be_date($lockedBookingDate)) ?>
+                            </div>
+                        <?php else: ?>
+                            <?= be_date_input('booking_date', $selectedBookingDate, 'stock-input rounded-2xl px-4 py-3 font-semibold', true, 'วันที่ถ่าย พ.ศ. เช่น 05/05/2569') ?>
+                        <?php endif; ?>
+                        <?php if ($lockedBookingDate !== ''): ?>
                             <p class="mt-2 rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-black text-emerald-700">
-                                <i class="fa-solid fa-circle-check mr-1"></i>เลือกวันที่จากปฏิทินวันว่างแล้ว: <?= h(format_be_date($selectedBookingDate)) ?>
-                                <?php if ($selectedTimeSlot !== ''): ?>
-                                    · <?= h(time_slot_label($selectedTimeSlot)) ?>
-                                <?php endif; ?>
+                                <i class="fa-solid fa-circle-check mr-1"></i>ล็อกวันที่และช่วงเวลาจากหน้าโปรไฟล์แล้ว: <?= h(format_be_date($lockedBookingDate)) ?> · <?= h(time_slot_label($lockedTimeSlot)) ?>
                             </p>
                         <?php endif; ?>
                     </div>

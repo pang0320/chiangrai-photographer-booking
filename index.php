@@ -20,7 +20,7 @@ $featured = db_fetch_all('SELECT p.*, d.district_name,
                             AND u.status = "active"
                             AND p.deleted_at IS NULL
                             AND u.deleted_at IS NULL
-                          ORDER BY p.is_featured DESC, p.featured_until DESC, p.total_reviews DESC, p.profile_views DESC
+                          ORDER BY p.is_featured DESC, p.featured_until DESC, ' . ranking_order_sql('p') . '
                           LIMIT 8');
 $topRated = db_fetch_all('SELECT p.*, d.district_name,
                           (SELECT image_path FROM photographer_portfolios pp WHERE pp.photographer_id = p.id AND pp.deleted_at IS NULL ORDER BY pp.is_featured DESC, pp.sort_order ASC LIMIT 1) AS featured_image
@@ -32,7 +32,7 @@ $topRated = db_fetch_all('SELECT p.*, d.district_name,
                             AND u.status = "active"
                             AND p.deleted_at IS NULL
                             AND u.deleted_at IS NULL
-                          ORDER BY p.average_rating DESC, p.total_reviews DESC
+                          ORDER BY ' . ranking_order_sql('p') . '
                           LIMIT 10');
 $popularDistricts = db_fetch_all('SELECT d.id, d.district_name, COUNT(DISTINCT p.id) AS photographer_count
                                   FROM districts d

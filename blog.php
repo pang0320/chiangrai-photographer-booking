@@ -271,6 +271,10 @@ include __DIR__ . '/includes/header.php';
             if ($articleExcerpt === '') {
                 $articleExcerpt = strip_tags((string)$article['content']);
             }
+            $articleDate = $article['published_at'] ?: $article['created_at'];
+            $tagList = array_filter(array_map('trim', explode(',', (string)$article['categories'])));
+            $visibleTags = array_slice($tagList, 0, 4);
+            $hiddenTagCount = max(0, count($tagList) - count($visibleTags));
             ?>
             <article class="stock-card stock-card-hover flex h-full flex-col overflow-hidden rounded-[1.75rem]">
                 <img class="h-56 w-full object-cover" src="<?= h(public_image($article['cover_image'], '/assets/uploads/seed/photo-1492691527719-9d1e07e534b4.jpg')) ?>" alt="">
@@ -282,16 +286,21 @@ include __DIR__ . '/includes/header.php';
                         <span class="rounded-full bg-neutral-100 px-3 py-1 text-xs font-black text-neutral-600">
                             <i class="fa-solid fa-user mr-1"></i><?= h($article['author_name']) ?>
                         </span>
+                        <?= new_content_badge($articleDate) ?>
                     </div>
-                    <h2 class="mt-4 text-xl font-black leading-snug text-neutral-950"><?= h($article['title']) ?></h2>
+                    <h2 class="mt-4 line-clamp-2 text-xl font-black leading-snug text-neutral-950"><?= h($article['title']) ?></h2>
+                    <p class="mt-2 text-xs font-black text-neutral-400"><i class="fa-solid fa-calendar-day mr-1 text-red-600"></i><?= h(format_be_datetime($articleDate)) ?></p>
                     <p class="mt-3 line-clamp-3 text-base font-semibold leading-7 text-neutral-600"><?= h(strip_tags($articleExcerpt)) ?></p>
-                    <?php if (!empty($article['categories'])): ?>
+                    <?php if ($tagList): ?>
                         <div class="mt-4 flex flex-wrap gap-2">
-                            <?php foreach (array_filter(array_map('trim', explode(',', (string)$article['categories']))) as $tagName): ?>
+                            <?php foreach ($visibleTags as $tagName): ?>
                                 <span class="rounded-full bg-neutral-50 px-3 py-1 text-xs font-black text-neutral-500">
                                     <i class="fa-solid fa-tag mr-1 text-red-600"></i><?= h($tagName) ?>
                                 </span>
                             <?php endforeach; ?>
+                            <?php if ($hiddenTagCount > 0): ?>
+                                <span class="rounded-full bg-neutral-950 px-3 py-1 text-xs font-black text-white">+<?= number_format($hiddenTagCount) ?></span>
+                            <?php endif; ?>
                         </div>
                     <?php endif; ?>
                     <div class="mt-auto pt-5">

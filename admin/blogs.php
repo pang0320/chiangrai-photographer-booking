@@ -200,7 +200,7 @@ include __DIR__ . '/../includes/header.php';
             <label class="grid gap-2 text-sm font-black text-neutral-700">
                 <span><i class="fa-solid fa-tags mr-1 text-red-600"></i>แท็ก คั่นด้วย comma</span>
                 <input name="tags" value="<?= h($editTags) ?>" class="stock-input rounded-2xl px-4 py-3 font-semibold" placeholder="งานแต่ง, พอร์ตเทรต, เชียงราย">
-                <span class="text-xs font-bold leading-6 text-neutral-500">แท็กเป็น shortcut ช่วยค้นหาและจัดกลุ่มบทความ ไม่ใช่ข้อมูลบังคับ</span>
+                <span class="text-xs font-bold leading-6 text-neutral-500">แท็กเป็น shortcut ช่วยค้นหาและจัดกลุ่มบทความ หน้า public จะแสดง 4 แท็กแรก และแสดง +จำนวนที่เหลืออัตโนมัติ</span>
             </label>
             <label class="grid gap-2 text-sm font-black text-neutral-700">
                 <span><i class="fa-solid fa-image mr-1 text-red-600"></i>รูปปก</span>

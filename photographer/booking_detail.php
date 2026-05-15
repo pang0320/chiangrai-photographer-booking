@@ -86,7 +86,7 @@ include __DIR__ . '/../includes/header.php';
                 if (!empty($log['old_status'])) {
                     $oldStatusText = booking_status_label((string)$log['old_status']);
                 }
-                $changedByName = 'System';
+                $changedByName = 'ระบบ';
                 if (!empty($log['name'])) {
                     $changedByName = $log['name'];
                 }

@@ -18,9 +18,9 @@ if (is_post()) {
     $stmt->execute([$id, $pid]);
     $booking = $stmt->fetch();
 
-    if ($booking && in_array($newStatus, ['accepted', 'rejected', 'confirmed', 'completed'], true)) {
-        if ($newStatus === 'rejected' && $reason === '') {
-            flash('error', 'กรุณาระบุเหตุผลการปฏิเสธ');
+    if ($booking && in_array($newStatus, ['accepted', 'rejected', 'cancelled', 'confirmed', 'completed'], true)) {
+        if (in_array($newStatus, ['rejected', 'cancelled'], true) && $reason === '') {
+            flash('error', 'กรุณาระบุเหตุผล');
             redirect('/photographer/bookings.php');
         }
 
@@ -35,6 +35,7 @@ if (is_post()) {
         $stmt->execute([$newStatus, $rejectionReason, $newStatus, $id]);
 
         add_booking_status_log($id, $booking['status'], $newStatus, (int)current_user()['id'], $reason);
+        sync_availability_after_booking_status($id);
         update_photographer_response_stats($pid);
         notify_user((int)$booking['customer_id'], 'สถานะคำขอจองเปลี่ยนแปลง', $booking['booking_code'] . ' เป็น ' . booking_status_label($newStatus), 'booking', $id);
         log_activity('change_booking_status', 'bookings', $id);
@@ -140,7 +141,7 @@ include __DIR__ . '/../includes/header.php';
 	    $tabs = [
 	        'active' => ['กำลังดำเนินการ', 'fa-hourglass-half', $bookingCounts['active']],
 	        'pending' => ['คำขอใหม่', 'fa-bell', $bookingCounts['pending']],
-	        'accepted' => ['ตอบรับ/นัดหมาย', 'fa-calendar-check', $bookingCounts['accepted']],
+	        'accepted' => ['ตอบรับ/ยืนยันงาน', 'fa-calendar-check', $bookingCounts['accepted']],
 	        'completed' => ['เสร็จสิ้นแล้ว', 'fa-circle-check', $bookingCounts['completed']],
 	        'closed' => ['ยกเลิก/ปฏิเสธ', 'fa-ban', $bookingCounts['closed']],
 	        'all' => ['ประวัติทั้งหมด', 'fa-list', $bookingCounts['all']],
@@ -194,8 +195,9 @@ include __DIR__ . '/../includes/header.php';
 	                                            <option value="confirmed">ยืนยันงาน</option>
 	                                            <option value="completed">เสร็จสิ้น</option>
 	                                            <option value="rejected">ปฏิเสธ</option>
+	                                            <option value="cancelled">ยกเลิกโดยลูกค้า</option>
 	                                        </select>
-	                                        <input name="rejection_reason" placeholder="เหตุผลถ้าปฏิเสธ" class="stock-input rounded-xl px-3 py-2">
+	                                        <input name="rejection_reason" placeholder="เหตุผลถ้าปฏิเสธ/ยกเลิก" class="stock-input rounded-xl px-3 py-2">
 	                                        <button data-confirm="ยืนยันเปลี่ยนสถานะคำขอจอง?" class="btn-cta btn-md rounded-xl">
 	                                            <i class="fa-solid fa-floppy-disk mr-1"></i>บันทึก
 	                                        </button>

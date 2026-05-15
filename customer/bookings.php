@@ -77,7 +77,7 @@ include __DIR__ . '/../includes/header.php';
     $tabs = [
         'active' => ['กำลังดำเนินการ', 'fa-hourglass-half', $bookingCounts['active']],
         'pending' => ['รอตอบรับ', 'fa-clock', $bookingCounts['pending']],
-        'accepted' => ['ตอบรับ/ยืนยันแล้ว', 'fa-calendar-check', $bookingCounts['accepted']],
+        'accepted' => ['ตอบรับ/ยืนยันงาน', 'fa-calendar-check', $bookingCounts['accepted']],
         'completed' => ['เสร็จสิ้นแล้ว', 'fa-circle-check', $bookingCounts['completed']],
         'all' => ['ประวัติทั้งหมด', 'fa-list', $bookingCounts['all']],
     ];

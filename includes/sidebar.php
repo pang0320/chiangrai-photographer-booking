@@ -40,6 +40,14 @@ if ($me) {
     if ($me['role_name'] === 'photographer') {
         $roleTitle = 'สตูดิโอช่างภาพ';
         $roleIcon = 'fa-camera-retro';
+        $photographerId = photographer_id_for_user((int)$me['id']);
+        $pendingBookings = 0;
+        $activeBookings = 0;
+        if ($photographerId > 0) {
+            $pendingBookings = (int)db_fetch_value('SELECT COUNT(*) FROM bookings WHERE photographer_id = ? AND status = "pending" AND deleted_at IS NULL', [$photographerId]);
+            $activeBookings = (int)db_fetch_value('SELECT COUNT(*) FROM bookings WHERE photographer_id = ? AND status IN ("pending","accepted","confirmed") AND deleted_at IS NULL', [$photographerId]);
+        }
+        $unreadNotifications = unread_notifications_count((int)$me['id']);
         $navItems = [
             ['/photographer/dashboard.php', 'แดชบอร์ด', 'fa-gauge'],
             ['/photographer/onboarding.php', 'ตั้งค่าเริ่มต้น', 'fa-list-check'],
@@ -48,10 +56,10 @@ if ($me) {
             ['/photographer/services.php', 'ประเภทงานที่รับ', 'fa-list-check'],
             ['/photographer/portfolio.php', 'ตัวอย่างงาน', 'fa-images'],
             ['/photographer/availability.php', 'วันว่าง', 'fa-calendar'],
-            ['/photographer/bookings.php', 'คำขอจอง', 'fa-calendar-check'],
+            ['/photographer/bookings.php', 'คำขอจอง', 'fa-calendar-check', $pendingBookings > 0 ? $pendingBookings : $activeBookings],
             ['/photographer/articles.php', 'บทความ', 'fa-newspaper'],
             ['/photographer/reviews.php', 'รีวิว', 'fa-star'],
-            ['/notifications.php', 'แจ้งเตือน', 'fa-bell'],
+            ['/notifications.php', 'แจ้งเตือน', 'fa-bell', $unreadNotifications],
         ];
     }
 
@@ -96,6 +104,10 @@ if ($me) {
             $url = $item[0];
             $label = $item[1];
             $icon = $item[2];
+            $badgeCount = 0;
+            if (isset($item[3])) {
+                $badgeCount = (int)$item[3];
+            }
             if ($me && $me['role_name'] === 'customer' && $url === '/notifications.php') {
                 $url = '/customer/notifications.php';
             }
@@ -109,6 +121,9 @@ if ($me) {
             <a href="<?= h($url) ?>" class="<?= h($className) ?>">
                 <i class="fa-solid <?= h($icon) ?> w-5"></i>
                 <span><?= h($label) ?></span>
+                <?php if ($badgeCount > 0): ?>
+                    <span class="workspace-nav-badge"><?= number_format($badgeCount) ?></span>
+                <?php endif; ?>
             </a>
         <?php endforeach; ?>
     </nav>

@@ -159,7 +159,7 @@ for ($i = 11; $i >= 0; $i--) {
 
 $statusChart = [
     ['รอตอบรับ', $stats['pending'], 'fa-hourglass-half', 'from-amber-400 to-orange-500'],
-    ['ตอบรับ/นัดหมาย', $stats['accepted_group'], 'fa-calendar-check', 'from-sky-500 to-indigo-500'],
+    ['ตอบรับ/ยืนยันงาน', $stats['accepted_group'], 'fa-calendar-check', 'from-sky-500 to-indigo-500'],
     ['เสร็จสิ้น', $stats['completed'], 'fa-circle-check', 'from-emerald-500 to-teal-500'],
     ['ปฏิเสธ/ยกเลิก', $stats['rejected'] + $stats['cancelled'], 'fa-ban', 'from-rose-500 to-red-600'],
 ];
@@ -239,7 +239,9 @@ $bookings = db_fetch_all('SELECT b.*, u.name AS customer_name, sc.name AS catego
 
 $availability = db_fetch_all('SELECT *
                               FROM photographer_availability
-                              WHERE photographer_id = ? AND available_date >= CURDATE()
+                              WHERE photographer_id = ?
+                                AND available_date >= CURDATE()
+                                AND status = "available"
                               ORDER BY available_date, time_slot
                               LIMIT 8', [$pid]);
 
@@ -385,8 +387,8 @@ include __DIR__ . '/../includes/header.php';
         <?php
         $metricCards = [
             ['คำขอใหม่', $stats['pending'], 'fa-hourglass-half', 'text-amber-600', 'รอตอบรับลูกค้า'],
-            ['กำลังดำเนินการ', $stats['accepted_group'], 'fa-calendar-check', 'text-sky-600', 'ตอบรับ/นัดหมาย'],
-            ['เสร็จสิ้น', $stats['completed'], 'fa-circle-check', 'text-emerald-600', 'completed'],
+            ['กำลังดำเนินการ', $stats['accepted_group'], 'fa-calendar-check', 'text-sky-600', 'ตอบรับ/ยืนยันงาน'],
+            ['เสร็จสิ้น', $stats['completed'], 'fa-circle-check', 'text-emerald-600', 'งานเสร็จสิ้น'],
 	            ['คะแนนเฉลี่ย', number_format((float)$profile['average_rating'], 1), 'fa-star', 'text-yellow-500', 'จำนวนรีวิว ' . number_format((int)$profile['total_reviews']) . ' รายการ'],
             ['เข้าชมโปรไฟล์', number_format((int)$profile['profile_views']), 'fa-eye', 'text-red-600', 'ยอดเปิดดูทั้งหมด'],
             ['วันว่างอนาคต', $stats['available_slots'], 'fa-calendar-days', 'text-teal-600', 'slot ที่เปิดไว้'],
@@ -677,7 +679,7 @@ include __DIR__ . '/../includes/header.php';
 
         <div class="grid gap-6">
             <div class="stock-card rounded-[1.75rem] p-6">
-                <p class="section-kicker">Calendar Preview</p>
+                <p class="section-kicker">ปฏิทินวันว่าง</p>
                 <h2 class="mt-1 text-xl font-black text-neutral-950"><i class="fa-solid fa-calendar-days mr-2 text-red-600"></i>วันว่างล่าสุด</h2>
                 <div class="mt-4 grid gap-2" data-block-paginate="5">
                     <?php foreach ($availability as $slot): ?>
@@ -695,7 +697,7 @@ include __DIR__ . '/../includes/header.php';
             </div>
 
             <div class="stock-card rounded-[1.75rem] p-6">
-                <p class="section-kicker">Status Timeline</p>
+                <p class="section-kicker">ประวัติสถานะ</p>
                 <h2 class="mt-1 text-xl font-black text-neutral-950"><i class="fa-solid fa-clock-rotate-left mr-2 text-red-600"></i>ประวัติสถานะล่าสุด</h2>
                 <div class="mt-4 grid gap-3" data-block-paginate="5">
                     <?php foreach ($latestLogs as $log): ?>

@@ -531,6 +531,20 @@ body {
     box-shadow: 0 10px 22px rgba(226, 27, 45, .14);
 }
 
+.calendar-day-disabled,
+.calendar-day-past {
+    cursor: not-allowed;
+    opacity: .42;
+    box-shadow: none;
+}
+
+.calendar-day-disabled:not(.calendar-day-empty):hover,
+.calendar-day-past:not(.calendar-day-empty):hover {
+    transform: none;
+    border-color: rgba(16, 16, 20, .08);
+    box-shadow: none;
+}
+
 .calendar-day-empty {
     border-color: transparent;
     background: transparent;
@@ -894,12 +908,36 @@ body {
     transition: transform .2s ease, background .2s ease, color .2s ease, border-color .2s ease;
 }
 
+.workspace-nav-link span:not(.workspace-nav-badge) {
+    flex: 1;
+}
+
+.workspace-nav-badge {
+    display: inline-flex;
+    min-width: 1.55rem;
+    height: 1.55rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: #e21b2d;
+    color: #fff;
+    font-size: .72rem;
+    font-weight: 900;
+    padding: 0 .45rem;
+}
+
 .workspace-nav-link:hover,
 .workspace-nav-link-active {
     transform: translateX(3px);
     color: #fff;
     border-color: rgba(226, 27, 45, .2);
     background: #101014;
+}
+
+.workspace-nav-link:hover .workspace-nav-badge,
+.workspace-nav-link-active .workspace-nav-badge {
+    background: #fff;
+    color: #e21b2d;
 }
 
 .page-loader {

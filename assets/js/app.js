@@ -188,6 +188,7 @@ function initCalendarDateInputs() {
     const prevButton = calendar.querySelector('[data-calendar-prev]');
     const nextButton = calendar.querySelector('[data-calendar-next]');
     let statuses = {};
+    let selectableStatuses = [];
     let current;
 
     if (!hidden || !grid || !monthLabel) return;
@@ -196,6 +197,11 @@ function initCalendarDateInputs() {
       statuses = JSON.parse(calendar.dataset.statuses || '{}') || {};
     } catch (error) {
       statuses = {};
+    }
+    try {
+      selectableStatuses = JSON.parse(calendar.dataset.selectableStatuses || '[]') || [];
+    } catch (error) {
+      selectableStatuses = [];
     }
 
     const selectedIso = parseBeDateToIso(hidden.value);
@@ -213,6 +219,8 @@ function initCalendarDateInputs() {
       const firstDay = new Date(year, month, 1).getDay();
       const daysInMonth = new Date(year, month + 1, 0).getDate();
       const selected = parseBeDateToIso(hidden.value);
+      const today = new Date();
+      const todayIso = buildIsoDate(today.getFullYear(), today.getMonth() + 1, today.getDate());
 
       monthLabel.textContent = thaiMonths[month] + ' ' + (year + 543);
       grid.innerHTML = '';
@@ -226,17 +234,28 @@ function initCalendarDateInputs() {
       for (let day = 1; day <= daysInMonth; day++) {
         const iso = buildIsoDate(year, month + 1, day);
         const status = statuses[iso] || calendar.dataset.defaultStatus || 'available';
+        const isPast = iso < todayIso;
+        const isSelectableStatus = selectableStatuses.length === 0 || selectableStatuses.indexOf(status) !== -1;
+        const isDisabled = isPast || !isSelectableStatus;
         const button = document.createElement('button');
         button.type = 'button';
         button.textContent = String(day);
         button.className = 'calendar-day calendar-day-' + status;
         button.dataset.date = iso;
+        button.disabled = isDisabled;
+        if (isPast) {
+          button.className += ' calendar-day-past';
+        }
+        if (isDisabled) {
+          button.className += ' calendar-day-disabled';
+        }
 
         if (iso === selected) {
           button.className += ' calendar-day-selected';
         }
 
         button.addEventListener('click', function () {
+          if (isDisabled) return;
           hidden.value = iso;
           if (selectedLabel) {
             selectedLabel.textContent = formatIsoToBeDate(iso);

@@ -171,6 +171,7 @@ include __DIR__ . '/../includes/header.php';
                     <div class="flex flex-wrap items-center gap-2">
                         <b class="text-lg text-neutral-950"><?= h($item['title']) ?></b>
                         <?= status_badge((string)$item['status']) ?>
+                        <?= new_content_badge($item['published_at'] ?: $item['created_at']) ?>
                     </div>
                     <p class="mt-2 text-sm font-bold text-neutral-500">
                         <i class="fa-solid fa-calendar-day mr-1 text-red-600"></i>

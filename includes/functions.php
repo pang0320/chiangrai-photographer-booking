@@ -18,6 +18,16 @@ function redirect(string $path): void
     exit;
 }
 
+function redirect_with_intended(string $path): void
+{
+    $requestUri = (string)($_SERVER['REQUEST_URI'] ?? '');
+    if ($requestUri !== '' && strpos($requestUri, '/login.php') !== 0) {
+        $_SESSION['intended_url'] = $requestUri;
+    }
+
+    redirect($path);
+}
+
 function clean_context_path(?string $path = null): string
 {
     if ($path === null) {
@@ -233,7 +243,7 @@ function requireLogin(): void
 
     if (!$user) {
         flash('warning', 'กรุณาเข้าสู่ระบบก่อน');
-        redirect('/login.php');
+        redirect_with_intended('/login.php');
     }
 
     if ($user['status'] === 'suspended') {
@@ -402,6 +412,90 @@ function notify_user(int $userId, string $title, string $message, string $type =
 {
     $stmt = db()->prepare('INSERT INTO notifications (user_id, title, message, type, related_id, is_read, created_at) VALUES (?, ?, ?, ?, ?, 0, NOW())');
     $stmt->execute([$userId, $title, $message, $type, $relatedId]);
+}
+
+function required_mark(): string
+{
+    return '<span class="text-red-600" aria-label="จำเป็น">*</span>';
+}
+
+function text_length(string $value): int
+{
+    if (function_exists('mb_strlen')) {
+        return mb_strlen($value, 'UTF-8');
+    }
+
+    return strlen($value);
+}
+
+function is_new_content(?string $date, int $days = 7): bool
+{
+    $date = trim((string)$date);
+    if ($date === '' || $date === '0000-00-00' || $date === '0000-00-00 00:00:00') {
+        return false;
+    }
+
+    try {
+        $created = new DateTime($date);
+        $limit = new DateTime('-' . max(1, $days) . ' days');
+        return $created >= $limit;
+    } catch (Exception $exception) {
+        return false;
+    }
+}
+
+function new_content_badge(?string $date, int $days = 7): string
+{
+    if (!is_new_content($date, $days)) {
+        return '';
+    }
+
+    return '<span class="inline-flex items-center gap-1 rounded-full bg-red-50 px-3 py-1 text-xs font-black text-red-700"><i class="fa-solid fa-bolt"></i>ใหม่</span>';
+}
+
+function ranking_order_sql(string $alias = 'p'): string
+{
+    $alias = preg_replace('/[^A-Za-z0-9_]/', '', $alias);
+    if ($alias === '') {
+        $alias = 'p';
+    }
+
+    return $alias . '.average_rating DESC, '
+        . $alias . '.total_reviews DESC, '
+        . '(SELECT COUNT(*) FROM bookings b_rank WHERE b_rank.photographer_id = ' . $alias . '.id AND b_rank.status = "completed" AND b_rank.deleted_at IS NULL) DESC, '
+        . $alias . '.response_rate DESC, '
+        . $alias . '.is_verified DESC, '
+        . $alias . '.profile_views DESC, '
+        . $alias . '.id ASC';
+}
+
+function notification_target_url(array $notification, array $user): string
+{
+    $type = (string)($notification['type'] ?? 'info');
+    $relatedId = (int)($notification['related_id'] ?? 0);
+    $role = (string)($user['role_name'] ?? '');
+
+    if ($type === 'booking' && $relatedId > 0) {
+        if ($role === 'customer') {
+            return '/customer/booking_detail.php?id=' . $relatedId;
+        }
+        if ($role === 'photographer') {
+            return '/photographer/booking_detail.php?id=' . $relatedId;
+        }
+        if ($role === 'admin') {
+            return '/admin/bookings.php';
+        }
+    }
+
+    if (($type === 'photographer_rejected' || $type === 'photographer_approved') && $role === 'photographer') {
+        return '/photographer/profile.php';
+    }
+
+    if ($type === 'article' && $relatedId > 0) {
+        return '/blog.php';
+    }
+
+    return $role === 'customer' ? '/customer/notifications.php' : '/notifications.php';
 }
 
 function unread_notifications_count(int $userId): int
@@ -650,8 +744,22 @@ function calendar_date_input(string $name, ?string $value = '', array $dateStatu
     if (isset($GLOBALS['calendar_date_default_status'][$name]) && is_string($GLOBALS['calendar_date_default_status'][$name])) {
         $defaultStatus = $GLOBALS['calendar_date_default_status'][$name];
     }
+    $selectableStatuses = [];
+    if (isset($GLOBALS['calendar_date_selectable_statuses'][$name]) && is_array($GLOBALS['calendar_date_selectable_statuses'][$name])) {
+        $selectableStatuses = $GLOBALS['calendar_date_selectable_statuses'][$name];
+    }
+    $selectableJson = h(json_encode($selectableStatuses, JSON_UNESCAPED_UNICODE));
+    $showLegend = true;
+    if (isset($GLOBALS['calendar_date_show_legend'][$name])) {
+        $showLegend = (bool)$GLOBALS['calendar_date_show_legend'][$name];
+    }
 
-    return '<div class="calendar-date" data-calendar-date data-target="' . h($id) . '" data-statuses="' . $statusJson . '" data-default-status="' . h($defaultStatus) . '">'
+    $legendHtml = '';
+    if ($showLegend) {
+        $legendHtml = '<div class="calendar-date-legend"><span><i class="calendar-dot calendar-dot-available"></i>ว่าง</span><span><i class="calendar-dot calendar-dot-unavailable"></i>ไม่ว่าง</span><span><i class="calendar-dot calendar-dot-booked"></i>ถูกจอง</span><span><i class="calendar-dot calendar-dot-pending"></i>รอตอบรับ</span></div>';
+    }
+
+    return '<div class="calendar-date" data-calendar-date data-target="' . h($id) . '" data-statuses="' . $statusJson . '" data-default-status="' . h($defaultStatus) . '" data-selectable-statuses="' . $selectableJson . '">'
         . '<input type="hidden" id="' . h($id) . '" name="' . h($name) . '" value="' . h($isoDate) . '"' . $requiredAttribute . '>'
         . '<button type="button" class="calendar-date-trigger" data-calendar-trigger>'
         . '<span><i class="fa-solid fa-calendar-days"></i><span><b>' . h($label) . '</b><small data-calendar-selected>' . h($isoDate ? format_be_date($isoDate) : 'เลือกวันที่') . '</small></span></span><i class="fa-solid fa-chevron-down"></i>'
@@ -664,7 +772,7 @@ function calendar_date_input(string $name, ?string $value = '', array $dateStatu
         . '<div class="calendar-date-month" data-calendar-month></div>'
         . '<div class="calendar-date-weekdays"><span>อา</span><span>จ</span><span>อ</span><span>พ</span><span>พฤ</span><span>ศ</span><span>ส</span></div>'
         . '<div class="calendar-date-grid" data-calendar-grid></div>'
-        . '<div class="calendar-date-legend"><span><i class="calendar-dot calendar-dot-available"></i>ว่าง</span><span><i class="calendar-dot calendar-dot-unavailable"></i>ไม่ว่าง</span><span><i class="calendar-dot calendar-dot-booked"></i>ถูกจอง</span><span><i class="calendar-dot calendar-dot-pending"></i>รอตอบรับ</span></div>'
+        . $legendHtml
         . '</div></div>';
 }
 
@@ -674,8 +782,8 @@ function booking_status_label(string $status): string
         'pending' => 'รอการตอบรับ',
         'accepted' => 'ตอบรับแล้ว',
         'rejected' => 'ปฏิเสธ',
-        'cancelled' => 'ยกเลิก',
-        'confirmed' => 'นัดหมายสำเร็จ',
+        'cancelled' => 'ยกเลิกโดยลูกค้า',
+        'confirmed' => 'ยืนยันงาน',
         'completed' => 'เสร็จสิ้น',
         'approved' => 'อนุมัติแล้ว',
         'suspended' => 'ระงับ',
@@ -764,8 +872,57 @@ function add_booking_status_log(int $bookingId, ?string $oldStatus, string $newS
     $stmt->execute([$bookingId, $oldStatus, $newStatus, $changedBy, $note]);
 }
 
+function sync_availability_after_booking_status(int $bookingId): void
+{
+    $booking = db_fetch_all('SELECT id, photographer_id, booking_date, time_slot, status FROM bookings WHERE id = ? AND deleted_at IS NULL LIMIT 1', [$bookingId]);
+    if (!$booking) {
+        return;
+    }
+
+    $booking = $booking[0];
+    $photographerId = (int)$booking['photographer_id'];
+    $bookingDate = (string)$booking['booking_date'];
+    $timeSlot = (string)$booking['time_slot'];
+    $status = (string)$booking['status'];
+
+    if (in_array($status, ['accepted', 'confirmed'], true)) {
+        $stmt = db()->prepare('INSERT INTO photographer_availability (photographer_id, available_date, time_slot, status, note, created_at, updated_at)
+                               VALUES (?, ?, ?, "booked", "ระบบเปลี่ยนเป็นถูกจองแล้วจากคำขอจอง", NOW(), NOW())
+                               ON DUPLICATE KEY UPDATE status = "booked", note = VALUES(note), updated_at = NOW()');
+        $stmt->execute([$photographerId, $bookingDate, $timeSlot]);
+        return;
+    }
+
+    if (in_array($status, ['rejected', 'cancelled'], true)) {
+        $conflictSql = 'SELECT id FROM bookings
+                        WHERE photographer_id = ?
+                          AND booking_date = ?
+                          AND status IN ("pending","accepted","confirmed")
+                          AND deleted_at IS NULL
+                          AND id <> ?
+                          AND (time_slot = ? OR time_slot = "full_day" OR ? = "full_day")
+                        LIMIT 1';
+        $stmt = db()->prepare($conflictSql);
+        $stmt->execute([$photographerId, $bookingDate, $bookingId, $timeSlot, $timeSlot]);
+
+        if (!$stmt->fetchColumn()) {
+            $stmt = db()->prepare('UPDATE photographer_availability
+                                   SET status = "available", note = NULL, updated_at = NOW()
+                                   WHERE photographer_id = ?
+                                     AND available_date = ?
+                                     AND time_slot = ?
+                                     AND status = "booked"');
+            $stmt->execute([$photographerId, $bookingDate, $timeSlot]);
+        }
+    }
+}
+
 function can_book_slot(int $photographerId, string $date, string $slot, ?int $excludeBookingId = null): bool
 {
+    if ($date < date('Y-m-d')) {
+        return false;
+    }
+
     $stmt = db()->prepare('SELECT id FROM photographer_availability WHERE photographer_id = ? AND available_date = ? AND time_slot = ? AND status = "available" LIMIT 1');
     $stmt->execute([$photographerId, $date, $slot]);
     if (!$stmt->fetchColumn()) {

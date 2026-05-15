@@ -34,6 +34,11 @@ if (is_post()) {
         db()->prepare('UPDATE users SET last_login_at = NOW() WHERE id = ?')->execute([(int)$user['id']]);
         log_activity('login', 'users', (int)$user['id'], 'User logged in');
         flash('success', 'เข้าสู่ระบบสำเร็จ');
+        $intendedUrl = (string)($_SESSION['intended_url'] ?? '');
+        unset($_SESSION['intended_url']);
+        if ($intendedUrl !== '' && strpos($intendedUrl, '/login.php') !== 0) {
+            redirect($intendedUrl);
+        }
         redirect(user_workspace_path($user));
     }
 

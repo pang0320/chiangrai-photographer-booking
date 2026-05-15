@@ -81,7 +81,8 @@ include __DIR__ . '/includes/header.php';
     <?php else: ?>
         <div class="mt-6 grid gap-3">
             <?php foreach ($notifications as $notification): ?>
-                <article class="stock-card rounded-[1.5rem] p-5 <?php if (!(int)$notification['is_read']): ?>border-red-200<?php endif; ?>">
+                <?php $targetUrl = notification_target_url($notification, $user); ?>
+                <a href="<?= h($targetUrl) ?>" class="stock-card stock-card-hover block rounded-[1.5rem] p-5 <?php if (!(int)$notification['is_read']): ?>border-red-200<?php endif; ?>">
                     <div class="flex flex-wrap items-start justify-between gap-3">
                         <div>
                             <h2 class="font-black text-neutral-950"><?= h($notification['title']) ?></h2>
@@ -95,8 +96,11 @@ include __DIR__ . '/includes/header.php';
                             <?php endif; ?>
                         </span>
                     </div>
-                    <p class="mt-3 text-xs font-bold text-neutral-400"><?= h(format_be_datetime($notification['created_at'])) ?></p>
-                </article>
+                    <p class="mt-3 text-xs font-bold text-neutral-400">
+                        <?= h(format_be_datetime($notification['created_at'])) ?>
+                        <span class="ml-2 text-red-600"><i class="fa-solid fa-arrow-up-right-from-square mr-1"></i>เปิดรายละเอียด</span>
+                    </p>
+                </a>
             <?php endforeach; ?>
         </div>
     <?php endif; ?>

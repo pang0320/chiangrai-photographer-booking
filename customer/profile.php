@@ -26,8 +26,11 @@ if (is_post()) {
         if (isset($_POST['phone'])) {
             $phone = trim((string)$_POST['phone']);
         }
-        if ($name === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            throw new RuntimeException('ข้อมูลไม่ถูกต้อง');
+        if ($name === '') {
+            throw new RuntimeException('กรุณากรอกชื่อผู้ใช้');
+        }
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            throw new RuntimeException('รูปแบบอีเมลไม่ถูกต้อง');
         }
         if (!empty($_POST['password'])) {
             $passwordConfirmation = '';
@@ -69,11 +72,11 @@ include __DIR__ . '/../includes/header.php';
             <?= csrf_field() ?>
             <div class="grid gap-4 sm:grid-cols-2">
                 <label class="grid gap-2 text-sm font-black text-slate-700">
-                    <span><i class="fa-solid fa-user mr-2 text-red-600"></i>ชื่อผู้ใช้</span>
+                    <span><i class="fa-solid fa-user mr-2 text-red-600"></i>ชื่อผู้ใช้ <?= required_mark() ?></span>
                     <input name="name" value="<?= h($user['name']) ?>" required class="rounded-2xl border px-4 py-3 font-semibold">
                 </label>
                 <label class="grid gap-2 text-sm font-black text-slate-700">
-                    <span><i class="fa-solid fa-envelope mr-2 text-red-600"></i>อีเมล</span>
+                    <span><i class="fa-solid fa-envelope mr-2 text-red-600"></i>อีเมล <?= required_mark() ?></span>
                     <input type="email" name="email" value="<?= h($user['email']) ?>" required class="rounded-2xl border px-4 py-3 font-semibold">
                 </label>
                 <label class="grid gap-2 text-sm font-black text-slate-700 sm:col-span-2">
@@ -88,15 +91,19 @@ include __DIR__ . '/../includes/header.php';
                 <input id="avatar-input" type="file" name="avatar" accept="image/jpeg,image/png,image/webp" class="rounded-2xl border bg-white px-4 py-3 font-semibold">
             </label>
 
-            <div class="grid gap-4 sm:grid-cols-2">
+            <div class="rounded-[1.5rem] bg-slate-50 p-5">
+                <h2 class="text-lg font-black text-slate-900"><i class="fa-solid fa-lock mr-2 text-red-600"></i>เปลี่ยนรหัสผ่าน</h2>
+                <p class="mt-1 text-sm font-bold text-slate-500">เว้นว่างไว้หากไม่ต้องการเปลี่ยนรหัสผ่าน</p>
+                <div class="mt-4 grid gap-4 sm:grid-cols-2">
                 <label class="grid gap-2 text-sm font-black text-slate-700">
-                    <span><i class="fa-solid fa-lock mr-2 text-red-600"></i>รหัสผ่านใหม่ (ไม่บังคับ)</span>
+                    <span><i class="fa-solid fa-lock mr-2 text-red-600"></i>รหัสผ่านใหม่</span>
                     <input type="password" name="password" placeholder="อย่างน้อย 8 ตัวอักษร" class="rounded-2xl border px-4 py-3 font-semibold">
                 </label>
                 <label class="grid gap-2 text-sm font-black text-slate-700">
                     <span><i class="fa-solid fa-key mr-2 text-red-600"></i>ยืนยันรหัสผ่าน</span>
                     <input type="password" name="password_confirmation" placeholder="กรอกซ้ำอีกครั้ง" class="rounded-2xl border px-4 py-3 font-semibold">
                 </label>
+                </div>
             </div>
             <button class="rounded-2xl bg-neutral-950 px-5 py-3 font-black text-white transition hover:bg-red-600"><i class="fa-solid fa-floppy-disk mr-2"></i>บันทึกโปรไฟล์</button>
         </form>

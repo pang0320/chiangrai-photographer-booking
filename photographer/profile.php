@@ -27,8 +27,18 @@ if (is_post()) {
         if (isset($_POST['is_available'])) {
             $isAvailableValue = 1;
         }
+        $displayName = trim((string)($_POST['display_name'] ?? ''));
+        $bio = trim((string)($_POST['bio'] ?? ''));
+        $experienceYears = max(0, (int)($_POST['experience_years'] ?? 0));
+        $startingPrice = (float)($_POST['starting_price'] ?? 0);
+        if ($displayName === '') {
+            throw new RuntimeException('กรุณากรอกชื่อช่างภาพ / ชื่อทีม');
+        }
+        if ($startingPrice < 0) {
+            throw new RuntimeException('ราคาเริ่มต้นต้องไม่ติดลบ');
+        }
         db()->prepare('UPDATE photographer_profiles SET display_name=?, slug=?, bio=?, experience_years=?, starting_price=?, profile_image=?, cover_image=?, phone_public=?, line_id=?, facebook_url=?, instagram_url=?, website_url=?, is_available=?, updated_at=NOW() WHERE id=?')
-            ->execute([trim((string)$_POST['display_name']), unique_slug('photographer_profiles', (string)$_POST['display_name'], (int)$profile['id']), trim((string)$_POST['bio']), (int)$_POST['experience_years'], (float)$_POST['starting_price'], $profileImage, $coverImage, trim((string)$_POST['phone_public']), trim((string)$_POST['line_id']), trim((string)$_POST['facebook_url']), trim((string)$_POST['instagram_url']), trim((string)$_POST['website_url']), $isAvailableValue, (int)$profile['id']]);
+            ->execute([$displayName, unique_slug('photographer_profiles', $displayName, (int)$profile['id']), $bio, $experienceYears, $startingPrice, $profileImage, $coverImage, trim((string)$_POST['phone_public']), trim((string)$_POST['line_id']), trim((string)$_POST['facebook_url']), trim((string)$_POST['instagram_url']), trim((string)$_POST['website_url']), $isAvailableValue, (int)$profile['id']]);
         log_activity('update_photographer_profile', 'photographer_profiles', (int)$profile['id']);
         flash('success', 'บันทึกโปรไฟล์แล้ว');
         redirect('/photographer/profile.php');
@@ -61,7 +71,7 @@ include __DIR__ . '/../includes/header.php';
             <?= csrf_field() ?>
             <div class="grid gap-4 sm:grid-cols-2">
                 <label class="grid gap-2 text-sm font-black text-slate-700">
-                    <span><i class="fa-solid fa-signature mr-2 text-red-600"></i>ชื่อช่างภาพ / ชื่อทีม</span>
+                    <span><i class="fa-solid fa-signature mr-2 text-red-600"></i>ชื่อช่างภาพ / ชื่อทีม <?= required_mark() ?></span>
                     <input name="display_name" value="<?= h($profile['display_name']) ?>" required class="rounded-2xl border px-4 py-3 font-semibold">
                 </label>
                 <label class="grid gap-2 text-sm font-black text-slate-700">
@@ -73,8 +83,8 @@ include __DIR__ . '/../includes/header.php';
                     <textarea name="bio" rows="5" class="rounded-2xl border px-4 py-3 font-semibold"><?= h($profile['bio']) ?></textarea>
                 </label>
                 <label class="grid gap-2 text-sm font-black text-slate-700 sm:col-span-2">
-                    <span><i class="fa-solid fa-tag mr-2 text-red-600"></i>ราคาเริ่มต้นโดยประมาณ (บาท)</span>
-                    <input type="number" min="0" step="0.01" name="starting_price" value="<?= h($profile['starting_price']) ?>" class="rounded-2xl border px-4 py-3 font-semibold">
+                    <span><i class="fa-solid fa-tag mr-2 text-red-600"></i>ราคาเริ่มต้นโดยประมาณ (บาท) <?= required_mark() ?></span>
+                    <input type="number" min="0" step="0.01" name="starting_price" value="<?= h($profile['starting_price']) ?>" required class="rounded-2xl border px-4 py-3 font-semibold">
                     <span class="text-sm font-bold leading-6 text-slate-500">ราคานี้ใช้แสดงเป็นข้อมูลเริ่มต้นเท่านั้น เว็บไซต์ไม่รับชำระเงิน ลูกค้าและช่างภาพตกลงราคาและชำระเงินกันเองภายนอกระบบ</span>
                 </label>
             </div>

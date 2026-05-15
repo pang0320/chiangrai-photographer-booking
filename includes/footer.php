@@ -26,8 +26,9 @@ if (!empty($_SESSION['user_id']) && !empty($_SESSION['last_activity_at'])) {
     </div>
 </div>
 <?php
-$footerCategories = db_fetch_all('SELECT id, name, slug FROM service_categories WHERE is_active = 1 ORDER BY sort_order, name LIMIT 6');
-$footerDistricts = db_fetch_all('SELECT district_name FROM districts WHERE is_active = 1 ORDER BY district_name LIMIT 8');
+$footerData = footer_public_data();
+$footerCategories = $footerData['categories'];
+$footerDistricts = $footerData['districts'];
 ?>
 <footer class="mt-16 border-t border-neutral-200 bg-neutral-950 text-white">
     <div class="stock-shell px-4 py-12 sm:px-6 lg:px-8">
@@ -165,8 +166,10 @@ $footerDistricts = db_fetch_all('SELECT district_name FROM districts WHERE is_ac
         </div>
     </div>
 </div>
+<?php if ($footerIsWorkspacePage): ?>
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+<?php endif; ?>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="/assets/js/app.js"></script>
 <?php foreach ($flashItems as $item): ?>

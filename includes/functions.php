@@ -18,6 +18,76 @@ function redirect(string $path): void
     exit;
 }
 
+function request_cache_remember(string $key, callable $resolver)
+{
+    static $cache = [];
+
+    if (array_key_exists($key, $cache)) {
+        return $cache[$key];
+    }
+
+    $cache[$key] = $resolver();
+    return $cache[$key];
+}
+
+function app_cache_file(string $key): string
+{
+    return rtrim(CACHE_PATH, '/\\') . '/' . sha1($key) . '.cache';
+}
+
+function cache_remember(string $key, int $ttlSeconds, callable $resolver)
+{
+    if (!CACHE_ENABLED || $ttlSeconds <= 0) {
+        return $resolver();
+    }
+
+    $file = app_cache_file($key);
+    if (is_file($file) && (time() - filemtime($file)) <= $ttlSeconds) {
+        $payload = file_get_contents($file);
+        if ($payload !== false) {
+            $value = @unserialize($payload, ['allowed_classes' => false]);
+            if ($value !== false || $payload === serialize(false)) {
+                return $value;
+            }
+        }
+    }
+
+    $value = $resolver();
+    $dir = dirname($file);
+    if (!is_dir($dir)) {
+        @mkdir($dir, 0755, true);
+    }
+
+    if (is_dir($dir) && is_writable($dir)) {
+        $tmp = $file . '.' . getmypid() . '.tmp';
+        if (@file_put_contents($tmp, serialize($value), LOCK_EX) !== false) {
+            @rename($tmp, $file);
+        }
+    }
+
+    return $value;
+}
+
+function cache_forget(string $key): void
+{
+    $file = app_cache_file($key);
+    if (is_file($file)) {
+        @unlink($file);
+    }
+}
+
+function cache_clear_all(): void
+{
+    $dir = rtrim(CACHE_PATH, '/\\');
+    if (!is_dir($dir)) {
+        return;
+    }
+
+    foreach (glob($dir . '/*.cache') ?: [] as $file) {
+        @unlink($file);
+    }
+}
+
 function redirect_with_intended(string $path): void
 {
     $requestUri = (string)($_SERVER['REQUEST_URI'] ?? '');
@@ -226,9 +296,11 @@ function current_user(): ?array
 
 function role_id(string $role): int
 {
-    $stmt = db()->prepare('SELECT id FROM roles WHERE name = ? LIMIT 1');
-    $stmt->execute([$role]);
-    return (int)($stmt->fetchColumn() ?: 0);
+    return (int)request_cache_remember('role_id:' . $role, function () use ($role) {
+        $stmt = db()->prepare('SELECT id FROM roles WHERE name = ? LIMIT 1');
+        $stmt->execute([$role]);
+        return (int)($stmt->fetchColumn() ?: 0);
+    });
 }
 
 function requireLogin(): void
@@ -338,10 +410,12 @@ function user_workspace_icon(array $user): string
 
 function setting(string $key, string $default = ''): string
 {
-    $stmt = db()->prepare('SELECT setting_value FROM settings WHERE setting_key = ? LIMIT 1');
-    $stmt->execute([$key]);
-    $value = $stmt->fetchColumn();
-    return $value === false ? $default : (string)$value;
+    return (string)request_cache_remember('setting:' . $key . ':' . $default, function () use ($key, $default) {
+        $stmt = db()->prepare('SELECT setting_value FROM settings WHERE setting_key = ? LIMIT 1');
+        $stmt->execute([$key]);
+        $value = $stmt->fetchColumn();
+        return $value === false ? $default : (string)$value;
+    });
 }
 
 function set_setting(string $key, string $value): void
@@ -362,6 +436,20 @@ function db_fetch_value(string $sql, array $params = [])
     $stmt = db()->prepare($sql);
     $stmt->execute($params);
     return $stmt->fetchColumn();
+}
+
+function db_fetch_all_cached(string $cacheKey, int $ttlSeconds, string $sql, array $params = []): array
+{
+    return cache_remember($cacheKey . ':' . sha1($sql . serialize($params)), $ttlSeconds, function () use ($sql, $params) {
+        return db_fetch_all($sql, $params);
+    });
+}
+
+function db_fetch_value_cached(string $cacheKey, int $ttlSeconds, string $sql, array $params = [])
+{
+    return cache_remember($cacheKey . ':' . sha1($sql . serialize($params)), $ttlSeconds, function () use ($sql, $params) {
+        return db_fetch_value($sql, $params);
+    });
 }
 
 function slugify(string $text): string
@@ -453,16 +541,20 @@ function new_content_badge(?string $date, int $days = 7): string
     return '<span class="inline-flex items-center gap-1 rounded-full bg-red-50 px-3 py-1 text-xs font-black text-red-700"><i class="fa-solid fa-bolt"></i>ใหม่</span>';
 }
 
-function ranking_order_sql(string $alias = 'p'): string
+function ranking_order_sql(string $alias = 'p', ?string $completedExpression = null): string
 {
     $alias = preg_replace('/[^A-Za-z0-9_]/', '', $alias);
     if ($alias === '') {
         $alias = 'p';
     }
 
+    if ($completedExpression === null || trim($completedExpression) === '') {
+        $completedExpression = '(SELECT COUNT(*) FROM bookings b_rank WHERE b_rank.photographer_id = ' . $alias . '.id AND b_rank.status = "completed" AND b_rank.deleted_at IS NULL)';
+    }
+
     return $alias . '.average_rating DESC, '
         . $alias . '.total_reviews DESC, '
-        . '(SELECT COUNT(*) FROM bookings b_rank WHERE b_rank.photographer_id = ' . $alias . '.id AND b_rank.status = "completed" AND b_rank.deleted_at IS NULL) DESC, '
+        . $completedExpression . ' DESC, '
         . $alias . '.response_rate DESC, '
         . $alias . '.is_verified DESC, '
         . $alias . '.profile_views DESC, '
@@ -500,9 +592,11 @@ function notification_target_url(array $notification, array $user): string
 
 function unread_notifications_count(int $userId): int
 {
-    $stmt = db()->prepare('SELECT COUNT(*) FROM notifications WHERE user_id = ? AND is_read = 0');
-    $stmt->execute([$userId]);
-    return (int)$stmt->fetchColumn();
+    return (int)request_cache_remember('unread_notifications_count:' . $userId, function () use ($userId) {
+        $stmt = db()->prepare('SELECT COUNT(*) FROM notifications WHERE user_id = ? AND is_read = 0');
+        $stmt->execute([$userId]);
+        return (int)$stmt->fetchColumn();
+    });
 }
 
 function recent_notifications(int $userId, int $limit = 20): array
@@ -539,9 +633,12 @@ function clear_failed_login_attempts(string $email): void
 
 function photographer_profile_by_user(int $userId): ?array
 {
-    $stmt = db()->prepare('SELECT * FROM photographer_profiles WHERE user_id = ? AND deleted_at IS NULL LIMIT 1');
-    $stmt->execute([$userId]);
-    return $stmt->fetch() ?: null;
+    return request_cache_remember('photographer_profile_by_user:' . $userId, function () use ($userId) {
+        $stmt = db()->prepare('SELECT * FROM photographer_profiles WHERE user_id = ? AND deleted_at IS NULL LIMIT 1');
+        $stmt->execute([$userId]);
+        $profile = $stmt->fetch();
+        return $profile ?: null;
+    });
 }
 
 function photographer_id_for_user(int $userId): int
@@ -558,13 +655,13 @@ function public_image(?string $path, string $fallback): string
     if (preg_match('#^https?://#i', $path)) {
         if (preg_match('#photo-[A-Za-z0-9_-]+#', $path, $matches)) {
             $seedPath = 'seed/' . $matches[0] . '.jpg';
-            if (is_file(UPLOAD_PATH . '/' . $seedPath)) {
+            if (is_file_cached(UPLOAD_PATH . '/' . $seedPath)) {
                 return '/assets/uploads/' . $seedPath;
             }
         }
         return normalize_local_image_fallback($fallback);
     }
-    if (!is_file(UPLOAD_PATH . '/' . ltrim($path, '/'))) {
+    if (!is_file_cached(UPLOAD_PATH . '/' . ltrim($path, '/'))) {
         return normalize_local_image_fallback($fallback);
     }
     return '/assets/uploads/' . ltrim($path, '/');
@@ -575,7 +672,7 @@ function normalize_local_image_fallback(string $fallback): string
     if (preg_match('#^https?://#i', $fallback)) {
         if (preg_match('#photo-[A-Za-z0-9_-]+#', $fallback, $matches)) {
             $seedPath = 'seed/' . $matches[0] . '.jpg';
-            if (is_file(UPLOAD_PATH . '/' . $seedPath)) {
+            if (is_file_cached(UPLOAD_PATH . '/' . $seedPath)) {
                 return '/assets/uploads/' . $seedPath;
             }
         }
@@ -586,11 +683,18 @@ function normalize_local_image_fallback(string $fallback): string
         return $fallback;
     }
 
-    if (is_file(UPLOAD_PATH . '/' . ltrim($fallback, '/'))) {
+    if (is_file_cached(UPLOAD_PATH . '/' . ltrim($fallback, '/'))) {
         return '/assets/uploads/' . ltrim($fallback, '/');
     }
 
     return $fallback;
+}
+
+function is_file_cached(string $path): bool
+{
+    return (bool)request_cache_remember('is_file:' . $path, function () use ($path) {
+        return is_file($path);
+    });
 }
 
 function time_slot_label(string $slot): string
@@ -1047,6 +1151,15 @@ function toggle_favorite_photographer(int $customerId, int $photographerId): boo
 
 function record_search_log(string $keyword, int $districtId, int $categoryId): void
 {
+    $logKey = sha1($keyword . '|' . $districtId . '|' . $categoryId . '|' . date('Y-m-d'));
+    if (!isset($_SESSION['last_search_log']) || !is_array($_SESSION['last_search_log'])) {
+        $_SESSION['last_search_log'] = [];
+    }
+    if (isset($_SESSION['last_search_log'][$logKey]) && (time() - (int)$_SESSION['last_search_log'][$logKey]) < 60) {
+        return;
+    }
+    $_SESSION['last_search_log'][$logKey] = time();
+
     $user = current_user();
     $userId = null;
     if ($user) {
@@ -1072,28 +1185,51 @@ function record_recently_viewed(int $userId, int $photographerId): void
 
 function photographer_completion_percent(int $photographerId): int
 {
-    $profile = db_fetch_all('SELECT * FROM photographer_profiles WHERE id = ? LIMIT 1', [$photographerId]);
-    if (!$profile) {
-        return 0;
-    }
-    $p = $profile[0];
-    $checks = [];
-    $checks[] = !empty($p['profile_image']);
-    $checks[] = !empty($p['cover_image']);
-    $checks[] = trim((string)$p['bio']) !== '';
-    $checks[] = trim((string)$p['phone_public']) !== '' || trim((string)$p['line_id']) !== '';
-    $checks[] = (int)db_fetch_value('SELECT COUNT(*) FROM photographer_service_areas WHERE photographer_id = ? AND is_active = 1', [$photographerId]) > 0;
-    $checks[] = (int)db_fetch_value('SELECT COUNT(*) FROM photographer_services WHERE photographer_id = ? AND is_active = 1', [$photographerId]) > 0;
-    $checks[] = (int)db_fetch_value('SELECT COUNT(*) FROM photographer_portfolios WHERE photographer_id = ? AND deleted_at IS NULL', [$photographerId]) >= 5;
-    $checks[] = (int)db_fetch_value('SELECT COUNT(*) FROM photographer_availability WHERE photographer_id = ? AND available_date >= CURDATE() AND status = "available"', [$photographerId]) > 0;
-
-    $done = 0;
-    foreach ($checks as $check) {
-        if ($check) {
-            $done++;
+    return (int)request_cache_remember('photographer_completion_percent:' . $photographerId, function () use ($photographerId) {
+        $profile = db_fetch_all('SELECT * FROM photographer_profiles WHERE id = ? LIMIT 1', [$photographerId]);
+        if (!$profile) {
+            return 0;
         }
-    }
-    return (int)round(($done / count($checks)) * 100);
+        $p = $profile[0];
+        $summary = db_fetch_all('SELECT
+                (SELECT COUNT(*) FROM photographer_service_areas WHERE photographer_id = ? AND is_active = 1) AS service_area_count,
+                (SELECT COUNT(*) FROM photographer_services WHERE photographer_id = ? AND is_active = 1) AS service_count,
+                (SELECT COUNT(*) FROM photographer_portfolios WHERE photographer_id = ? AND deleted_at IS NULL) AS portfolio_count,
+                (SELECT COUNT(*) FROM photographer_availability WHERE photographer_id = ? AND available_date >= CURDATE() AND status = "available") AS availability_count', [
+            $photographerId,
+            $photographerId,
+            $photographerId,
+            $photographerId,
+        ]);
+        $row = $summary[0] ?? [];
+        $checks = [];
+        $checks[] = !empty($p['profile_image']);
+        $checks[] = !empty($p['cover_image']);
+        $checks[] = trim((string)$p['bio']) !== '';
+        $checks[] = trim((string)$p['phone_public']) !== '' || trim((string)$p['line_id']) !== '';
+        $checks[] = (int)($row['service_area_count'] ?? 0) > 0;
+        $checks[] = (int)($row['service_count'] ?? 0) > 0;
+        $checks[] = (int)($row['portfolio_count'] ?? 0) >= 5;
+        $checks[] = (int)($row['availability_count'] ?? 0) > 0;
+
+        $done = 0;
+        foreach ($checks as $check) {
+            if ($check) {
+                $done++;
+            }
+        }
+        return (int)round(($done / count($checks)) * 100);
+    });
+}
+
+function footer_public_data(): array
+{
+    return cache_remember('footer_public_data_v2', 300, function () {
+        return [
+            'categories' => db_fetch_all('SELECT id, name, slug FROM service_categories WHERE is_active = 1 ORDER BY sort_order, name LIMIT 6'),
+            'districts' => db_fetch_all('SELECT district_name FROM districts WHERE is_active = 1 ORDER BY district_name LIMIT 8'),
+        ];
+    });
 }
 
 function report_status_label(string $status): string

@@ -35,6 +35,8 @@ if (!$appUrl) {
 define('APP_URL', $appUrl);
 define('UPLOAD_PATH', __DIR__ . '/../assets/uploads');
 define('UPLOAD_URL', APP_URL . '/assets/uploads');
+define('CACHE_PATH', __DIR__ . '/../storage/cache');
+define('CACHE_ENABLED', getenv('CACHE_ENABLED') !== '0');
 define('MAX_UPLOAD_SIZE', 5 * 1024 * 1024);
 define('UPLOAD_IMAGE_HELP_TEXT', 'รองรับ jpg, jpeg, png, webp ขนาดไม่เกิน 5MB');
 define('CSRF_PROTECTION', getenv('CSRF_PROTECTION') === '1');

@@ -10,8 +10,8 @@ if (defined('CUSTOMER_PHOTOGRAPHERS_PAGE')) {
     $photographerSearchPath = '/customer/photographers.php';
 }
 
-$districts = db_fetch_all('SELECT * FROM districts WHERE is_active = 1 ORDER BY district_name');
-$categories = db_fetch_all('SELECT * FROM service_categories WHERE is_active = 1 ORDER BY sort_order, name');
+$districts = db_fetch_all_cached('photographer_filter_districts', 300, 'SELECT * FROM districts WHERE is_active = 1 ORDER BY district_name');
+$categories = db_fetch_all_cached('photographer_filter_categories', 300, 'SELECT * FROM service_categories WHERE is_active = 1 ORDER BY sort_order, name');
 $cleanContext = clean_context_init(['district_id', 'category_id', 'available_date', 'min_rating', 'max_price', 'q', 'sort', 'page']);
 
 $districtId = 0;
@@ -95,7 +95,7 @@ if ($keyword !== '') {
     $params[] = '%' . $keyword . '%';
 }
 
-$rankingOrder = ranking_order_sql('p');
+$rankingOrder = ranking_order_sql('p', 'COALESCE(bc.completed_total, 0)');
 $orderOptions = [
     'reviews' => 'p.total_reviews DESC, ' . $rankingOrder,
     'newest' => 'p.created_at DESC, ' . $rankingOrder,
@@ -122,6 +122,12 @@ $sql = "SELECT p.*, d.district_name,
         FROM photographer_profiles p
         JOIN users u ON u.id = p.user_id
         LEFT JOIN districts d ON d.id = p.main_district_id
+        LEFT JOIN (
+            SELECT photographer_id, COUNT(*) AS completed_total
+            FROM bookings
+            WHERE status = 'completed' AND deleted_at IS NULL
+            GROUP BY photographer_id
+        ) bc ON bc.photographer_id = p.id
         WHERE {$whereSql}
         ORDER BY {$order}
         LIMIT {$perPage} OFFSET {$offset}";
@@ -161,11 +167,17 @@ if (!$photographers && $districtId > 0) {
         JOIN users u ON u.id = p.user_id AND u.status = 'active' AND u.deleted_at IS NULL
         JOIN districts d ON d.id = psa.district_id
         LEFT JOIN districts main_d ON main_d.id = p.main_district_id
+        LEFT JOIN (
+            SELECT photographer_id, COUNT(*) AS completed_total
+            FROM bookings
+            WHERE status = 'completed' AND deleted_at IS NULL
+            GROUP BY photographer_id
+        ) bc ON bc.photographer_id = p.id
         WHERE src.id = ?
         {$nearCategorySql}
         GROUP BY p.id
         HAVING distance_km <= ?
-        ORDER BY distance_km ASC, " . ranking_order_sql('p') . "
+        ORDER BY distance_km ASC, " . ranking_order_sql('p', 'COALESCE(bc.completed_total, 0)') . "
         LIMIT 6";
     $nearStmt = db()->prepare($nearSql);
     $nearStmt->execute($nearParams);

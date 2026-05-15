@@ -100,35 +100,43 @@ $articleStmt = db()->prepare('SELECT article_pool.*
 $articleStmt->execute($params);
 $articles = $articleStmt->fetchAll();
 
-$systemCount = (int)db_fetch_value('SELECT COUNT(*) FROM blogs WHERE status = "published" AND deleted_at IS NULL');
-$photographerCount = (int)db_fetch_value('SELECT COUNT(*)
-                                          FROM photographer_articles a
-                                          JOIN photographer_profiles p ON p.id = a.photographer_id
-                                          JOIN users u ON u.id = p.user_id
-                                          WHERE a.status = "published"
-                                            AND a.deleted_at IS NULL
-                                            AND p.deleted_at IS NULL
-                                            AND p.approval_status = "approved"
-                                            AND u.status = "active"
-                                            AND u.deleted_at IS NULL');
+$blogSourceCounts = cache_remember('blog_source_counts_v2', 120, function () {
+    $system = (int)db_fetch_value('SELECT COUNT(*) FROM blogs WHERE status = "published" AND deleted_at IS NULL');
+    $photographer = (int)db_fetch_value('SELECT COUNT(*)
+                                         FROM photographer_articles a
+                                         JOIN photographer_profiles p ON p.id = a.photographer_id
+                                         JOIN users u ON u.id = p.user_id
+                                         WHERE a.status = "published"
+                                           AND a.deleted_at IS NULL
+                                           AND p.deleted_at IS NULL
+                                           AND p.approval_status = "approved"
+                                           AND u.status = "active"
+                                           AND u.deleted_at IS NULL');
+    return [
+        'system' => $system,
+        'photographer' => $photographer,
+    ];
+});
+$systemCount = (int)$blogSourceCounts['system'];
+$photographerCount = (int)$blogSourceCounts['photographer'];
 $allCount = $systemCount + $photographerCount;
 
-$categories = db_fetch_all('SELECT DISTINCT t.name
-                            FROM tags t
-                            WHERE EXISTS (SELECT 1 FROM blog_tags bt JOIN blogs b ON b.id = bt.blog_id WHERE bt.tag_id = t.id AND b.status = "published" AND b.deleted_at IS NULL)
-                               OR EXISTS (SELECT 1
-                                          FROM article_tags agt
-                                          JOIN photographer_articles a ON a.id = agt.article_id
-                                          JOIN photographer_profiles p ON p.id = a.photographer_id
-                                          JOIN users u ON u.id = p.user_id
-                                          WHERE agt.tag_id = t.id
-                                            AND a.status = "published"
-                                            AND a.deleted_at IS NULL
-                                            AND p.deleted_at IS NULL
-                                            AND p.approval_status = "approved"
-                                            AND u.status = "active"
-                                            AND u.deleted_at IS NULL)
-                            ORDER BY t.name');
+$categories = db_fetch_all_cached('blog_public_categories', 300, 'SELECT DISTINCT t.name
+                                                                    FROM tags t
+                                                                    WHERE EXISTS (SELECT 1 FROM blog_tags bt JOIN blogs b ON b.id = bt.blog_id WHERE bt.tag_id = t.id AND b.status = "published" AND b.deleted_at IS NULL)
+                                                                       OR EXISTS (SELECT 1
+                                                                                  FROM article_tags agt
+                                                                                  JOIN photographer_articles a ON a.id = agt.article_id
+                                                                                  JOIN photographer_profiles p ON p.id = a.photographer_id
+                                                                                  JOIN users u ON u.id = p.user_id
+                                                                                  WHERE agt.tag_id = t.id
+                                                                                    AND a.status = "published"
+                                                                                    AND a.deleted_at IS NULL
+                                                                                    AND p.deleted_at IS NULL
+                                                                                    AND p.approval_status = "approved"
+                                                                                    AND u.status = "active"
+                                                                                    AND u.deleted_at IS NULL)
+                                                                    ORDER BY t.name');
 
 $sourceTabs = [
     ['all', 'ทั้งหมด', $allCount, 'fa-newspaper'],
@@ -277,7 +285,7 @@ include __DIR__ . '/includes/header.php';
             $hiddenTagCount = max(0, count($tagList) - count($visibleTags));
             ?>
             <article class="stock-card stock-card-hover flex h-full flex-col overflow-hidden rounded-[1.75rem]">
-                <img class="h-56 w-full object-cover" src="<?= h(public_image($article['cover_image'], '/assets/uploads/seed/photo-1492691527719-9d1e07e534b4.jpg')) ?>" alt="">
+                <img class="h-56 w-full object-cover" loading="lazy" decoding="async" src="<?= h(public_image($article['cover_image'], '/assets/uploads/seed/photo-1492691527719-9d1e07e534b4.jpg')) ?>" alt="">
                 <div class="flex flex-1 flex-col p-6">
                     <div class="flex flex-wrap items-center gap-2">
                         <span class="inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-black <?= h($articleBadgeClass) ?>">

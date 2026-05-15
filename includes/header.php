@@ -13,6 +13,7 @@ if (!$currentPath) {
 }
 $isWorkspacePage = preg_match('#^/(admin|customer|photographer)/#', $currentPath) === 1;
 $shouldShowAdminOverview = preg_match('#^/admin/#', $currentPath) === 1 && $currentPath !== '/admin/dashboard.php';
+$shouldLoadDataTables = $isWorkspacePage || preg_match('#^/admin/#', $currentPath) === 1;
 ?>
 <!doctype html>
 <html lang="th">
@@ -22,9 +23,17 @@ $shouldShowAdminOverview = preg_match('#^/admin/#', $currentPath) === 1 && $curr
     <title><?= h($pageTitle) ?></title>
     <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
     <link rel="shortcut icon" href="/assets/favicon.svg">
+    <link rel="preconnect" href="https://cdn.tailwindcss.com">
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <?php if ($shouldLoadDataTables): ?>
+        <link rel="preconnect" href="https://cdn.datatables.net">
+    <?php endif; ?>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/jquery.dataTables.min.css">
+    <?php if ($shouldLoadDataTables): ?>
+        <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/jquery.dataTables.min.css">
+    <?php endif; ?>
     <link rel="stylesheet" href="/assets/css/app.css">
     <script>
         tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','ui-sans-serif','system-ui'] } } } };

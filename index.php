@@ -1,78 +1,102 @@
 <?php
 require_once __DIR__ . '/includes/functions.php';
 
-$districts = db_fetch_all('SELECT * FROM districts WHERE is_active = 1 ORDER BY district_name');
-$categories = db_fetch_all('SELECT sc.*, COUNT(DISTINCT ps.photographer_id) AS photographer_count
-                            FROM service_categories sc
-                            LEFT JOIN photographer_services ps ON ps.category_id = sc.id AND ps.is_active = 1
-                            LEFT JOIN photographer_profiles p ON p.id = ps.photographer_id AND p.approval_status = "approved" AND p.is_available = 1 AND p.deleted_at IS NULL
-                            WHERE sc.is_active = 1
-                            GROUP BY sc.id
-                            ORDER BY sc.sort_order, sc.name');
-$featured = db_fetch_all('SELECT p.*, d.district_name,
-                          (SELECT image_path FROM photographer_portfolios pp WHERE pp.photographer_id = p.id AND pp.deleted_at IS NULL ORDER BY pp.is_featured DESC, pp.sort_order ASC LIMIT 1) AS featured_image,
-                          (SELECT GROUP_CONCAT(DISTINCT sc.name ORDER BY sc.sort_order SEPARATOR ", ") FROM photographer_services ps JOIN service_categories sc ON sc.id = ps.category_id WHERE ps.photographer_id = p.id AND ps.is_active = 1) AS services
-                          FROM photographer_profiles p
-                          JOIN users u ON u.id = p.user_id
-                          LEFT JOIN districts d ON d.id = p.main_district_id
-                          WHERE p.approval_status = "approved"
-                            AND p.is_available = 1
-                            AND u.status = "active"
-                            AND p.deleted_at IS NULL
-                            AND u.deleted_at IS NULL
-                          ORDER BY p.is_featured DESC, p.featured_until DESC, ' . ranking_order_sql('p') . '
-                          LIMIT 8');
-$topRated = db_fetch_all('SELECT p.*, d.district_name,
-                          (SELECT image_path FROM photographer_portfolios pp WHERE pp.photographer_id = p.id AND pp.deleted_at IS NULL ORDER BY pp.is_featured DESC, pp.sort_order ASC LIMIT 1) AS featured_image
-                          FROM photographer_profiles p
-                          JOIN users u ON u.id = p.user_id
-                          LEFT JOIN districts d ON d.id = p.main_district_id
-                          WHERE p.approval_status = "approved"
-                            AND p.is_available = 1
-                            AND u.status = "active"
-                            AND p.deleted_at IS NULL
-                            AND u.deleted_at IS NULL
-                          ORDER BY ' . ranking_order_sql('p') . '
-                          LIMIT 10');
-$popularDistricts = db_fetch_all('SELECT d.id, d.district_name, COUNT(DISTINCT p.id) AS photographer_count
-                                  FROM districts d
-                                  LEFT JOIN photographer_service_areas psa ON psa.district_id = d.id AND psa.is_active = 1
-                                  LEFT JOIN photographer_profiles p ON p.id = psa.photographer_id AND p.approval_status = "approved" AND p.is_available = 1 AND p.deleted_at IS NULL
-                                  WHERE d.is_active = 1
-                                  GROUP BY d.id
-                                  ORDER BY photographer_count DESC, d.district_name
-                                  LIMIT 8');
-$portfolioShowcase = db_fetch_all('SELECT pp.*, p.display_name, p.id AS photographer_id
-                                   FROM photographer_portfolios pp
-                                   JOIN photographer_profiles p ON p.id = pp.photographer_id
-                                   JOIN users u ON u.id = p.user_id
-                                   WHERE pp.deleted_at IS NULL
-                                     AND p.approval_status = "approved"
-                                     AND p.is_available = 1
-                                     AND u.status = "active"
-                                   ORDER BY pp.created_at DESC, pp.is_featured DESC
-                                   LIMIT 12');
-$articles = db_fetch_all('SELECT a.*, p.display_name
-                          FROM photographer_articles a
-                          JOIN photographer_profiles p ON p.id = a.photographer_id
-                          WHERE a.status = "published" AND a.deleted_at IS NULL
-                          ORDER BY a.published_at DESC
-                          LIMIT 6');
-$homeFaqs = db_fetch_all('SELECT * FROM faqs WHERE is_active = 1 ORDER BY sort_order, id DESC LIMIT 6');
-$reviews = db_fetch_all('SELECT r.*, u.name customer_name, u.avatar, p.display_name
-                         FROM reviews r
-                         JOIN users u ON u.id = r.customer_id
-                         JOIN photographer_profiles p ON p.id = r.photographer_id
-                         WHERE r.status = "visible" AND r.deleted_at IS NULL
-                         ORDER BY r.created_at DESC
-                         LIMIT 6');
-$stats = [
-    'photographers' => db_fetch_value('SELECT COUNT(*) FROM photographer_profiles p JOIN users u ON u.id = p.user_id WHERE p.approval_status = "approved" AND p.is_available = 1 AND p.deleted_at IS NULL AND u.status = "active" AND u.deleted_at IS NULL'),
-    'reviews' => db_fetch_value('SELECT COUNT(*) FROM reviews WHERE status = "visible" AND deleted_at IS NULL'),
-    'bookings' => db_fetch_value('SELECT COUNT(*) FROM bookings WHERE deleted_at IS NULL'),
-    'districts' => db_fetch_value('SELECT COUNT(*) FROM districts WHERE is_active = 1'),
-    'avg_rating' => db_fetch_value('SELECT AVG(rating_overall) FROM reviews WHERE status = "visible" AND deleted_at IS NULL'),
-];
+$homeData = cache_remember('home_page_public_data_v4', 120, function () {
+    $completedJoin = 'LEFT JOIN (
+                              SELECT photographer_id, COUNT(*) AS completed_total
+                              FROM bookings
+                              WHERE status = "completed" AND deleted_at IS NULL
+                              GROUP BY photographer_id
+                          ) bc ON bc.photographer_id = p.id';
+
+    return [
+        'districts' => db_fetch_all('SELECT * FROM districts WHERE is_active = 1 ORDER BY district_name'),
+        'categories' => db_fetch_all('SELECT sc.*, COUNT(DISTINCT ps.photographer_id) AS photographer_count
+                                      FROM service_categories sc
+                                      LEFT JOIN photographer_services ps ON ps.category_id = sc.id AND ps.is_active = 1
+                                      LEFT JOIN photographer_profiles p ON p.id = ps.photographer_id AND p.approval_status = "approved" AND p.is_available = 1 AND p.deleted_at IS NULL
+                                      WHERE sc.is_active = 1
+                                      GROUP BY sc.id
+                                      ORDER BY sc.sort_order, sc.name'),
+        'featured' => db_fetch_all('SELECT p.*, d.district_name,
+                                    (SELECT image_path FROM photographer_portfolios pp WHERE pp.photographer_id = p.id AND pp.deleted_at IS NULL ORDER BY pp.is_featured DESC, pp.sort_order ASC LIMIT 1) AS featured_image,
+                                    (SELECT GROUP_CONCAT(DISTINCT sc.name ORDER BY sc.sort_order SEPARATOR ", ") FROM photographer_services ps JOIN service_categories sc ON sc.id = ps.category_id WHERE ps.photographer_id = p.id AND ps.is_active = 1) AS services
+                                    FROM photographer_profiles p
+                                    JOIN users u ON u.id = p.user_id
+                                    LEFT JOIN districts d ON d.id = p.main_district_id
+                                    ' . $completedJoin . '
+                                    WHERE p.approval_status = "approved"
+                                      AND p.is_available = 1
+                                      AND u.status = "active"
+                                      AND p.deleted_at IS NULL
+                                      AND u.deleted_at IS NULL
+                                    ORDER BY p.is_featured DESC, p.featured_until DESC, ' . ranking_order_sql('p', 'COALESCE(bc.completed_total, 0)') . '
+                                    LIMIT 8'),
+        'topRated' => db_fetch_all('SELECT p.*, d.district_name,
+                                    (SELECT image_path FROM photographer_portfolios pp WHERE pp.photographer_id = p.id AND pp.deleted_at IS NULL ORDER BY pp.is_featured DESC, pp.sort_order ASC LIMIT 1) AS featured_image
+                                    FROM photographer_profiles p
+                                    JOIN users u ON u.id = p.user_id
+                                    LEFT JOIN districts d ON d.id = p.main_district_id
+                                    ' . $completedJoin . '
+                                    WHERE p.approval_status = "approved"
+                                      AND p.is_available = 1
+                                      AND u.status = "active"
+                                      AND p.deleted_at IS NULL
+                                      AND u.deleted_at IS NULL
+                                    ORDER BY ' . ranking_order_sql('p', 'COALESCE(bc.completed_total, 0)') . '
+                                    LIMIT 10'),
+        'popularDistricts' => db_fetch_all('SELECT d.id, d.district_name, COUNT(DISTINCT p.id) AS photographer_count
+                                            FROM districts d
+                                            LEFT JOIN photographer_service_areas psa ON psa.district_id = d.id AND psa.is_active = 1
+                                            LEFT JOIN photographer_profiles p ON p.id = psa.photographer_id AND p.approval_status = "approved" AND p.is_available = 1 AND p.deleted_at IS NULL
+                                            WHERE d.is_active = 1
+                                            GROUP BY d.id
+                                            ORDER BY photographer_count DESC, d.district_name
+                                            LIMIT 8'),
+        'portfolioShowcase' => db_fetch_all('SELECT pp.*, p.display_name, p.id AS photographer_id
+                                             FROM photographer_portfolios pp
+                                             JOIN photographer_profiles p ON p.id = pp.photographer_id
+                                             JOIN users u ON u.id = p.user_id
+                                             WHERE pp.deleted_at IS NULL
+                                               AND p.approval_status = "approved"
+                                               AND p.is_available = 1
+                                               AND u.status = "active"
+                                             ORDER BY pp.created_at DESC, pp.is_featured DESC
+                                             LIMIT 12'),
+        'articles' => db_fetch_all('SELECT a.*, p.display_name
+                                    FROM photographer_articles a
+                                    JOIN photographer_profiles p ON p.id = a.photographer_id
+                                    WHERE a.status = "published" AND a.deleted_at IS NULL
+                                    ORDER BY a.published_at DESC
+                                    LIMIT 6'),
+        'homeFaqs' => db_fetch_all('SELECT * FROM faqs WHERE is_active = 1 ORDER BY sort_order, id DESC LIMIT 6'),
+        'reviews' => db_fetch_all('SELECT r.*, u.name customer_name, u.avatar, p.display_name
+                                   FROM reviews r
+                                   JOIN users u ON u.id = r.customer_id
+                                   JOIN photographer_profiles p ON p.id = r.photographer_id
+                                   WHERE r.status = "visible" AND r.deleted_at IS NULL
+                                   ORDER BY r.created_at DESC
+                                   LIMIT 6'),
+        'stats' => [
+            'photographers' => db_fetch_value('SELECT COUNT(*) FROM photographer_profiles p JOIN users u ON u.id = p.user_id WHERE p.approval_status = "approved" AND p.is_available = 1 AND p.deleted_at IS NULL AND u.status = "active" AND u.deleted_at IS NULL'),
+            'reviews' => db_fetch_value('SELECT COUNT(*) FROM reviews WHERE status = "visible" AND deleted_at IS NULL'),
+            'bookings' => db_fetch_value('SELECT COUNT(*) FROM bookings WHERE deleted_at IS NULL'),
+            'districts' => db_fetch_value('SELECT COUNT(*) FROM districts WHERE is_active = 1'),
+            'avg_rating' => db_fetch_value('SELECT AVG(rating_overall) FROM reviews WHERE status = "visible" AND deleted_at IS NULL'),
+        ],
+    ];
+});
+
+$districts = $homeData['districts'];
+$categories = $homeData['categories'];
+$featured = $homeData['featured'];
+$topRated = $homeData['topRated'];
+$popularDistricts = $homeData['popularDistricts'];
+$portfolioShowcase = $homeData['portfolioShowcase'];
+$articles = $homeData['articles'];
+$homeFaqs = $homeData['homeFaqs'];
+$reviews = $homeData['reviews'];
+$stats = $homeData['stats'];
 
 $heroImages = [
     '/assets/uploads/seed/photo-1519741497674-611481863552.jpg',
@@ -153,7 +177,7 @@ include __DIR__ . '/includes/header.php';
                 ];
                 ?>
                 <div class="media-tile absolute <?= h($classes[$index]) ?> rounded-[2rem] border-4 border-white/18 shadow-2xl">
-                    <img src="<?= h($image) ?>" alt="">
+                    <img loading="lazy" decoding="async" src="<?= h($image) ?>" alt="">
                 </div>
             <?php endforeach; ?>
             <div class="absolute left-4 top-[46%] rounded-[2rem] bg-white p-5 text-neutral-950 shadow-2xl">
@@ -222,7 +246,7 @@ include __DIR__ . '/includes/header.php';
                     $topRatedImage = $p['cover_image'];
                 }
                 ?>
-	                <?= clean_context_button('/photographer_detail.php', ['id' => (int)$p['id']], '<img class="h-48 w-full rounded-[1.35rem] object-cover" src="' . h(public_image($topRatedImage, '/assets/uploads/seed/photo-1492691527719-9d1e07e534b4.jpg')) . '" alt=""><div class="p-2"><div class="mt-4 flex items-start justify-between gap-3"><h3 class="font-black text-neutral-950">' . h($p['display_name']) . '</h3><span class="rounded-full bg-red-50 px-3 py-1 text-xs font-black text-red-600"><i class="fa-solid fa-star mr-1"></i>คะแนนเฉลี่ย ' . number_format((float)$p['average_rating'], 1) . '</span></div><p class="mt-2 text-sm font-bold text-neutral-500">' . h($p['district_name']) . ' · จำนวนรีวิว ' . number_format((int)$p['total_reviews']) . ' รายการ</p></div>', 'stock-card stock-card-hover w-80 shrink-0 rounded-[1.75rem] p-4 text-left', 'contents') ?>
+	                <?= clean_context_button('/photographer_detail.php', ['id' => (int)$p['id']], '<img class="h-48 w-full rounded-[1.35rem] object-cover" loading="lazy" decoding="async" src="' . h(public_image($topRatedImage, '/assets/uploads/seed/photo-1492691527719-9d1e07e534b4.jpg')) . '" alt=""><div class="p-2"><div class="mt-4 flex items-start justify-between gap-3"><h3 class="font-black text-neutral-950">' . h($p['display_name']) . '</h3><span class="rounded-full bg-red-50 px-3 py-1 text-xs font-black text-red-600"><i class="fa-solid fa-star mr-1"></i>คะแนนเฉลี่ย ' . number_format((float)$p['average_rating'], 1) . '</span></div><p class="mt-2 text-sm font-bold text-neutral-500">' . h($p['district_name']) . ' · จำนวนรีวิว ' . number_format((int)$p['total_reviews']) . ' รายการ</p></div>', 'stock-card stock-card-hover w-80 shrink-0 rounded-[1.75rem] p-4 text-left', 'contents') ?>
             <?php endforeach; ?>
         </div>
     </div>
@@ -273,7 +297,7 @@ include __DIR__ . '/includes/header.php';
         </div>
         <div class="masonry-gallery mt-8">
             <?php foreach ($portfolioShowcase as $item): ?>
-                <?= clean_context_button('/photographer_detail.php', ['id' => (int)$item['photographer_id']], '<img class="min-h-[220px]" src="' . h(public_image($item['image_path'], '/assets/uploads/seed/photo-1516035069371-29a1b244cc32.jpg')) . '" alt=""><div class="media-overlay p-5 opacity-100"><div><b>' . h($item['title']) . '</b><p class="mt-1 text-sm text-white/72">' . h($item['display_name']) . '</p></div></div>', 'media-tile block w-full rounded-[1.5rem] text-left shadow-xl', 'contents') ?>
+                <?= clean_context_button('/photographer_detail.php', ['id' => (int)$item['photographer_id']], '<img class="min-h-[220px]" loading="lazy" decoding="async" src="' . h(public_image($item['image_path'], '/assets/uploads/seed/photo-1516035069371-29a1b244cc32.jpg')) . '" alt=""><div class="media-overlay p-5 opacity-100"><div><b>' . h($item['title']) . '</b><p class="mt-1 text-sm text-white/72">' . h($item['display_name']) . '</p></div></div>', 'media-tile block w-full rounded-[1.5rem] text-left shadow-xl', 'contents') ?>
             <?php endforeach; ?>
         </div>
     </div>
@@ -287,7 +311,7 @@ include __DIR__ . '/includes/header.php';
             <?php foreach ($reviews as $review): ?>
                 <article class="stock-card rounded-[1.5rem] p-6">
                     <div class="flex items-center gap-3">
-                        <img class="h-12 w-12 rounded-2xl object-cover" src="<?= h(public_image($review['avatar'], '/assets/uploads/seed/photo-1494790108377-be9c29b29330.jpg')) ?>" alt="">
+                        <img class="h-12 w-12 rounded-2xl object-cover" loading="lazy" decoding="async" src="<?= h(public_image($review['avatar'], '/assets/uploads/seed/photo-1494790108377-be9c29b29330.jpg')) ?>" alt="">
                         <div>
                             <p class="font-black text-neutral-950"><?= h($review['customer_name']) ?></p>
                             <p class="text-sm font-bold text-neutral-500">รีวิว <?= h($review['display_name']) ?></p>
@@ -321,7 +345,7 @@ include __DIR__ . '/includes/header.php';
         <div class="mt-8 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
             <?php foreach ($articles as $article): ?>
                 <article class="stock-card stock-card-hover rounded-[1.75rem]">
-                    <img class="h-48 w-full object-cover" src="<?= h(public_image($article['cover_image'], '/assets/uploads/seed/photo-1487412720507-e7ab37603c6f.jpg')) ?>" alt="">
+                    <img class="h-48 w-full object-cover" loading="lazy" decoding="async" src="<?= h(public_image($article['cover_image'], '/assets/uploads/seed/photo-1487412720507-e7ab37603c6f.jpg')) ?>" alt="">
                     <div class="p-6">
                         <p class="text-sm font-black text-red-600"><?= h($article['display_name']) ?></p>
                         <h3 class="mt-2 text-xl font-black text-neutral-950"><?= h($article['title']) ?></h3>

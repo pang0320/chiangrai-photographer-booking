@@ -140,6 +140,12 @@ $similarPhotographers = db_fetch_all('SELECT p.*, d.district_name,
                                       FROM photographer_profiles p
                                       JOIN users u ON u.id = p.user_id
                                       LEFT JOIN districts d ON d.id = p.main_district_id
+                                      LEFT JOIN (
+                                          SELECT photographer_id, COUNT(*) AS completed_total
+                                          FROM bookings
+                                          WHERE status = "completed" AND deleted_at IS NULL
+                                          GROUP BY photographer_id
+                                      ) bc ON bc.photographer_id = p.id
                                       WHERE p.id <> ?
                                         AND p.approval_status = "approved"
                                         AND p.is_available = 1
@@ -147,7 +153,7 @@ $similarPhotographers = db_fetch_all('SELECT p.*, d.district_name,
                                         AND p.deleted_at IS NULL
                                         AND u.deleted_at IS NULL
                                         AND EXISTS (SELECT 1 FROM photographer_service_areas a WHERE a.photographer_id = p.id AND a.district_id = ? AND a.is_active = 1)
-                                      ORDER BY ' . ranking_order_sql('p') . '
+                                      ORDER BY ' . ranking_order_sql('p', 'COALESCE(bc.completed_total, 0)') . '
                                       LIMIT 3', [$id, (int)$profile['main_district_id']]);
 $shareUrl = APP_URL . '/photographer_detail.php';
 

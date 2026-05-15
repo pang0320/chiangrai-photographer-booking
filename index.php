@@ -105,7 +105,63 @@ $heroImages = [
     '/assets/uploads/seed/photo-1520854221256-17451cc331bf.jpg',
 ];
 
-$pageTitle = 'ค้นหาช่างภาพมืออาชีพในจังหวัดเชียงราย';
+$siteUrl = rtrim(APP_URL, '/');
+$pageTitle = 'ค้นหาช่างภาพเชียงราย | จองช่างภาพมืออาชีพ งานแต่ง รับปริญญา โปรไฟล์';
+$pageMetaDescription = 'ค้นหาช่างภาพมืออาชีพในจังหวัดเชียงราย ดูผลงานจริง คะแนนรีวิว วันว่าง และส่งคำขอจองงานแต่ง รับปริญญา ครอบครัว สินค้า อีเวนต์ และโปรไฟล์ได้ง่าย';
+$pageMetaKeywords = 'ช่างภาพเชียงราย, จองช่างภาพเชียงราย, ช่างภาพงานแต่งเชียงราย, ช่างภาพรับปริญญาเชียงราย, ช่างภาพโปรไฟล์, ช่างภาพสินค้า, ช่างภาพอีเวนต์, Chiang Rai photographer';
+$pageCanonical = $siteUrl . '/';
+$pageOgTitle = $pageTitle;
+$pageOgDescription = $pageMetaDescription;
+$pageOgImage = $siteUrl . '/assets/uploads/seed/photo-1511285560929-80b456fea0bc.jpg';
+$pageJsonLd = [
+    [
+        '@context' => 'https://schema.org',
+        '@type' => 'WebSite',
+        'name' => 'Chiang Rai Photographer Booking',
+        'alternateName' => 'Chiang Rai Photo',
+        'url' => $siteUrl . '/',
+        'inLanguage' => 'th-TH',
+        'description' => $pageMetaDescription,
+        'potentialAction' => [
+            '@type' => 'SearchAction',
+            'target' => $siteUrl . '/photographers.php?q={search_term_string}',
+            'query-input' => 'required name=search_term_string',
+        ],
+    ],
+    [
+        '@context' => 'https://schema.org',
+        '@type' => 'Organization',
+        'name' => 'Chiang Rai Photographer Booking',
+        'url' => $siteUrl . '/',
+        'logo' => $siteUrl . '/assets/favicon.svg',
+        'areaServed' => [
+            '@type' => 'AdministrativeArea',
+            'name' => 'จังหวัดเชียงราย',
+        ],
+    ],
+    [
+        '@context' => 'https://schema.org',
+        '@type' => 'Service',
+        'name' => 'บริการค้นหาและส่งคำขอจองช่างภาพเชียงราย',
+        'serviceType' => 'Photographer marketplace and booking request',
+        'provider' => [
+            '@type' => 'Organization',
+            'name' => 'Chiang Rai Photographer Booking',
+            'url' => $siteUrl . '/',
+        ],
+        'areaServed' => [
+            '@type' => 'AdministrativeArea',
+            'name' => 'จังหวัดเชียงราย',
+        ],
+        'description' => $pageMetaDescription,
+        'offers' => [
+            '@type' => 'Offer',
+            'priceCurrency' => 'THB',
+            'availability' => 'https://schema.org/InStock',
+            'url' => $siteUrl . '/photographers.php',
+        ],
+    ],
+];
 include __DIR__ . '/includes/header.php';
 ?>
 

@@ -14,8 +14,12 @@ if (is_post()) {
         $status = 'reviewed';
     }
 
+    $report = db_fetch_all('SELECT reporter_id, target_type, target_id FROM reports WHERE id = ? LIMIT 1', [$id]);
     $stmt = db()->prepare('UPDATE reports SET status = ?, admin_note = ?, updated_at = NOW() WHERE id = ?');
     $stmt->execute([$status, $adminNote, $id]);
+    if ($report && !empty($report[0]['reporter_id'])) {
+        notify_user((int)$report[0]['reporter_id'], 'ผลตรวจรายงานปัญหา', 'รายงาน #' . $id . ' เป็น ' . report_status_label($status), 'report', $id);
+    }
     log_activity('moderate_report', 'reports', $id, $adminNote);
     flash('success', 'อัปเดตรายงานปัญหาแล้ว');
     clean_redirect('/admin/reports_moderation.php', []);

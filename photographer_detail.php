@@ -52,6 +52,8 @@ if (is_post()) {
         } elseif ($targetId > 0) {
             $stmt = db()->prepare('INSERT INTO reports (reporter_id, target_type, target_id, reason, detail, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, "pending", NOW(), NOW())');
             $stmt->execute([(int)$user['id'], $targetType, $targetId, $reason, $detail]);
+            $reportId = (int)db()->lastInsertId();
+            notify_admins('มีรายงานใหม่รอตรวจสอบ', ($targetType === 'review' ? 'รายงานรีวิว #' : 'รายงานช่างภาพ #') . $targetId, 'report', $reportId);
             flash('success', 'ส่งรายงานให้ Admin ตรวจสอบแล้ว');
         } else {
             flash('error', 'ไม่พบข้อมูลที่ต้องการรายงาน');
@@ -119,7 +121,15 @@ $availability = db()->prepare('SELECT pa.*
                                LIMIT 12');
 $availability->execute([$id]);
 $availability = $availability->fetchAll();
-$articles = db()->prepare('SELECT * FROM photographer_articles WHERE photographer_id = ? AND status = "published" AND deleted_at IS NULL ORDER BY published_at DESC LIMIT 6');
+$articles = db()->prepare('SELECT a.*,
+                           (SELECT GROUP_CONCAT(t.name ORDER BY t.name SEPARATOR ", ")
+                            FROM article_tags atg
+                            JOIN tags t ON t.id = atg.tag_id
+                            WHERE atg.article_id = a.id) AS tags
+                           FROM photographer_articles a
+                           WHERE a.photographer_id = ? AND a.status = "published" AND a.deleted_at IS NULL
+                           ORDER BY a.published_at DESC
+                           LIMIT 6');
 $articles->execute([$id]);
 $articles = $articles->fetchAll();
 $reviews = db()->prepare('SELECT r.*, u.name customer_name FROM reviews r JOIN users u ON u.id = r.customer_id WHERE r.photographer_id = ? AND r.status = "visible" AND r.deleted_at IS NULL ORDER BY r.created_at DESC');
@@ -455,6 +465,13 @@ include __DIR__ . '/includes/header.php';
                                 <span class="text-xs font-black text-neutral-400"><i class="fa-solid fa-calendar-day mr-1 text-red-600"></i><?= h(format_be_datetime($a['published_at'] ?: $a['created_at'])) ?></span>
                             </div>
                             <h3 class="font-black text-neutral-950"><i class="fa-solid fa-newspaper mr-2 text-red-600"></i><?= h($a['title']) ?></h3>
+                            <?php if (!empty($a['tags'])): ?>
+                                <div class="mt-3 flex flex-wrap gap-1.5">
+                                    <?php foreach (array_slice(array_filter(array_map('trim', explode(',', (string)$a['tags']))), 0, 4) as $tagName): ?>
+                                        <span class="rounded-full bg-red-50 px-2.5 py-1 text-xs font-black text-red-700"><i class="fa-solid fa-tag mr-1"></i><?= h($tagName) ?></span>
+                                    <?php endforeach; ?>
+                                </div>
+                            <?php endif; ?>
                             <p class="mt-3 line-clamp-3 text-sm leading-7 text-neutral-600"><?= h(strip_tags($a['content'])) ?></p>
                             <?= clean_context_button('/article_detail.php', ['slug' => $a['slug']], '<i class="fa-solid fa-eye mr-1"></i>อ่านต่อ', 'mt-4 inline-flex rounded-full bg-neutral-950 px-4 py-2 text-xs font-black text-white hover:bg-red-600') ?>
                         </article>

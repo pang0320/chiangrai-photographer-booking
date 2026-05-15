@@ -187,6 +187,8 @@ function initCalendarDateInputs() {
     const popover = calendar.querySelector('[data-calendar-popover]');
     const prevButton = calendar.querySelector('[data-calendar-prev]');
     const nextButton = calendar.querySelector('[data-calendar-next]');
+    const today = new Date();
+    const minMonth = new Date(today.getFullYear(), today.getMonth(), 1);
     let statuses = {};
     let selectableStatuses = [];
     let current;
@@ -208,8 +210,10 @@ function initCalendarDateInputs() {
     if (selectedIso) {
       const parts = selectedIso.split('-').map(function (part) { return parseInt(part, 10); });
       current = new Date(parts[0], parts[1] - 1, 1);
+      if (current < minMonth) {
+        current = new Date(minMonth.getFullYear(), minMonth.getMonth(), 1);
+      }
     } else {
-      const today = new Date();
       current = new Date(today.getFullYear(), today.getMonth(), 1);
     }
 
@@ -219,11 +223,17 @@ function initCalendarDateInputs() {
       const firstDay = new Date(year, month, 1).getDay();
       const daysInMonth = new Date(year, month + 1, 0).getDate();
       const selected = parseBeDateToIso(hidden.value);
-      const today = new Date();
       const todayIso = buildIsoDate(today.getFullYear(), today.getMonth() + 1, today.getDate());
 
       monthLabel.textContent = thaiMonths[month] + ' ' + (year + 543);
       grid.innerHTML = '';
+
+      if (prevButton) {
+        const isMinMonth = current.getFullYear() === minMonth.getFullYear() && current.getMonth() === minMonth.getMonth();
+        prevButton.disabled = isMinMonth;
+        prevButton.classList.toggle('calendar-nav-disabled', isMinMonth);
+        prevButton.setAttribute('aria-disabled', isMinMonth ? 'true' : 'false');
+      }
 
       for (let blank = 0; blank < firstDay; blank++) {
         const spacer = document.createElement('span');
@@ -273,7 +283,11 @@ function initCalendarDateInputs() {
 
     if (prevButton) {
       prevButton.addEventListener('click', function () {
-        current = new Date(current.getFullYear(), current.getMonth() - 1, 1);
+        const previousMonth = new Date(current.getFullYear(), current.getMonth() - 1, 1);
+        if (previousMonth < minMonth) {
+          return;
+        }
+        current = previousMonth;
         renderCalendar();
       });
     }

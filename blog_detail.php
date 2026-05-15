@@ -31,6 +31,8 @@ if (is_post()) {
     } else {
         $stmt = db()->prepare('INSERT INTO reports (reporter_id, target_type, target_id, reason, detail, status, created_at, updated_at) VALUES (?, "article", ?, ?, ?, "pending", NOW(), NOW())');
         $stmt->execute([(int)$user['id'], (int)$blog['id'], $reason, $detail]);
+        $reportId = (int)db()->lastInsertId();
+        notify_admins('มีรายงานบทความใหม่', $blog['title'], 'report', $reportId);
         flash('success', 'ส่งรายงานบทความให้ Admin ตรวจสอบแล้ว');
     }
     clean_redirect('/blog_detail.php', ['slug' => $blog['slug']]);

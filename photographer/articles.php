@@ -35,6 +35,7 @@ if (is_post()) {
         $status = (string)($_POST['status'] ?? 'draft');
         $content = trim((string)($_POST['content'] ?? ''));
         $plainContent = trim(strip_tags($content));
+        $tagIds = selected_article_tag_ids_from_post();
 
         if (!in_array($status, ['draft', 'published', 'hidden'], true)) {
             $status = 'draft';
@@ -63,6 +64,7 @@ if (is_post()) {
                                        updated_at = NOW()
                                    WHERE id = ? AND photographer_id = ?');
             $stmt->execute([$title, $slug, $cover, $content, $status, $status, $articleId, $pid]);
+            sync_article_tag_relations('article_tags', 'article_id', $articleId, $tagIds);
             log_activity('manage_articles', 'photographer_articles', $articleId);
             flash('success', 'แก้ไขบทความแล้ว');
         } else {
@@ -70,6 +72,7 @@ if (is_post()) {
                                    VALUES (?, ?, ?, ?, ?, ?, IF(? = "published", NOW(), NULL), NOW(), NOW())');
             $stmt->execute([$pid, $title, unique_slug('photographer_articles', $title), $cover, $content, $status, $status]);
             $articleId = (int)db()->lastInsertId();
+            sync_article_tag_relations('article_tags', 'article_id', $articleId, $tagIds);
             log_activity('manage_articles', 'photographer_articles', $articleId);
             flash('success', 'บันทึกบทความแล้ว');
         }
@@ -86,13 +89,22 @@ if ($editId > 0) {
     $stmt->execute([$editId, $pid]);
     $editArticle = $stmt->fetch();
 }
+$editTagIds = $editArticle ? selected_article_tag_ids('article_tags', 'article_id', (int)$editArticle['id']) : [];
+$tagSelectorHtml = article_tag_selector_html($editTagIds);
 
 $orderSql = 'created_at DESC, id DESC';
 if ($sort === 'oldest') {
     $orderSql = 'created_at ASC, id ASC';
 }
 
-$stmt = db()->prepare('SELECT * FROM photographer_articles WHERE photographer_id = ? AND deleted_at IS NULL ORDER BY ' . $orderSql);
+$stmt = db()->prepare('SELECT a.*,
+                       (SELECT GROUP_CONCAT(t.name ORDER BY t.name SEPARATOR ", ")
+                        FROM article_tags atg
+                        JOIN tags t ON t.id = atg.tag_id
+                        WHERE atg.article_id = a.id) AS tags
+                       FROM photographer_articles a
+                       WHERE a.photographer_id = ? AND a.deleted_at IS NULL
+                       ORDER BY ' . $orderSql);
 $stmt->execute([$pid]);
 $items = $stmt->fetchAll();
 
@@ -145,6 +157,14 @@ include __DIR__ . '/../includes/header.php';
             <div id="article-editor" class="min-h-[260px] rounded-b-2xl bg-white"></div>
         </div>
 
+        <div class="grid gap-2">
+            <div>
+                <label class="block text-sm font-black text-neutral-700"><i class="fa-solid fa-tags mr-2 text-red-600"></i>แท็กบทความ</label>
+                <p class="mt-1 text-xs font-bold leading-6 text-neutral-500">เลือกจากแท็กที่ระบบกำหนดไว้ เพื่อให้หน้า blog ค้นหาและจัดกลุ่มได้ตรงกันทั้งระบบ</p>
+            </div>
+            <?= $tagSelectorHtml ?>
+        </div>
+
         <select name="status" class="stock-input rounded-2xl px-4 py-3 font-semibold">
             <?php foreach (['draft' => 'ฉบับร่าง', 'published' => 'เผยแพร่', 'hidden' => 'ซ่อน'] as $status => $label): ?>
                 <option value="<?= h($status) ?>" <?php if ($editArticle && $editArticle['status'] === $status): ?>selected<?php endif; ?>><?= h($label) ?></option>
@@ -179,6 +199,13 @@ include __DIR__ . '/../includes/header.php';
                         <span class="mx-2 text-neutral-300">/</span>
                         แก้ไขล่าสุด: <?= h(format_be_datetime($item['updated_at'])) ?>
                     </p>
+                    <?php if (!empty($item['tags'])): ?>
+                        <div class="mt-2 flex flex-wrap gap-1.5">
+                            <?php foreach (array_slice(array_filter(array_map('trim', explode(',', (string)$item['tags']))), 0, 6) as $tagName): ?>
+                                <span class="rounded-full bg-red-50 px-2.5 py-1 text-xs font-black text-red-700"><i class="fa-solid fa-tag mr-1"></i><?= h($tagName) ?></span>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
                     <p class="mt-2 line-clamp-2 text-sm leading-7 text-neutral-600"><?= h(strip_tags($item['content'])) ?></p>
                 </div>
 

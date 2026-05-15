@@ -29,6 +29,7 @@ $breadcrumbLabels = [
     'article_detail.php' => 'รายละเอียดบทความ',
     'blogs.php' => 'บทความระบบ',
     'profile.php' => 'โปรไฟล์',
+    'analytics.php' => 'วิเคราะห์ผลงาน',
     'portfolio.php' => 'ตัวอย่างงานถ่ายภาพ',
     'availability.php' => 'วันว่าง',
     'services.php' => 'ประเภทงาน',

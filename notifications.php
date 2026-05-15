@@ -15,6 +15,22 @@ if (is_post()) {
 
     $action = (string)($_POST['action'] ?? '');
 
+    if ($action === 'open_notification') {
+        $notificationId = (int)($_POST['notification_id'] ?? 0);
+        $stmt = db()->prepare('SELECT * FROM notifications WHERE id = ? AND user_id = ? LIMIT 1');
+        $stmt->execute([$notificationId, (int)$user['id']]);
+        $notification = $stmt->fetch();
+
+        if ($notification) {
+            $stmt = db()->prepare('UPDATE notifications SET is_read = 1 WHERE id = ? AND user_id = ?');
+            $stmt->execute([$notificationId, (int)$user['id']]);
+            log_activity('open_notification', 'notifications', $notificationId);
+            redirect(notification_target_url($notification, $user));
+        }
+
+        flash('error', 'ไม่พบแจ้งเตือนนี้');
+    }
+
     if ($action === 'mark_all_read') {
         $stmt = db()->prepare('UPDATE notifications SET is_read = 1 WHERE user_id = ?');
         $stmt->execute([(int)$user['id']]);
@@ -81,26 +97,30 @@ include __DIR__ . '/includes/header.php';
     <?php else: ?>
         <div class="mt-6 grid gap-3">
             <?php foreach ($notifications as $notification): ?>
-                <?php $targetUrl = notification_target_url($notification, $user); ?>
-                <a href="<?= h($targetUrl) ?>" class="stock-card stock-card-hover block rounded-[1.5rem] p-5 <?php if (!(int)$notification['is_read']): ?>border-red-200<?php endif; ?>">
-                    <div class="flex flex-wrap items-start justify-between gap-3">
-                        <div>
-                            <h2 class="font-black text-neutral-950"><?= h($notification['title']) ?></h2>
-                            <p class="mt-1 text-sm leading-6 text-neutral-600"><?= h($notification['message']) ?></p>
+                <form method="post" class="contents">
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="action" value="open_notification">
+                    <input type="hidden" name="notification_id" value="<?= (int)$notification['id'] ?>">
+                    <button type="submit" class="stock-card stock-card-hover block w-full rounded-[1.5rem] p-5 text-left <?php if (!(int)$notification['is_read']): ?>border-red-200<?php endif; ?>">
+                        <div class="flex flex-wrap items-start justify-between gap-3">
+                            <div class="min-w-0">
+                                <h2 class="font-black text-neutral-950"><?= h($notification['title']) ?></h2>
+                                <p class="mt-1 text-sm leading-6 text-neutral-600"><?= h($notification['message']) ?></p>
+                            </div>
+                            <span class="rounded-full px-3 py-1 text-xs font-black <?php if ((int)$notification['is_read']): ?>bg-neutral-100 text-neutral-600<?php else: ?>bg-red-50 text-red-700<?php endif; ?>">
+                                <?php if ((int)$notification['is_read']): ?>
+                                    อ่านแล้ว
+                                <?php else: ?>
+                                    ใหม่
+                                <?php endif; ?>
+                            </span>
                         </div>
-                        <span class="rounded-full px-3 py-1 text-xs font-black <?php if ((int)$notification['is_read']): ?>bg-neutral-100 text-neutral-600<?php else: ?>bg-red-50 text-red-700<?php endif; ?>">
-                            <?php if ((int)$notification['is_read']): ?>
-                                อ่านแล้ว
-                            <?php else: ?>
-                                ใหม่
-                            <?php endif; ?>
-                        </span>
-                    </div>
-                    <p class="mt-3 text-xs font-bold text-neutral-400">
-                        <?= h(format_be_datetime($notification['created_at'])) ?>
-                        <span class="ml-2 text-red-600"><i class="fa-solid fa-arrow-up-right-from-square mr-1"></i>เปิดรายละเอียด</span>
-                    </p>
-                </a>
+                        <p class="mt-3 text-xs font-bold text-neutral-400">
+                            <?= h(format_be_datetime($notification['created_at'])) ?>
+                            <span class="ml-2 text-red-600"><i class="fa-solid fa-arrow-up-right-from-square mr-1"></i>เปิดรายละเอียด</span>
+                        </p>
+                    </button>
+                </form>
             <?php endforeach; ?>
         </div>
     <?php endif; ?>

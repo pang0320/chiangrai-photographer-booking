@@ -11,8 +11,13 @@ if (!$currentPath) {
 $navItems = [];
 $roleTitle = 'พื้นที่ทำงาน';
 $roleIcon = 'fa-grid-2';
+$sidebarAvatarUrl = '';
+$sidebarInitial = '';
 
 if ($me) {
+    $sidebarAvatarUrl = user_avatar_url($me);
+    $sidebarInitial = mb_substr((string)$me['name'], 0, 1, 'UTF-8');
+
     if ($me['role_name'] === 'admin') {
         $roleTitle = 'ผู้ดูแลระบบ';
         $roleIcon = 'fa-user-shield';
@@ -52,6 +57,7 @@ if ($me) {
             ['/photographer/dashboard.php', 'แดชบอร์ด', 'fa-gauge'],
             ['/photographer/onboarding.php', 'ตั้งค่าเริ่มต้น', 'fa-list-check'],
             ['/photographer/profile.php', 'โปรไฟล์', 'fa-id-card'],
+            ['/photographer/analytics.php', 'วิเคราะห์ผลงาน', 'fa-chart-line'],
             ['/photographer/service_areas.php', 'พื้นที่ให้บริการ', 'fa-map-location-dot'],
             ['/photographer/services.php', 'ประเภทงานที่รับ', 'fa-list-check'],
             ['/photographer/portfolio.php', 'ตัวอย่างงาน', 'fa-images'],
@@ -83,9 +89,17 @@ if ($me) {
 <aside class="workspace-sidebar">
     <div class="rounded-[1.5rem] bg-neutral-950 p-5 text-white shadow-xl">
         <div class="flex items-center gap-3">
-            <span class="grid h-11 w-11 place-items-center rounded-2xl bg-red-600">
-                <i class="fa-solid <?= h($roleIcon) ?>"></i>
-            </span>
+            <?php if ($sidebarAvatarUrl !== ''): ?>
+                <img class="h-11 w-11 rounded-2xl object-cover ring-2 ring-white/15" src="<?= h($sidebarAvatarUrl) ?>" alt="<?= h($me['name'] ?? $roleTitle) ?>">
+            <?php else: ?>
+                <span class="grid h-11 w-11 place-items-center rounded-2xl bg-red-600 text-sm font-black">
+                    <?php if ($sidebarInitial !== ''): ?>
+                        <?= h($sidebarInitial) ?>
+                    <?php else: ?>
+                        <i class="fa-solid <?= h($roleIcon) ?>"></i>
+                    <?php endif; ?>
+                </span>
+            <?php endif; ?>
             <div>
                 <p class="text-xs font-black uppercase tracking-[0.2em] text-white/45">เมนูจัดการ</p>
                 <h2 class="font-black"><?= h($roleTitle) ?></h2>

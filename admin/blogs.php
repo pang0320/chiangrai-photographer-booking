@@ -9,31 +9,9 @@ if (isset($cleanContext['edit'])) {
     $editId = (int)$cleanContext['edit'];
 }
 
-function save_blog_tags(int $blogId, string $tagText): void
+function save_blog_tags(int $blogId, array $tagIds): void
 {
-    $stmt = db()->prepare('DELETE FROM blog_tags WHERE blog_id = ?');
-    $stmt->execute([$blogId]);
-
-    $rawTags = explode(',', $tagText);
-    foreach ($rawTags as $rawTag) {
-        $tagName = trim($rawTag);
-        if ($tagName === '') {
-            continue;
-        }
-
-        $slug = unique_slug('tags', $tagName);
-        $existingId = db_fetch_value('SELECT id FROM tags WHERE name = ? OR slug = ? LIMIT 1', [$tagName, slugify($tagName)]);
-        if ($existingId) {
-            $tagId = (int)$existingId;
-        } else {
-            $stmt = db()->prepare('INSERT INTO tags (name, slug, created_at) VALUES (?, ?, NOW())');
-            $stmt->execute([$tagName, $slug]);
-            $tagId = (int)db()->lastInsertId();
-        }
-
-        $stmt = db()->prepare('INSERT IGNORE INTO blog_tags (blog_id, tag_id) VALUES (?, ?)');
-        $stmt->execute([$blogId, $tagId]);
-    }
+    sync_article_tag_relations('blog_tags', 'blog_id', $blogId, $tagIds);
 }
 
 if (is_post()) {
@@ -70,7 +48,7 @@ if (is_post()) {
     $excerpt = trim((string)($_POST['excerpt'] ?? ''));
     $content = trim((string)($_POST['content'] ?? ''));
     $status = (string)($_POST['status'] ?? 'draft');
-    $tagText = trim((string)($_POST['tags'] ?? ''));
+    $tagIds = selected_article_tag_ids_from_post();
 
     if (!in_array($status, ['draft', 'published', 'hidden'], true)) {
         $status = 'draft';
@@ -104,13 +82,13 @@ if (is_post()) {
         if ($id > 0) {
             $stmt = db()->prepare('UPDATE blogs SET title = ?, slug = ?, cover_image = ?, excerpt = ?, content = ?, status = ?, published_at = IF(? = "published", IFNULL(published_at, NOW()), published_at), updated_at = NOW() WHERE id = ?');
             $stmt->execute([$title, $slug, $coverImage, $excerpt, $content, $status, $status, $id]);
-            save_blog_tags($id, $tagText);
+            save_blog_tags($id, $tagIds);
             log_activity('update_blog', 'blogs', $id);
         } else {
             $stmt = db()->prepare('INSERT INTO blogs (admin_id, title, slug, cover_image, excerpt, content, status, published_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())');
             $stmt->execute([(int)$adminUser['id'], $title, $slug, $coverImage, $excerpt, $content, $status, $publishedAt]);
             $id = (int)db()->lastInsertId();
-            save_blog_tags($id, $tagText);
+            save_blog_tags($id, $tagIds);
             log_activity('create_blog', 'blogs', $id);
         }
 
@@ -123,15 +101,16 @@ if (is_post()) {
 }
 
 $editBlog = null;
-$editTags = '';
+$editTagIds = [];
 if ($editId > 0) {
     $stmt = db()->prepare('SELECT * FROM blogs WHERE id = ? AND deleted_at IS NULL LIMIT 1');
     $stmt->execute([$editId]);
     $editBlog = $stmt->fetch();
     if ($editBlog) {
-        $editTags = (string)db_fetch_value('SELECT GROUP_CONCAT(t.name ORDER BY t.name SEPARATOR ", ") FROM blog_tags bt JOIN tags t ON t.id = bt.tag_id WHERE bt.blog_id = ?', [$editId]);
+        $editTagIds = selected_article_tag_ids('blog_tags', 'blog_id', $editId);
     }
 }
+$tagSelectorHtml = article_tag_selector_html($editTagIds);
 
 $q = trim((string)clean_context_value($cleanContext, 'q', ''));
 $statusFilter = (string)clean_context_value($cleanContext, 'status', '');
@@ -197,11 +176,11 @@ include __DIR__ . '/../includes/header.php';
             <textarea name="content" rows="8" required class="stock-input rounded-2xl px-4 py-3 font-semibold"><?php if ($editBlog): ?><?= h($editBlog['content']) ?><?php endif; ?></textarea>
         </label>
         <div class="grid gap-4 lg:grid-cols-2">
-            <label class="grid gap-2 text-sm font-black text-neutral-700">
-                <span><i class="fa-solid fa-tags mr-1 text-red-600"></i>แท็ก คั่นด้วย comma</span>
-                <input name="tags" value="<?= h($editTags) ?>" class="stock-input rounded-2xl px-4 py-3 font-semibold" placeholder="งานแต่ง, พอร์ตเทรต, เชียงราย">
-                <span class="text-xs font-bold leading-6 text-neutral-500">แท็กเป็น shortcut ช่วยค้นหาและจัดกลุ่มบทความ หน้า public จะแสดง 4 แท็กแรก และแสดง +จำนวนที่เหลืออัตโนมัติ</span>
-            </label>
+            <div class="grid gap-2 text-sm font-black text-neutral-700">
+                <span><i class="fa-solid fa-tags mr-1 text-red-600"></i>แท็กบทความ</span>
+                <p class="text-xs font-bold leading-6 text-neutral-500">เลือกจากแท็กที่ระบบกำหนดไว้ หน้า public จะแสดง 4 แท็กแรก และแสดง +จำนวนที่เหลืออัตโนมัติ</p>
+                <?= $tagSelectorHtml ?>
+            </div>
             <label class="grid gap-2 text-sm font-black text-neutral-700">
                 <span><i class="fa-solid fa-image mr-1 text-red-600"></i>รูปปก</span>
                 <input type="file" name="cover_image" accept="image/jpeg,image/png,image/webp" class="stock-input rounded-2xl px-4 py-3 font-semibold">

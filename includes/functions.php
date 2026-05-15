@@ -498,8 +498,25 @@ function log_activity(string $action, string $table = '', ?int $recordId = null,
 
 function notify_user(int $userId, string $title, string $message, string $type = 'info', ?int $relatedId = null): void
 {
+    if ($userId <= 0) {
+        return;
+    }
+
     $stmt = db()->prepare('INSERT INTO notifications (user_id, title, message, type, related_id, is_read, created_at) VALUES (?, ?, ?, ?, ?, 0, NOW())');
     $stmt->execute([$userId, $title, $message, $type, $relatedId]);
+}
+
+function notify_admins(string $title, string $message, string $type = 'info', ?int $relatedId = null): void
+{
+    $admins = db_fetch_all('SELECT u.id
+                            FROM users u
+                            JOIN roles r ON r.id = u.role_id
+                            WHERE r.name = "admin"
+                              AND u.status = "active"
+                              AND u.deleted_at IS NULL');
+    foreach ($admins as $admin) {
+        notify_user((int)$admin['id'], $title, $message, $type, $relatedId);
+    }
 }
 
 function required_mark(): string
@@ -579,8 +596,46 @@ function notification_target_url(array $notification, array $user): string
         }
     }
 
-    if (($type === 'photographer_rejected' || $type === 'photographer_approved') && $role === 'photographer') {
-        return '/photographer/profile.php';
+    if ($type === 'review') {
+        if ($role === 'photographer') {
+            return '/photographer/reviews.php';
+        }
+        if ($role === 'customer') {
+            return '/customer/reviews.php';
+        }
+        if ($role === 'admin') {
+            return '/admin/reviews.php';
+        }
+    }
+
+    if (in_array($type, ['photographer_verified', 'photographer_rejected', 'photographer_approved', 'photographer_suspended'], true)) {
+        if ($role === 'photographer') {
+            return '/photographer/profile.php';
+        }
+        if ($role === 'admin') {
+            return '/admin/photographers.php';
+        }
+    }
+
+    if ($type === 'account') {
+        if ($role === 'customer') {
+            return '/customer/profile.php';
+        }
+        if ($role === 'photographer') {
+            return '/photographer/profile.php';
+        }
+        if ($role === 'admin') {
+            return '/admin/users.php';
+        }
+    }
+
+    if ($type === 'report') {
+        if ($role === 'admin') {
+            return '/admin/reports_moderation.php';
+        }
+        if ($role === 'customer') {
+            return '/customer/reports.php';
+        }
     }
 
     if ($type === 'article' && $relatedId > 0) {
@@ -645,6 +700,27 @@ function photographer_id_for_user(int $userId): int
 {
     $profile = photographer_profile_by_user($userId);
     return $profile ? (int)$profile['id'] : 0;
+}
+
+function user_avatar_url(array $user): string
+{
+    $role = (string)($user['role_name'] ?? '');
+    $fallback = '/assets/uploads/seed/photo-1494790108377-be9c29b29330.jpg';
+    $imagePath = (string)($user['avatar'] ?? '');
+
+    if ($role === 'photographer') {
+        $fallback = '/assets/uploads/seed/photo-1500648767791-00dcc994a43e.jpg';
+        $profile = photographer_profile_by_user((int)($user['id'] ?? 0));
+        if ($profile && !empty($profile['profile_image'])) {
+            $imagePath = (string)$profile['profile_image'];
+        }
+    }
+
+    if ($role === 'admin') {
+        $fallback = '/assets/uploads/seed/photo-1519345182560-3f2917c472ef.jpg';
+    }
+
+    return public_image($imagePath, $fallback);
 }
 
 function public_image(?string $path, string $fallback): string
@@ -853,7 +929,7 @@ function calendar_date_input(string $name, ?string $value = '', array $dateStatu
         $selectableStatuses = $GLOBALS['calendar_date_selectable_statuses'][$name];
     }
     $selectableJson = h(json_encode($selectableStatuses, JSON_UNESCAPED_UNICODE));
-    $showLegend = true;
+    $showLegend = !empty($dateStatuses);
     if (isset($GLOBALS['calendar_date_show_legend'][$name])) {
         $showLegend = (bool)$GLOBALS['calendar_date_show_legend'][$name];
     }
@@ -974,6 +1050,87 @@ function add_booking_status_log(int $bookingId, ?string $oldStatus, string $newS
 {
     $stmt = db()->prepare('INSERT INTO booking_status_logs (booking_id, old_status, new_status, changed_by, note, created_at) VALUES (?, ?, ?, ?, ?, NOW())');
     $stmt->execute([$bookingId, $oldStatus, $newStatus, $changedBy, $note]);
+}
+
+function booking_status_timeline_icon(string $status): string
+{
+    $icons = [
+        'pending' => 'fa-hourglass-half',
+        'accepted' => 'fa-calendar-check',
+        'confirmed' => 'fa-handshake',
+        'completed' => 'fa-circle-check',
+        'rejected' => 'fa-circle-xmark',
+        'cancelled' => 'fa-ban',
+    ];
+
+    return $icons[$status] ?? 'fa-clock-rotate-left';
+}
+
+function booking_status_timeline_tone(string $status): string
+{
+    $tones = [
+        'pending' => 'timeline-tone-pending',
+        'accepted' => 'timeline-tone-accepted',
+        'confirmed' => 'timeline-tone-confirmed',
+        'completed' => 'timeline-tone-completed',
+        'rejected' => 'timeline-tone-rejected',
+        'cancelled' => 'timeline-tone-cancelled',
+    ];
+
+    return $tones[$status] ?? 'timeline-tone-default';
+}
+
+function booking_status_timeline_html(array $logs): string
+{
+    if (!$logs) {
+        return '<div class="booking-timeline-empty">'
+            . '<i class="fa-solid fa-clipboard-list"></i>'
+            . '<h3>ยังไม่มีประวัติสถานะ</h3>'
+            . '<p>เมื่อมีการเปลี่ยนสถานะ ระบบจะแสดงเป็นเส้นเวลาที่นี่</p>'
+            . '</div>';
+    }
+
+    $total = count($logs);
+    $html = '<div class="booking-timeline-scroll" aria-label="ประวัติสถานะแบบเส้นเวลา">';
+    $html .= '<div class="booking-timeline" style="--timeline-count:' . (int)$total . '">';
+
+    foreach ($logs as $index => $log) {
+        $newStatus = (string)($log['new_status'] ?? '');
+        $oldStatus = (string)($log['old_status'] ?? '');
+        $oldStatusText = $oldStatus !== '' ? booking_status_label($oldStatus) : 'เริ่มต้น';
+        $newStatusText = booking_status_label($newStatus);
+        $changedByName = !empty($log['name']) ? (string)$log['name'] : 'ระบบ';
+        $note = trim((string)($log['note'] ?? ''));
+        $stepNumber = $index + 1;
+        $isLatest = $stepNumber === $total;
+        $tone = booking_status_timeline_tone($newStatus);
+        $icon = booking_status_timeline_icon($newStatus);
+
+        $html .= '<article class="booking-timeline-item ' . h($tone) . ($isLatest ? ' is-latest' : '') . '" style="--step-index:' . (int)$stepNumber . '" tabindex="0">';
+        $html .= '<div class="booking-timeline-marker" aria-hidden="true"><span>' . (int)$stepNumber . '</span><i class="fa-solid ' . h($icon) . '"></i></div>';
+        $html .= '<div class="booking-timeline-card">';
+        $html .= '<div class="booking-timeline-head">';
+        $html .= '<div>';
+        $html .= '<p class="booking-timeline-kicker">ขั้นตอนที่ ' . (int)$stepNumber . ($isLatest ? ' · ล่าสุด' : '') . '</p>';
+        $html .= '<h3>' . h($newStatusText) . '</h3>';
+        $html .= '</div>';
+        $html .= status_badge($newStatus);
+        $html .= '</div>';
+        $html .= '<div class="booking-timeline-flow">';
+        $html .= '<span>' . h($oldStatusText) . '</span><i class="fa-solid fa-arrow-right"></i><strong>' . h($newStatusText) . '</strong>';
+        $html .= '</div>';
+        $html .= '<div class="booking-timeline-meta">';
+        $html .= '<span><i class="fa-solid fa-calendar-day"></i>' . h(format_be_datetime((string)$log['created_at'])) . '</span>';
+        $html .= '<span><i class="fa-solid fa-user"></i>' . h($changedByName) . '</span>';
+        $html .= '</div>';
+        if ($note !== '') {
+            $html .= '<p class="booking-timeline-note"><i class="fa-solid fa-note-sticky"></i>' . nl2br(h($note)) . '</p>';
+        }
+        $html .= '</div>';
+        $html .= '</article>';
+    }
+
+    return $html . '</div></div>';
 }
 
 function sync_availability_after_booking_status(int $bookingId): void
@@ -1230,6 +1387,238 @@ function footer_public_data(): array
             'districts' => db_fetch_all('SELECT district_name FROM districts WHERE is_active = 1 ORDER BY district_name LIMIT 8'),
         ];
     });
+}
+
+function predefined_article_tag_groups(): array
+{
+    return [
+        'ประเภทงาน' => [
+            'งานแต่งงาน',
+            'พรีเวดดิ้ง',
+            'รับปริญญา',
+            'ครอบครัว',
+            'เด็กและทารก',
+            'พอร์ตเทรต',
+            'สินค้า',
+            'อาหาร',
+            'อีเวนต์',
+            'องค์กร',
+            'ท่องเที่ยว',
+            'อสังหาริมทรัพย์',
+        ],
+        'สไตล์ภาพ' => [
+            'แคนดิด',
+            'มินิมอล',
+            'โทนอุ่น',
+            'โทนฟิล์ม',
+            'แฟชั่น',
+            'สารคดี',
+            'ไลฟ์สไตล์',
+            'ธรรมชาติ',
+            'กลางคืน',
+            'สตูดิโอ',
+            'ภาพขาวดำ',
+            'ภาพเล่าเรื่อง',
+        ],
+        'สถานที่เชียงราย' => [
+            'เชียงราย',
+            'แม่สาย',
+            'เชียงแสน',
+            'แม่จัน',
+            'แม่ฟ้าหลวง',
+            'เทิง',
+            'ภูชี้ฟ้า',
+            'ดอยตุง',
+            'วัดร่องขุ่น',
+            'ไร่ชา',
+            'คาเฟ่',
+            'สวนดอกไม้',
+        ],
+        'คำแนะนำลูกค้า' => [
+            'เตรียมตัวก่อนถ่าย',
+            'เลือกชุด',
+            'เลือกโลเคชัน',
+            'โพสท่า',
+            'วางแผนเวลา',
+            'งบประมาณ',
+            'เช็กลิสต์',
+            'วันฝนตก',
+            'แสงธรรมชาติ',
+            'ไฟสตูดิโอ',
+            'ส่งมอบไฟล์',
+            'การจองช่างภาพ',
+        ],
+    ];
+}
+
+function predefined_article_tag_names(): array
+{
+    $names = [];
+    foreach (predefined_article_tag_groups() as $groupTags) {
+        foreach ($groupTags as $name) {
+            $names[] = $name;
+        }
+    }
+
+    return array_values(array_unique($names));
+}
+
+function ensure_predefined_article_tags(): array
+{
+    $tagRows = [];
+    foreach (predefined_article_tag_names() as $tagName) {
+        $slug = slugify($tagName);
+        $existingId = db_fetch_value('SELECT id FROM tags WHERE name = ? OR slug = ? LIMIT 1', [$tagName, $slug]);
+        if ($existingId) {
+            $tagRows[$tagName] = (int)$existingId;
+            continue;
+        }
+
+        $stmt = db()->prepare('INSERT INTO tags (name, slug, created_at) VALUES (?, ?, NOW())');
+        $stmt->execute([$tagName, unique_slug('tags', $tagName)]);
+        $tagRows[$tagName] = (int)db()->lastInsertId();
+    }
+
+    return $tagRows;
+}
+
+function article_tag_options(): array
+{
+    $tagIdsByName = ensure_predefined_article_tags();
+    $groups = [];
+
+    foreach (predefined_article_tag_groups() as $groupName => $tagNames) {
+        $groups[$groupName] = [];
+        foreach ($tagNames as $tagName) {
+            if (!isset($tagIdsByName[$tagName])) {
+                continue;
+            }
+            $groups[$groupName][] = [
+                'id' => (int)$tagIdsByName[$tagName],
+                'name' => $tagName,
+            ];
+        }
+    }
+
+    return $groups;
+}
+
+function allowed_article_tag_ids(): array
+{
+    $ids = [];
+    foreach (article_tag_options() as $tags) {
+        foreach ($tags as $tag) {
+            $ids[] = (int)$tag['id'];
+        }
+    }
+
+    return array_values(array_unique($ids));
+}
+
+function selected_article_tag_ids_from_post(): array
+{
+    $rawIds = $_POST['tag_ids'] ?? [];
+    if (!is_array($rawIds)) {
+        $rawIds = [];
+    }
+
+    $allowed = array_flip(allowed_article_tag_ids());
+    $selected = [];
+
+    foreach ($rawIds as $rawId) {
+        $tagId = (int)$rawId;
+        if ($tagId > 0 && isset($allowed[$tagId])) {
+            $selected[] = $tagId;
+        }
+    }
+
+    return array_values(array_unique($selected));
+}
+
+function selected_article_tag_ids(string $relationTable, string $recordColumn, int $recordId): array
+{
+    if ($recordId <= 0) {
+        return [];
+    }
+
+    $allowedTables = [
+        'article_tags' => 'article_id',
+        'blog_tags' => 'blog_id',
+    ];
+
+    if (!isset($allowedTables[$relationTable]) || $allowedTables[$relationTable] !== $recordColumn) {
+        return [];
+    }
+
+    $rows = db_fetch_all('SELECT tag_id FROM ' . $relationTable . ' WHERE ' . $recordColumn . ' = ?', [$recordId]);
+    $ids = [];
+    foreach ($rows as $row) {
+        $ids[] = (int)$row['tag_id'];
+    }
+
+    return $ids;
+}
+
+function sync_article_tag_relations(string $relationTable, string $recordColumn, int $recordId, array $tagIds): void
+{
+    $allowedTables = [
+        'article_tags' => 'article_id',
+        'blog_tags' => 'blog_id',
+    ];
+
+    if ($recordId <= 0 || !isset($allowedTables[$relationTable]) || $allowedTables[$relationTable] !== $recordColumn) {
+        return;
+    }
+
+    $allowed = array_flip(allowed_article_tag_ids());
+    $cleanTagIds = [];
+    foreach ($tagIds as $tagId) {
+        $tagId = (int)$tagId;
+        if ($tagId > 0 && isset($allowed[$tagId])) {
+            $cleanTagIds[] = $tagId;
+        }
+    }
+    $cleanTagIds = array_values(array_unique($cleanTagIds));
+
+    $stmt = db()->prepare('DELETE FROM ' . $relationTable . ' WHERE ' . $recordColumn . ' = ?');
+    $stmt->execute([$recordId]);
+
+    if (!$cleanTagIds) {
+        cache_clear_all();
+        return;
+    }
+
+    $stmt = db()->prepare('INSERT IGNORE INTO ' . $relationTable . ' (' . $recordColumn . ', tag_id) VALUES (?, ?)');
+    foreach ($cleanTagIds as $tagId) {
+        $stmt->execute([$recordId, $tagId]);
+    }
+
+    cache_clear_all();
+}
+
+function article_tag_selector_html(array $selectedIds = [], string $inputName = 'tag_ids'): string
+{
+    $selectedLookup = array_flip(array_map('intval', $selectedIds));
+    $html = '<div class="grid gap-4">';
+
+    foreach (article_tag_options() as $groupName => $tags) {
+        $html .= '<div class="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">';
+        $html .= '<div class="mb-3 text-sm font-black text-neutral-800"><i class="fa-solid fa-tags mr-2 text-red-600"></i>' . h($groupName) . '</div>';
+        $html .= '<div class="flex flex-wrap gap-2">';
+
+        foreach ($tags as $tag) {
+            $tagId = (int)$tag['id'];
+            $checked = isset($selectedLookup[$tagId]) ? ' checked' : '';
+            $html .= '<label class="inline-flex cursor-pointer items-center gap-2 rounded-full border border-neutral-200 bg-white px-3 py-2 text-xs font-black text-neutral-700 transition hover:border-red-300 hover:bg-red-50">';
+            $html .= '<input type="checkbox" name="' . h($inputName) . '[]" value="' . $tagId . '" class="h-4 w-4 rounded border-neutral-300 text-red-600 focus:ring-red-500"' . $checked . '>';
+            $html .= '<span>' . h($tag['name']) . '</span>';
+            $html .= '</label>';
+        }
+
+        $html .= '</div></div>';
+    }
+
+    return $html . '</div>';
 }
 
 function report_status_label(string $status): string

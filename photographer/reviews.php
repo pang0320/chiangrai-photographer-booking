@@ -28,7 +28,9 @@ if (is_post()) {
         } else {
             $stmt = db()->prepare('INSERT INTO reports (reporter_id, target_type, target_id, reason, detail, status, created_at, updated_at) VALUES (?, "review", ?, ?, ?, "pending", NOW(), NOW())');
             $stmt->execute([(int)current_user()['id'], $reviewId, $reason, $detail]);
-            log_activity('report_review', 'reports', (int)db()->lastInsertId());
+            $reportId = (int)db()->lastInsertId();
+            notify_admins('มีรายงานรีวิวใหม่', 'ช่างภาพรายงานรีวิว #' . $reviewId, 'report', $reportId);
+            log_activity('report_review', 'reports', $reportId);
             flash('success', 'ส่งรายงานรีวิวให้ผู้ดูแลตรวจสอบแล้ว');
         }
 

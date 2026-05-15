@@ -14,6 +14,15 @@ if (!$currentPath) {
 $isWorkspacePage = preg_match('#^/(admin|customer|photographer)/#', $currentPath) === 1;
 $shouldShowAdminOverview = preg_match('#^/admin/#', $currentPath) === 1 && $currentPath !== '/admin/dashboard.php';
 $shouldLoadDataTables = $isWorkspacePage || preg_match('#^/admin/#', $currentPath) === 1;
+$pageMetaDescription = isset($pageMetaDescription) ? trim((string)$pageMetaDescription) : '';
+$pageMetaKeywords = isset($pageMetaKeywords) ? trim((string)$pageMetaKeywords) : '';
+$pageRobots = isset($pageRobots) ? trim((string)$pageRobots) : ($isWorkspacePage ? 'noindex, nofollow' : 'index, follow');
+$pageCanonical = isset($pageCanonical) ? trim((string)$pageCanonical) : rtrim(APP_URL, '/') . ($currentPath === '/index.php' ? '/' : $currentPath);
+$pageOgTitle = isset($pageOgTitle) ? trim((string)$pageOgTitle) : (string)$pageTitle;
+$pageOgDescription = isset($pageOgDescription) ? trim((string)$pageOgDescription) : $pageMetaDescription;
+$pageOgImage = isset($pageOgImage) ? trim((string)$pageOgImage) : rtrim(APP_URL, '/') . '/assets/uploads/seed/photo-1511285560929-80b456fea0bc.jpg';
+$pageOgType = isset($pageOgType) ? trim((string)$pageOgType) : 'website';
+$pageJsonLd = isset($pageJsonLd) && is_array($pageJsonLd) ? $pageJsonLd : [];
 ?>
 <!doctype html>
 <html lang="th">
@@ -21,6 +30,29 @@ $shouldLoadDataTables = $isWorkspacePage || preg_match('#^/admin/#', $currentPat
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= h($pageTitle) ?></title>
+    <?php if ($pageMetaDescription !== ''): ?>
+        <meta name="description" content="<?= h($pageMetaDescription) ?>">
+    <?php endif; ?>
+    <?php if ($pageMetaKeywords !== ''): ?>
+        <meta name="keywords" content="<?= h($pageMetaKeywords) ?>">
+    <?php endif; ?>
+    <meta name="robots" content="<?= h($pageRobots) ?>">
+    <link rel="canonical" href="<?= h($pageCanonical) ?>">
+    <meta property="og:locale" content="th_TH">
+    <meta property="og:site_name" content="<?= h(APP_NAME) ?>">
+    <meta property="og:type" content="<?= h($pageOgType) ?>">
+    <meta property="og:title" content="<?= h($pageOgTitle) ?>">
+    <?php if ($pageOgDescription !== ''): ?>
+        <meta property="og:description" content="<?= h($pageOgDescription) ?>">
+    <?php endif; ?>
+    <meta property="og:url" content="<?= h($pageCanonical) ?>">
+    <meta property="og:image" content="<?= h($pageOgImage) ?>">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="<?= h($pageOgTitle) ?>">
+    <?php if ($pageOgDescription !== ''): ?>
+        <meta name="twitter:description" content="<?= h($pageOgDescription) ?>">
+    <?php endif; ?>
+    <meta name="twitter:image" content="<?= h($pageOgImage) ?>">
     <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
     <link rel="shortcut icon" href="/assets/favicon.svg">
     <link rel="preconnect" href="https://cdn.tailwindcss.com">
@@ -38,6 +70,9 @@ $shouldLoadDataTables = $isWorkspacePage || preg_match('#^/admin/#', $currentPat
     <script>
         tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','ui-sans-serif','system-ui'] } } } };
     </script>
+    <?php foreach ($pageJsonLd as $jsonLd): ?>
+        <script type="application/ld+json"><?= json_encode($jsonLd, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?></script>
+    <?php endforeach; ?>
 </head>
 <body class="min-h-screen bg-slate-50 text-slate-900 antialiased">
 <?php include __DIR__ . '/navbar.php'; ?>

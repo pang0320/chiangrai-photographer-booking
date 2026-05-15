@@ -46,7 +46,11 @@ if ($statusFilter !== '') {
     $params[] = $statusFilter;
 }
 
-$stmt = db()->prepare('SELECT a.*, COALESCE(p.display_name, CONCAT("ช่างภาพ #", a.photographer_id)) AS display_name
+$stmt = db()->prepare('SELECT a.*, COALESCE(p.display_name, CONCAT("ช่างภาพ #", a.photographer_id)) AS display_name,
+                       (SELECT GROUP_CONCAT(t.name ORDER BY t.name SEPARATOR ", ")
+                        FROM article_tags atg
+                        JOIN tags t ON t.id = atg.tag_id
+                        WHERE atg.article_id = a.id) AS tags
                        FROM photographer_articles a
                        LEFT JOIN photographer_profiles p ON p.id = a.photographer_id
                        WHERE ' . implode(' AND ', $where) . '
@@ -85,6 +89,7 @@ include __DIR__ . '/../includes/header.php';
                     <th>หัวข้อ</th>
                     <th>ผู้เขียน</th>
                     <th>แหล่งที่มา</th>
+                    <th>แท็ก</th>
                     <th>สถานะ</th>
                     <th>วันที่โพสต์</th>
                     <th>จัดการ</th>
@@ -109,6 +114,17 @@ include __DIR__ . '/../includes/header.php';
                         </td>
                         <td><?= h($article['display_name']) ?></td>
                         <td><span class="rounded-full bg-red-50 px-3 py-1 text-xs font-black text-red-700"><i class="fa-solid fa-camera mr-1"></i>จากช่างภาพ</span></td>
+                        <td>
+                            <?php if (!empty($article['tags'])): ?>
+                                <div class="flex flex-wrap gap-1.5">
+                                    <?php foreach (array_slice(array_filter(array_map('trim', explode(',', (string)$article['tags']))), 0, 4) as $tagName): ?>
+                                        <span class="rounded-full bg-neutral-100 px-2 py-1 text-xs font-black text-neutral-700"><?= h($tagName) ?></span>
+                                    <?php endforeach; ?>
+                                </div>
+                            <?php else: ?>
+                                <span class="text-neutral-400">-</span>
+                            <?php endif; ?>
+                        </td>
                         <td><?= status_badge($article['status']) ?></td>
                         <td><?= h(format_be_datetime($articleDate)) ?></td>
                         <td>

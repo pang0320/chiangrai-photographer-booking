@@ -251,13 +251,14 @@ include __DIR__ . '/includes/header.php';
 <section class="stock-shell px-4 py-8 sm:px-6 lg:px-8">
     <div class="grid gap-8 lg:grid-cols-[320px_1fr]">
         <aside class="lg:sticky lg:top-24 lg:self-start">
-            <form method="post" action="<?= h($photographerSearchPath) ?>" class="photographer-filter-form stock-card rounded-[2rem] p-5">
-                <?= clean_context_inputs([]) ?>
+            <div class="photographer-filter-form stock-card rounded-[2rem] p-5">
                 <div class="flex items-center justify-between gap-4">
                     <h2 class="text-xl font-black text-neutral-950">ตัวกรอง</h2>
                     <?= clean_context_button($photographerSearchPath, [], 'ล้าง', 'text-sm font-black text-red-600') ?>
                 </div>
-                <div class="mt-5 grid gap-3">
+
+                <form method="post" action="<?= h($photographerSearchPath) ?>" class="mt-5 grid gap-3">
+                    <?= clean_context_inputs([]) ?>
                     <label class="icon-input block"><i class="fa-solid fa-camera"></i><input name="q" value="<?= h($keyword) ?>" placeholder="ชื่อช่างภาพ" class="stock-input w-full rounded-[1.2rem] px-4 py-3 font-semibold"></label>
                     <label class="icon-input block">
                         <i class="fa-solid fa-location-dot"></i>
@@ -315,9 +316,9 @@ include __DIR__ . '/includes/header.php';
                     <div class="rounded-2xl bg-red-50 p-4 text-sm font-black leading-6 text-red-700">
                         <i class="fa-solid fa-circle-info mr-2"></i>ราคาเป็นราคาเริ่มต้นโดยประมาณ เว็บไซต์ไม่รับชำระเงิน ลูกค้าและช่างภาพตกลงราคากันภายนอกระบบ
                     </div>
-                    <button class="stock-button rounded-[1.2rem] px-5 py-3 font-black"><i class="fa-solid fa-magnifying-glass mr-2"></i>ค้นหา</button>
-                </div>
-            </form>
+                    <button type="submit" class="stock-button rounded-[1.2rem] px-5 py-3 font-black"><i class="fa-solid fa-magnifying-glass mr-2"></i>ค้นหา</button>
+                </form>
+            </div>
 
             <div class="stock-card mt-5 rounded-[2rem] p-5">
                 <h3 class="font-black text-neutral-950">ตัวอย่างแผนที่</h3>

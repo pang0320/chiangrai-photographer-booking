@@ -71,25 +71,25 @@ if (isset($p['is_featured'])) {
 
 $cardFormId = 'photographer-card-link-' . $cardId . '-' . substr(md5(uniqid('', true)), 0, 8);
 ?>
-<article class="stock-card stock-card-hover rounded-[1.75rem]" data-clickable-card data-card-form="<?= h($cardFormId) ?>" tabindex="0" role="link" aria-label="ดูโปรไฟล์ <?= h($cardName) ?>">
+<article class="stock-card stock-card-hover flex h-full flex-col overflow-hidden rounded-[1.75rem]" data-clickable-card data-card-form="<?= h($cardFormId) ?>" tabindex="0" role="link" aria-label="ดูโปรไฟล์ <?= h($cardName) ?>">
     <form id="<?= h($cardFormId) ?>" method="post" action="/photographer_detail.php" class="hidden" aria-hidden="true">
         <?= clean_context_inputs($cardDetailParams) ?>
     </form>
-    <?= clean_context_button('/photographer_detail.php', $cardDetailParams, '<img loading="lazy" decoding="async" src="' . h(public_image($cardImagePath, '/assets/uploads/seed/photo-1516035069371-29a1b244cc32.jpg')) . '" alt=""><div class="media-overlay p-5"><div>' . ($cardIsVerified ? '<span class="rounded-full bg-white/95 px-3 py-1 text-xs font-black text-neutral-950"><i class="fa-solid fa-circle-check mr-1 text-red-600"></i>ยืนยันแล้ว</span>' : '') . ($cardIsFeatured ? '<span class="ml-1 rounded-full bg-yellow-300 px-3 py-1 text-xs font-black text-neutral-950"><i class="fa-solid fa-award mr-1"></i>แนะนำ</span>' : '') . '<p class="mt-3 text-sm font-semibold text-white/90">ดูตัวอย่างงานและข้อมูลติดต่อ</p></div></div>', 'media-tile block h-64 w-full text-left', 'block') ?>
-    <div class="p-5">
-        <div class="flex items-start justify-between gap-3">
-            <div>
-                <h3 class="text-lg font-black tracking-tight text-neutral-950"><?= h($cardName) ?></h3>
-                <p class="mt-1 text-sm font-medium text-neutral-500"><i class="fa-solid fa-location-dot mr-1 text-red-600"></i><?= h($cardAreaText) ?></p>
+    <?= clean_context_button('/photographer_detail.php', $cardDetailParams, '<img loading="lazy" decoding="async" src="' . h(public_image($cardImagePath, '/assets/uploads/seed/photo-1516035069371-29a1b244cc32.jpg')) . '" alt=""><div class="media-overlay p-5"><div>' . ($cardIsVerified ? '<span class="rounded-full bg-white/95 px-3 py-1 text-xs font-black text-neutral-950"><i class="fa-solid fa-circle-check mr-1 text-red-600"></i>ยืนยันแล้ว</span>' : '') . ($cardIsFeatured ? '<span class="ml-1 rounded-full bg-yellow-300 px-3 py-1 text-xs font-black text-neutral-950"><i class="fa-solid fa-award mr-1"></i>แนะนำ</span>' : '') . '<p class="mt-3 text-sm font-semibold text-white/90">ดูตัวอย่างงานและข้อมูลติดต่อ</p></div></div>', 'media-tile block h-64 w-full shrink-0 text-left', 'block') ?>
+    <div class="flex flex-1 flex-col p-5">
+        <div class="flex min-h-[76px] items-start justify-between gap-3">
+            <div class="min-w-0">
+                <h3 class="line-clamp-1 text-lg font-black tracking-tight text-neutral-950"><?= h($cardName) ?></h3>
+                <p class="mt-1 line-clamp-2 text-sm font-medium leading-6 text-neutral-500"><i class="fa-solid fa-location-dot mr-1 text-red-600"></i><?= h($cardAreaText) ?></p>
             </div>
             <span class="shrink-0 rounded-full bg-red-50 px-3 py-1 text-xs font-black text-red-600"><i class="fa-solid fa-star mr-1"></i>คะแนนเฉลี่ย <?= number_format($cardRating, 1) ?></span>
         </div>
-        <p class="mt-3 line-clamp-2 text-sm leading-6 text-neutral-600"><?= h($cardServiceText) ?></p>
-        <div class="mt-4 flex items-end justify-between gap-4">
-            <div>
+        <p class="mt-3 min-h-[48px] line-clamp-2 text-sm leading-6 text-neutral-600"><?= h($cardServiceText) ?></p>
+        <div class="mt-4 min-h-[122px]">
+            <div class="grid gap-1">
                 <p class="text-xs font-bold uppercase tracking-[0.2em] text-neutral-400">ราคาเริ่มต้นโดยประมาณ</p>
                 <p class="text-xl font-black text-neutral-950"><?= number_format($cardStartingPrice) ?> บาท</p>
-                <p class="text-sm font-semibold text-neutral-500">
+                <p class="min-h-[24px] text-sm font-semibold text-neutral-500">
                     จำนวนรีวิว <?= number_format($cardTotalReviews) ?> รายการ
                     <?php if (isset($p['distance_km'])): ?>
                         · ระยะประมาณ <?= number_format((float)$p['distance_km'], 1) ?> กม. จากอำเภอที่เลือก
@@ -98,7 +98,7 @@ $cardFormId = 'photographer-card-link-' . $cardId . '-' . substr(md5(uniqid('', 
                 <p class="mt-1 text-xs font-bold leading-5 text-neutral-500">ชำระเงินและตกลงราคากับช่างภาพโดยตรง</p>
             </div>
         </div>
-        <div class="mt-5 grid auto-rows-fr gap-3 sm:grid-cols-2">
+        <div class="mt-auto grid auto-rows-fr gap-3 pt-5 sm:grid-cols-2">
             <?= clean_context_button('/photographer_detail.php', $cardDetailParams, '<i class="fa-solid fa-eye mr-1"></i>ดูโปรไฟล์', 'btn-primary btn-sm min-h-[44px] w-full whitespace-nowrap text-center', 'contents') ?>
             <?= clean_context_button('/compare.php', ['ids' => $cardId], '<i class="fa-solid fa-code-compare mr-1"></i>เปรียบเทียบ', 'btn-muted btn-sm min-h-[44px] w-full whitespace-nowrap text-center', 'contents') ?>
             <?= clean_context_button('/customer/create_booking.php', ['photographer_id' => $cardId], '<i class="fa-solid fa-calendar-check mr-1"></i>จอง', 'btn-cta btn-sm min-h-[44px] w-full whitespace-nowrap text-center sm:col-span-2', 'contents') ?>

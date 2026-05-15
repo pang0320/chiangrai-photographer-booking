@@ -65,28 +65,13 @@ include __DIR__ . '/../includes/header.php';
         </div>
     </div>
     <div class="mt-6 rounded-3xl bg-white p-8 shadow-sm ring-1 ring-slate-200">
-        <h2 class="text-xl font-extrabold">ประวัติสถานะ</h2>
-        <div class="mt-4 grid gap-3">
-            <?php foreach ($logs as $log): ?>
-                <?php
-                $oldStatusText = '-';
-                if (!empty($log['old_status'])) {
-                    $oldStatusText = booking_status_label((string)$log['old_status']);
-                }
-                $newStatusText = booking_status_label((string)$log['new_status']);
-                $changedByName = 'ระบบ';
-                if (!empty($log['name'])) {
-                    $changedByName = $log['name'];
-                }
-                ?>
-                <div class="rounded-2xl bg-slate-50 p-4 text-sm">
-                    <?= h(format_be_datetime($log['created_at'])) ?>
-                    · <?= h($oldStatusText) ?>
-                    → <?= h($newStatusText) ?>
-                    ผู้ดำเนินการ: <?= h($changedByName) ?>
-                    <?= h($log['note']) ?>
-                </div>
-            <?php endforeach; ?>
+        <div>
+            <p class="section-kicker"><i class="fa-solid fa-clock-rotate-left mr-2"></i>ประวัติสถานะ</p>
+            <h2 class="mt-1 text-2xl font-black text-neutral-950">เส้นเวลาการจอง</h2>
+            <p class="mt-2 text-sm font-bold text-neutral-500">ติดตามทุกจังหวะของคำขอจอง ตั้งแต่สร้างรายการจนถึงสถานะล่าสุด</p>
+        </div>
+        <div class="mt-6">
+            <?= booking_status_timeline_html($logs) ?>
         </div>
     </div>
 </section>

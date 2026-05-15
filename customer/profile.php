@@ -55,7 +55,7 @@ if (is_post()) {
 $pageTitle = 'โปรไฟล์ลูกค้า';
 include __DIR__ . '/../includes/header.php';
 ?>
-<section class="mx-auto max-w-5xl px-4 py-10">
+<section class="mx-auto w-full max-w-[1880px] px-4 py-10 sm:px-6 lg:px-10">
     <div class="rounded-[2rem] bg-gradient-to-r from-neutral-950 via-slate-900 to-red-700 p-7 text-white shadow-xl">
         <div class="flex flex-wrap items-center gap-5">
             <img id="avatar-preview" class="h-24 w-24 rounded-[1.6rem] object-cover ring-4 ring-white/20" src="<?= h(public_image($user['avatar'], '/assets/uploads/seed/photo-1494790108377-be9c29b29330.jpg')) ?>" alt="<?= h($user['name']) ?>">
@@ -67,10 +67,10 @@ include __DIR__ . '/../includes/header.php';
         </div>
     </div>
 
-    <div class="mt-6 rounded-3xl bg-white p-8 shadow-sm ring-1 ring-slate-200">
+    <div class="mt-6 rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200 sm:p-8 lg:p-10">
         <form method="post" enctype="multipart/form-data" class="grid gap-5">
             <?= csrf_field() ?>
-            <div class="grid gap-4 sm:grid-cols-2">
+            <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                 <label class="grid gap-2 text-sm font-black text-slate-700">
                     <span><i class="fa-solid fa-user mr-2 text-red-600"></i>ชื่อผู้ใช้ <?= required_mark() ?></span>
                     <input name="name" value="<?= h($user['name']) ?>" required class="rounded-2xl border px-4 py-3 font-semibold">
@@ -79,7 +79,7 @@ include __DIR__ . '/../includes/header.php';
                     <span><i class="fa-solid fa-envelope mr-2 text-red-600"></i>อีเมล <?= required_mark() ?></span>
                     <input type="email" name="email" value="<?= h($user['email']) ?>" required class="rounded-2xl border px-4 py-3 font-semibold">
                 </label>
-                <label class="grid gap-2 text-sm font-black text-slate-700 sm:col-span-2">
+                <label class="grid gap-2 text-sm font-black text-slate-700">
                     <span><i class="fa-solid fa-phone mr-2 text-red-600"></i>เบอร์โทรศัพท์</span>
                     <input name="phone" value="<?= h($user['phone']) ?>" class="rounded-2xl border px-4 py-3 font-semibold">
                 </label>

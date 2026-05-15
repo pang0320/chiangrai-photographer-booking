@@ -10,11 +10,15 @@ $workspacePath = '/login.php';
 $workspaceLabel = 'เมนูของฉัน';
 $workspaceIcon = 'fa-gauge';
 $roleHomePath = '/login.php';
+$notificationsHref = '/notifications.php';
 
 if ($me) {
     $unreadCount = unread_notifications_count((int)$me['id']);
     $workspacePath = user_workspace_path($me);
     $roleHomePath = dashboard_path((string)$me['role_name']);
+    if ($me['role_name'] === 'customer') {
+        $notificationsHref = '/customer/notifications.php';
+    }
     if ($workspacePath === '/photographer/onboarding.php') {
         $workspaceLabel = 'ตั้งค่าโปรไฟล์';
         $workspaceIcon = 'fa-list-check';
@@ -24,9 +28,7 @@ if ($me) {
         $roleLabel = (string)$me['role_name'];
     }
     $userInitial = mb_substr((string)$me['name'], 0, 1, 'UTF-8');
-    if (!empty($me['avatar'])) {
-        $userAvatarUrl = public_image($me['avatar'], '/assets/uploads/seed/photo-1494790108377-be9c29b29330.jpg');
-    }
+    $userAvatarUrl = user_avatar_url($me);
 
     if ($me['role_name'] === 'admin') {
         $roleIcon = 'fa-user-shield';
@@ -36,10 +38,6 @@ if ($me) {
     if ($me['role_name'] === 'photographer') {
         $roleIcon = 'fa-camera-retro';
         $roleClass = 'bg-amber-50 text-amber-700';
-        $navbarPhotographerProfile = photographer_profile_by_user((int)$me['id']);
-        if ($navbarPhotographerProfile && !empty($navbarPhotographerProfile['profile_image'])) {
-            $userAvatarUrl = public_image($navbarPhotographerProfile['profile_image'], '/assets/uploads/seed/photo-1500648767791-00dcc994a43e.jpg');
-        }
     }
 
     if ($me['role_name'] === 'customer') {
@@ -73,7 +71,7 @@ if ($me) {
                 <a class="inline-flex h-11 items-center rounded-full bg-neutral-950 px-5 text-sm font-black text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-red-600 hover:shadow-lg" href="<?= h($workspacePath) ?>" title="<?= h($workspaceLabel) ?>">
                     <i class="fa-solid <?= h($workspaceIcon) ?> mr-2"></i><?= h($workspaceLabel) ?>
                 </a>
-                <a class="relative grid h-11 w-11 place-items-center rounded-full border border-neutral-200 bg-white text-neutral-700 shadow-sm transition hover:bg-neutral-950 hover:text-white" href="/notifications.php" title="แจ้งเตือน">
+                <a class="relative grid h-11 w-11 place-items-center rounded-full border border-neutral-200 bg-white text-neutral-700 shadow-sm transition hover:bg-neutral-950 hover:text-white" href="<?= h($notificationsHref) ?>" title="แจ้งเตือน">
                     <i class="fa-solid fa-bell"></i>
                     <?php if ($unreadCount > 0): ?>
                         <span class="absolute -right-1 -top-1 rounded-full bg-red-600 px-1.5 py-0.5 text-[10px] font-black text-white">

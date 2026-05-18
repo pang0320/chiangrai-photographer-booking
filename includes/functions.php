@@ -260,15 +260,18 @@ function auth_session_expired(): bool
 function clear_auth_session(bool $restart = false): void
 {
     $_SESSION = [];
+    $canModifyHeaders = !headers_sent();
 
-    if (ini_get('session.use_cookies')) {
+    if ($canModifyHeaders && ini_get('session.use_cookies')) {
         $params = session_get_cookie_params();
         setcookie(session_name(), '', time() - 42000, $params['path'], $params['domain'], (bool)$params['secure'], (bool)$params['httponly']);
     }
 
-    session_destroy();
+    if (session_status() === PHP_SESSION_ACTIVE) {
+        session_destroy();
+    }
 
-    if ($restart) {
+    if ($restart && $canModifyHeaders) {
         session_start();
     }
 }
@@ -1451,6 +1454,26 @@ function predefined_article_tag_groups(): array
     ];
 }
 
+function ensure_tags_status_column(): void
+{
+    static $checked = false;
+    if ($checked) {
+        return;
+    }
+
+    $exists = (int)db_fetch_value('SELECT COUNT(*)
+                                  FROM INFORMATION_SCHEMA.COLUMNS
+                                  WHERE TABLE_SCHEMA = DATABASE()
+                                    AND TABLE_NAME = "tags"
+                                    AND COLUMN_NAME = "is_active"');
+    if ($exists === 0) {
+        db()->exec('ALTER TABLE tags ADD COLUMN is_active TINYINT(1) NOT NULL DEFAULT 1 AFTER slug');
+        db()->exec('ALTER TABLE tags ADD INDEX idx_tags_active (is_active, name)');
+    }
+
+    $checked = true;
+}
+
 function predefined_article_tag_names(): array
 {
     $names = [];
@@ -1465,6 +1488,8 @@ function predefined_article_tag_names(): array
 
 function ensure_predefined_article_tags(): array
 {
+    ensure_tags_status_column();
+
     $tagRows = [];
     foreach (predefined_article_tag_names() as $tagName) {
         $slug = slugify($tagName);
@@ -1474,7 +1499,7 @@ function ensure_predefined_article_tags(): array
             continue;
         }
 
-        $stmt = db()->prepare('INSERT INTO tags (name, slug, created_at) VALUES (?, ?, NOW())');
+        $stmt = db()->prepare('INSERT INTO tags (name, slug, is_active, created_at) VALUES (?, ?, 1, NOW())');
         $stmt->execute([$tagName, unique_slug('tags', $tagName)]);
         $tagRows[$tagName] = (int)db()->lastInsertId();
     }
@@ -1484,13 +1509,23 @@ function ensure_predefined_article_tags(): array
 
 function article_tag_options(): array
 {
+    ensure_tags_status_column();
+
     $tagIdsByName = ensure_predefined_article_tags();
+    $activeRows = db_fetch_all('SELECT id FROM tags WHERE is_active = 1');
+    $activeIds = [];
+    foreach ($activeRows as $row) {
+        $activeIds[(int)$row['id']] = true;
+    }
     $groups = [];
 
     foreach (predefined_article_tag_groups() as $groupName => $tagNames) {
         $groups[$groupName] = [];
         foreach ($tagNames as $tagName) {
             if (!isset($tagIdsByName[$tagName])) {
+                continue;
+            }
+            if (!isset($activeIds[(int)$tagIdsByName[$tagName]])) {
                 continue;
             }
             $groups[$groupName][] = [

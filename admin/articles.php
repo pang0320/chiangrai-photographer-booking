@@ -133,7 +133,7 @@ include __DIR__ . '/../includes/header.php';
                                 <input type="hidden" name="id" value="<?= (int)$article['id'] ?>">
                                 <button name="action" value="publish" class="btn-success btn-sm"><i class="fa-solid fa-check"></i>เผยแพร่</button>
                                 <button name="action" value="hide" class="btn-muted btn-sm"><i class="fa-solid fa-eye-slash"></i>ซ่อน</button>
-                                <button data-confirm="ลบบทความนี้?" name="action" value="delete" class="btn-danger btn-sm"><i class="fa-solid fa-trash"></i>ลบ</button>
+                                <button data-confirm="ซ่อนบทความนี้?" data-confirm-text="บทความจะหายจากหน้าระบบ แต่ข้อมูลเดิมยังอยู่ในฐานข้อมูล" data-confirm-button="ซ่อนบทความ" name="action" value="delete" class="btn-warning btn-sm"><i class="fa-solid fa-eye-slash"></i>ซ่อน</button>
                             </form>
                         </td>
                     </tr>

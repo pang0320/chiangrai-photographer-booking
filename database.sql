@@ -471,8 +471,10 @@ CREATE TABLE tags (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(100) NOT NULL,
   slug VARCHAR(120) NOT NULL,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
   created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE KEY uk_tags_slug (slug)
+  UNIQUE KEY uk_tags_slug (slug),
+  KEY idx_tags_active (is_active, name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE portfolio_tags (

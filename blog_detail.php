@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/includes/functions.php';
+ensure_tags_status_column();
 $cleanContext = clean_context_init(['slug']);
 $slug = trim((string)clean_context_value($cleanContext, 'slug', ''));
 $stmt = db()->prepare('SELECT b.*, u.name AS admin_name
@@ -13,7 +14,12 @@ if (!$blog) {
     http_response_code(404);
     exit('ไม่พบบทความ');
 }
-$tags = db_fetch_all('SELECT t.* FROM blog_tags bt JOIN tags t ON t.id = bt.tag_id WHERE bt.blog_id = ? ORDER BY t.name', [(int)$blog['id']]);
+$tags = db_fetch_all('SELECT t.*
+                      FROM blog_tags bt
+                      JOIN tags t ON t.id = bt.tag_id
+                      WHERE bt.blog_id = ?
+                        AND t.is_active = 1
+                      ORDER BY t.name', [(int)$blog['id']]);
 $currentUser = current_user();
 
 if (is_post()) {

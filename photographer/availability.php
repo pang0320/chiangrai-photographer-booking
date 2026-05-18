@@ -14,9 +14,9 @@ if (is_post()) {
 
     if ($action === 'delete') {
         $id = (int)($_POST['id'] ?? 0);
-        $stmt = db()->prepare('DELETE FROM photographer_availability WHERE id = ? AND photographer_id = ?');
+        $stmt = db()->prepare('UPDATE photographer_availability SET status = "unavailable", updated_at = NOW() WHERE id = ? AND photographer_id = ?');
         $stmt->execute([$id, $pid]);
-        flash('success', 'ลบวันว่างแล้ว');
+        flash('success', 'ซ่อนวันว่างจากหน้าจองแล้ว ข้อมูลเดิมยังอยู่');
     } else {
         $availableDate = parse_be_date_to_iso((string)($_POST['available_date'] ?? ''));
         $timeSlot = (string)($_POST['time_slot'] ?? '');
@@ -148,8 +148,8 @@ include __DIR__ . '/../includes/header.php';
                                 <?= csrf_field() ?>
                                 <input type="hidden" name="action" value="delete">
                                 <input type="hidden" name="id" value="<?= (int)$item['id'] ?>">
-                                <button data-confirm="ลบรายการนี้?" class="btn-danger btn-sm">
-                                    <i class="fa-solid fa-trash mr-1"></i>ลบ
+                                <button data-confirm="ซ่อนรายการนี้จากหน้าจอง?" data-confirm-text="ระบบจะเปลี่ยนสถานะเป็นไม่ว่าง ข้อมูลเดิมยังอยู่ในฐานข้อมูล" data-confirm-button="ซ่อนรายการ" class="btn-warning btn-sm">
+                                    <i class="fa-solid fa-eye-slash mr-1"></i>ซ่อน
                                 </button>
                             </form>
                         </td>

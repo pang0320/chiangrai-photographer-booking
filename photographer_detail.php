@@ -97,6 +97,8 @@ if ($currentUser && $currentUser['role_name'] === 'customer') {
 $areas = db()->prepare('SELECT d.* FROM photographer_service_areas psa JOIN districts d ON d.id = psa.district_id WHERE psa.photographer_id = ? AND psa.is_active = 1 ORDER BY psa.is_primary DESC, d.district_name');
 $areas->execute([$id]);
 $areas = $areas->fetchAll();
+ensure_tags_status_column();
+
 $services = db()->prepare('SELECT ps.*, sc.name, sc.icon FROM photographer_services ps JOIN service_categories sc ON sc.id = ps.category_id WHERE ps.photographer_id = ? AND ps.is_active = 1 ORDER BY sc.sort_order');
 $services->execute([$id]);
 $services = $services->fetchAll();
@@ -125,7 +127,8 @@ $articles = db()->prepare('SELECT a.*,
                            (SELECT GROUP_CONCAT(t.name ORDER BY t.name SEPARATOR ", ")
                             FROM article_tags atg
                             JOIN tags t ON t.id = atg.tag_id
-                            WHERE atg.article_id = a.id) AS tags
+                            WHERE atg.article_id = a.id
+                              AND t.is_active = 1) AS tags
                            FROM photographer_articles a
                            WHERE a.photographer_id = ? AND a.status = "published" AND a.deleted_at IS NULL
                            ORDER BY a.published_at DESC

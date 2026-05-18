@@ -23,8 +23,8 @@ if (is_post()) {
     if ($action === 'delete') {
         $stmt = db()->prepare('UPDATE blogs SET deleted_at = NOW(), updated_at = NOW() WHERE id = ?');
         $stmt->execute([$id]);
-        log_activity('delete_blog', 'blogs', $id);
-        flash('success', 'ลบบทความแล้ว');
+        log_activity('hide_blog', 'blogs', $id);
+        flash('success', 'ซ่อนบทความแล้ว ข้อมูลเดิมยังอยู่');
         clean_redirect('/admin/blogs.php', []);
     }
 
@@ -248,7 +248,7 @@ include __DIR__ . '/../includes/header.php';
                                     <?= csrf_field() ?>
                                     <input type="hidden" name="action" value="delete">
                                     <input type="hidden" name="id" value="<?= (int)$item['id'] ?>">
-                                    <button data-confirm="ลบบทความนี้?" class="btn-danger btn-sm"><i class="fa-solid fa-trash"></i>ลบ</button>
+                                    <button data-confirm="ซ่อนบทความนี้?" data-confirm-text="บทความจะหายจากหน้าระบบ แต่ข้อมูลเดิมยังอยู่ในฐานข้อมูล" data-confirm-button="ซ่อนบทความ" class="btn-warning btn-sm"><i class="fa-solid fa-eye-slash"></i>ซ่อน</button>
                                 </form>
                             </div>
                         </td>

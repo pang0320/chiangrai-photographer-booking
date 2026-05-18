@@ -12,6 +12,19 @@ document.addEventListener('visibilitychange', function () {
 });
 
 document.addEventListener('click', function (event) {
+  const alertButton = event.target.closest('[data-alert]');
+  if (alertButton) {
+    event.preventDefault();
+    Swal.fire({
+      icon: alertButton.dataset.alertIcon || 'info',
+      title: alertButton.dataset.alertTitle || alertButton.dataset.alert || 'แจ้งเตือน',
+      text: alertButton.dataset.alertText || '',
+      confirmButtonText: alertButton.dataset.alertButton || 'เข้าใจแล้ว',
+      confirmButtonColor: '#e21b2d'
+    });
+    return;
+  }
+
   const button = event.target.closest('[data-confirm]');
   if (!button) return;
   event.preventDefault();

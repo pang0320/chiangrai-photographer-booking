@@ -13,9 +13,9 @@ if (is_post()) {
 
     if ($action === 'delete') {
         $id = (int)($_POST['id'] ?? 0);
-        $stmt = db()->prepare('DELETE FROM photographer_services WHERE id = ? AND photographer_id = ?');
+        $stmt = db()->prepare('UPDATE photographer_services SET is_active = 0, updated_at = NOW() WHERE id = ? AND photographer_id = ?');
         $stmt->execute([$id, $pid]);
-        flash('success', 'ลบประเภทงานที่รับออกแล้ว');
+        flash('success', 'ซ่อนประเภทงานนี้จากโปรไฟล์แล้ว ข้อมูลเดิมยังอยู่');
     } elseif ($action === 'toggle') {
         $id = (int)($_POST['id'] ?? 0);
         $isActive = (int)($_POST['is_active'] ?? 0);
@@ -274,8 +274,8 @@ include __DIR__ . '/../includes/header.php';
                             <?= csrf_field() ?>
                             <input type="hidden" name="action" value="delete">
                             <input type="hidden" name="id" value="<?= (int)$service['id'] ?>">
-                            <button data-confirm="ลบประเภทงานนี้ออกจากโปรไฟล์?" data-confirm-text="ลบเฉพาะประเภทงานที่ช่างภาพรับ ไม่ได้ลบหมวดหมู่กลางของระบบ" class="btn-danger btn-sm" type="submit">
-                                <i class="fa-solid fa-trash"></i>ลบออก
+                            <button data-confirm="ซ่อนประเภทงานนี้จากโปรไฟล์?" data-confirm-text="ข้อมูลบริการเดิมยังอยู่ สามารถเปิดกลับมาแสดงได้ภายหลัง" data-confirm-button="ซ่อนรายการ" class="btn-warning btn-sm" type="submit">
+                                <i class="fa-solid fa-eye-slash"></i>ซ่อน
                             </button>
                         </form>
                     </div>

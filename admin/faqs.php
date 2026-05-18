@@ -22,10 +22,10 @@ if (is_post()) {
     }
 
     if ($action === 'delete') {
-        $stmt = db()->prepare('DELETE FROM faqs WHERE id = ?');
+        $stmt = db()->prepare('UPDATE faqs SET is_active = 0, updated_at = NOW() WHERE id = ?');
         $stmt->execute([$id]);
-        log_activity('delete_faq', 'faqs', $id);
-        flash('success', 'ลบคำถามแล้ว');
+        log_activity('hide_faq', 'faqs', $id);
+        flash('success', 'ซ่อนคำถามแล้ว ข้อมูลเดิมยังอยู่');
         clean_redirect('/admin/faqs.php', []);
     }
 
@@ -139,7 +139,7 @@ include __DIR__ . '/../includes/header.php';
                                     <?= csrf_field() ?>
                                     <input type="hidden" name="action" value="delete">
                                     <input type="hidden" name="id" value="<?= (int)$item['id'] ?>">
-                                    <button data-confirm="ลบคำถามนี้?" class="btn-danger btn-sm"><i class="fa-solid fa-trash"></i>ลบ</button>
+                                    <button data-confirm="ซ่อนคำถามนี้?" data-confirm-text="คำถามจะไม่แสดงในหน้า FAQ แต่ข้อมูลเดิมยังอยู่ในระบบ" data-confirm-button="ซ่อนคำถาม" class="btn-warning btn-sm"><i class="fa-solid fa-eye-slash"></i>ซ่อน</button>
                                 </form>
                             </div>
                         </td>

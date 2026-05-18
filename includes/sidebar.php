@@ -31,6 +31,7 @@ if ($me) {
             ['/admin/reviews.php', 'รีวิว', 'fa-star'],
             ['/admin/articles.php', 'บทความช่างภาพ', 'fa-newspaper'],
             ['/admin/blogs.php', 'บทความเว็บ', 'fa-blog'],
+            ['/admin/tags.php', 'แท็ก', 'fa-tags'],
             ['/admin/faqs.php', 'คำถามที่พบบ่อย', 'fa-circle-question'],
             ['/admin/banners.php', 'แบนเนอร์', 'fa-images'],
             ['/admin/reports.php', 'รายงานสรุป', 'fa-chart-line'],

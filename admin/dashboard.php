@@ -15,7 +15,7 @@ function dashboard_activity_action_label(string $action): string
         'admin_suspend_photographer' => 'ระงับช่างภาพ',
         'admin_activate_user' => 'เปิดใช้งานสมาชิก',
         'admin_suspend_user' => 'ระงับสมาชิก',
-        'admin_delete_user' => 'ลบสมาชิก',
+        'admin_delete_user' => 'ซ่อนสมาชิก',
         'admin_show_review' => 'แสดงรีวิว',
         'admin_hide_review' => 'ซ่อนรีวิว',
         'moderate_report' => 'ตรวจรายงานปัญหา',

@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/includes/functions.php';
+ensure_tags_status_column();
 
 $cleanContext = clean_context_init(['slug']);
 $slug = trim((string)clean_context_value($cleanContext, 'slug', ''));
@@ -23,7 +24,12 @@ if (!$article) {
     exit('ไม่พบบทความ');
 }
 
-$tags = db_fetch_all('SELECT t.* FROM article_tags atg JOIN tags t ON t.id = atg.tag_id WHERE atg.article_id = ? ORDER BY t.name', [(int)$article['id']]);
+$tags = db_fetch_all('SELECT t.*
+                      FROM article_tags atg
+                      JOIN tags t ON t.id = atg.tag_id
+                      WHERE atg.article_id = ?
+                        AND t.is_active = 1
+                      ORDER BY t.name', [(int)$article['id']]);
 
 if (is_post()) {
     verify_csrf();

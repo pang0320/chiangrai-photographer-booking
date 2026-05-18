@@ -10,7 +10,7 @@ if (is_post()) {
 
         if ($action === 'delete') {
             $id = (int)($_POST['id'] ?? 0);
-            $stmt = db()->prepare('DELETE FROM banners WHERE id = ?');
+            $stmt = db()->prepare('UPDATE banners SET is_active = 0, updated_at = NOW() WHERE id = ?');
             $stmt->execute([$id]);
         } else {
             $image = upload_image($_FILES['image'] ?? [], 'banners');
@@ -111,8 +111,8 @@ include __DIR__ . '/../includes/header.php';
                                 <?= csrf_field() ?>
                                 <input type="hidden" name="action" value="delete">
                                 <input type="hidden" name="id" value="<?= (int)$banner['id'] ?>">
-                                <button data-confirm="ลบ banner นี้?" class="btn-danger btn-sm">
-                                    <i class="fa-solid fa-trash mr-1"></i>ลบ
+                                <button data-confirm="ซ่อนแบนเนอร์นี้?" data-confirm-text="แบนเนอร์จะไม่แสดงบนหน้าเว็บ แต่ข้อมูลเดิมยังอยู่ในระบบ" data-confirm-button="ซ่อนแบนเนอร์" class="btn-warning btn-sm">
+                                    <i class="fa-solid fa-eye-slash mr-1"></i>ซ่อน
                                 </button>
                             </form>
                         </td>

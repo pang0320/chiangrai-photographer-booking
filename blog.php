@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/includes/functions.php';
+ensure_tags_status_column();
 
 $context = clean_context_init(['source', 'q', 'category', 'page']);
 $currentUser = current_user();
@@ -31,7 +32,8 @@ $baseSql = 'FROM (
         (SELECT GROUP_CONCAT(t.name ORDER BY t.name SEPARATOR ", ")
          FROM blog_tags bt
          JOIN tags t ON t.id = bt.tag_id
-         WHERE bt.blog_id = b.id) AS categories
+         WHERE bt.blog_id = b.id
+           AND t.is_active = 1) AS categories
     FROM blogs b
     JOIN users u ON u.id = b.admin_id
     WHERE b.status = "published"
@@ -54,7 +56,8 @@ $baseSql = 'FROM (
         (SELECT GROUP_CONCAT(t.name ORDER BY t.name SEPARATOR ", ")
          FROM article_tags agt
          JOIN tags t ON t.id = agt.tag_id
-         WHERE agt.article_id = a.id) AS categories
+         WHERE agt.article_id = a.id
+           AND t.is_active = 1) AS categories
     FROM photographer_articles a
     JOIN photographer_profiles p ON p.id = a.photographer_id
     JOIN users u ON u.id = p.user_id
@@ -121,9 +124,10 @@ $systemCount = (int)$blogSourceCounts['system'];
 $photographerCount = (int)$blogSourceCounts['photographer'];
 $allCount = $systemCount + $photographerCount;
 
-$categories = db_fetch_all_cached('blog_public_categories', 300, 'SELECT DISTINCT t.name
+$categories = db_fetch_all_cached('blog_public_categories_active', 300, 'SELECT DISTINCT t.name
                                                                     FROM tags t
-                                                                    WHERE EXISTS (SELECT 1 FROM blog_tags bt JOIN blogs b ON b.id = bt.blog_id WHERE bt.tag_id = t.id AND b.status = "published" AND b.deleted_at IS NULL)
+                                                                    WHERE t.is_active = 1
+                                                                      AND (EXISTS (SELECT 1 FROM blog_tags bt JOIN blogs b ON b.id = bt.blog_id WHERE bt.tag_id = t.id AND b.status = "published" AND b.deleted_at IS NULL)
                                                                        OR EXISTS (SELECT 1
                                                                                   FROM article_tags agt
                                                                                   JOIN photographer_articles a ON a.id = agt.article_id
@@ -135,7 +139,7 @@ $categories = db_fetch_all_cached('blog_public_categories', 300, 'SELECT DISTINC
                                                                                     AND p.deleted_at IS NULL
                                                                                     AND p.approval_status = "approved"
                                                                                     AND u.status = "active"
-                                                                                    AND u.deleted_at IS NULL)
+                                                                                    AND u.deleted_at IS NULL))
                                                                     ORDER BY t.name');
 
 $sourceTabs = [

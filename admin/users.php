@@ -181,8 +181,8 @@ include __DIR__ . '/../includes/header.php';
                                 <button data-confirm="ยืนยันระงับบัญชีนี้?" name="action" value="suspend" class="btn-warning btn-sm">
                                     <i class="fa-solid fa-ban mr-1"></i>ระงับ
                                 </button>
-                                <button data-confirm="ลบผู้ใช้นี้?" name="action" value="delete" class="btn-danger btn-sm">
-                                    <i class="fa-solid fa-trash mr-1"></i>ลบ
+                                <button data-confirm="ซ่อนผู้ใช้นี้?" data-confirm-text="บัญชีจะหายจากการใช้งานปกติ แต่ข้อมูลเดิมยังอยู่ในฐานข้อมูล" data-confirm-button="ซ่อนผู้ใช้" name="action" value="delete" class="btn-warning btn-sm">
+                                    <i class="fa-solid fa-eye-slash mr-1"></i>ซ่อน
                                 </button>
                             </form>
                         </td>

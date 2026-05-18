@@ -18,7 +18,7 @@ if (is_post()) {
             $portfolioItem = $stmt->fetch();
 
             if (!$portfolioItem) {
-                throw new RuntimeException('ไม่พบตัวอย่างงานถ่ายภาพที่ต้องการลบ');
+                throw new RuntimeException('ไม่พบตัวอย่างงานถ่ายภาพที่ต้องการซ่อน');
             }
 
             db()->beginTransaction();
@@ -27,36 +27,14 @@ if (is_post()) {
             $stmt->execute([$id, $pid]);
 
             $imagePath = trim((string)$portfolioItem['image_path']);
-            $fileDeleted = false;
-            $fileDeleteNote = 'skip_non_portfolio_path';
-            $fileName = basename($imagePath);
-            $isRandomUploadedFile = (bool)preg_match('/^[a-f0-9]{32}\.(jpg|jpeg|png|webp)$/i', $fileName);
-
-            if ($imagePath !== '' && strpos($imagePath, 'portfolios/') === 0 && strpos($imagePath, '..') === false && strpos($imagePath, '\\') === false && $isRandomUploadedFile) {
-                $portfolioUploadDir = realpath(UPLOAD_PATH . '/portfolios');
-                $targetPath = realpath(UPLOAD_PATH . '/' . $imagePath);
-
-                if ($portfolioUploadDir !== false && $targetPath !== false && strpos($targetPath, $portfolioUploadDir . DIRECTORY_SEPARATOR) === 0 && is_file($targetPath)) {
-                    if (!@unlink($targetPath)) {
-                        throw new RuntimeException('ลบไฟล์รูปตัวอย่างงานไม่สำเร็จ กรุณาลองใหม่');
-                    }
-
-                    $fileDeleted = true;
-                    $fileDeleteNote = 'deleted_uploaded_file';
-                } else {
-                    $fileDeleteNote = 'file_not_found_or_outside_upload_folder';
-                }
-            } elseif ($imagePath !== '' && strpos($imagePath, 'portfolios/') === 0 && !$isRandomUploadedFile) {
-                $fileDeleteNote = 'skip_seed_or_shared_portfolio_file';
-            }
 
             db()->commit();
-            log_activity('delete_portfolio_file', 'photographer_portfolios', $id, json_encode([
+            log_activity('hide_portfolio', 'photographer_portfolios', $id, json_encode([
                 'image_path' => $imagePath,
-                'file_deleted' => $fileDeleted,
-                'note' => $fileDeleteNote,
+                'file_deleted' => false,
+                'note' => 'soft_deleted_only_keep_file',
             ], JSON_UNESCAPED_UNICODE));
-            flash('success', 'ลบตัวอย่างงานถ่ายภาพแล้ว');
+            flash('success', 'ซ่อนตัวอย่างงานถ่ายภาพแล้ว ข้อมูลและไฟล์รูปเดิมยังอยู่');
         } else {
             $path = upload_image($_FILES['image'] ?? [], 'portfolios');
 
@@ -161,8 +139,8 @@ include __DIR__ . '/../includes/header.php';
                         <?= csrf_field() ?>
                         <input type="hidden" name="action" value="delete">
                         <input type="hidden" name="id" value="<?= (int)$item['id'] ?>">
-                        <button data-confirm="ลบตัวอย่างงานนี้?" class="btn-danger btn-sm">
-                            <i class="fa-solid fa-trash mr-1"></i>ลบ
+                        <button data-confirm="ซ่อนตัวอย่างงานนี้?" data-confirm-text="ตัวอย่างงานจะหายจากหน้าโปรไฟล์ แต่ข้อมูลเดิมยังอยู่ในฐานข้อมูล" data-confirm-button="ซ่อนตัวอย่างงาน" class="btn-warning btn-sm">
+                            <i class="fa-solid fa-eye-slash mr-1"></i>ซ่อน
                         </button>
                     </form>
                 </div>

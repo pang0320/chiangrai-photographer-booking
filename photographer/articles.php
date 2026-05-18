@@ -27,7 +27,7 @@ if (is_post()) {
             $stmt = db()->prepare('UPDATE photographer_articles SET deleted_at = NOW(), updated_at = NOW() WHERE id = ? AND photographer_id = ?');
             $stmt->execute([$articleId, $pid]);
             log_activity('manage_articles', 'photographer_articles', $articleId);
-            flash('success', 'ลบบทความแล้ว');
+            flash('success', 'ซ่อนบทความแล้ว ข้อมูลเดิมยังอยู่');
             clean_redirect('/photographer/articles.php', ['sort' => $sort]);
         }
 
@@ -101,7 +101,8 @@ $stmt = db()->prepare('SELECT a.*,
                        (SELECT GROUP_CONCAT(t.name ORDER BY t.name SEPARATOR ", ")
                         FROM article_tags atg
                         JOIN tags t ON t.id = atg.tag_id
-                        WHERE atg.article_id = a.id) AS tags
+                        WHERE atg.article_id = a.id
+                          AND t.is_active = 1) AS tags
                        FROM photographer_articles a
                        WHERE a.photographer_id = ? AND a.deleted_at IS NULL
                        ORDER BY ' . $orderSql);
@@ -218,8 +219,8 @@ include __DIR__ . '/../includes/header.php';
                         <?= csrf_field() ?>
                         <input type="hidden" name="action" value="delete">
                         <input type="hidden" name="id" value="<?= (int)$item['id'] ?>">
-                        <button data-confirm="ลบบทความนี้?" class="btn-danger btn-sm">
-                            <i class="fa-solid fa-trash mr-1"></i>ลบ
+                        <button data-confirm="ซ่อนบทความนี้?" data-confirm-text="บทความจะหายจากหน้าระบบ แต่ข้อมูลเดิมยังอยู่ในฐานข้อมูล" data-confirm-button="ซ่อนบทความ" class="btn-warning btn-sm">
+                            <i class="fa-solid fa-eye-slash mr-1"></i>ซ่อน
                         </button>
                     </form>
                 </div>

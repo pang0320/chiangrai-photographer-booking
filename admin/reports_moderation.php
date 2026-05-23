@@ -372,7 +372,7 @@ if (is_post()) {
         $message .= ' ระบบไม่เปิดเผยตัวตนของผู้รายงาน';
 
         foreach ($recipients as $recipient) {
-            notify_user((int)$recipient['user_id'], 'แจ้งเตือนรายงานปัญหา', $message, 'info', $id);
+            notify_user((int)$recipient['user_id'], 'แจ้งเตือนรายงานปัญหา', $message, 'report_notice', $id);
         }
 
         log_activity('notify_report_target', 'reports', $id, 'sent_to=' . implode(',', array_map(static function ($recipient) {

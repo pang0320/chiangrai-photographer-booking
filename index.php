@@ -2,7 +2,7 @@
 require_once __DIR__ . '/includes/functions.php';
 ensure_service_categories_deleted_at_column();
 
-$homeData = cache_remember('home_page_public_data_v5', 120, function () {
+$homeData = cache_remember('home_page_public_data_v6', 120, function () {
     $completedJoin = 'LEFT JOIN (
                               SELECT photographer_id, COUNT(*) AS completed_total
                               FROM bookings
@@ -79,11 +79,6 @@ $homeData = cache_remember('home_page_public_data_v5', 120, function () {
                                    WHERE r.status = "visible" AND r.deleted_at IS NULL
                                    ORDER BY r.created_at DESC
                                    LIMIT 6'),
-        'banners' => db_fetch_all('SELECT *
-                                   FROM banners
-                                   WHERE is_active = 1
-                                   ORDER BY sort_order, id DESC
-                                   LIMIT 6'),
         'stats' => [
             'photographers' => db_fetch_value('SELECT COUNT(*) FROM photographer_profiles p JOIN users u ON u.id = p.user_id WHERE p.approval_status = "approved" AND p.is_available = 1 AND p.deleted_at IS NULL AND u.status = "active" AND u.deleted_at IS NULL'),
             'reviews' => db_fetch_value('SELECT COUNT(*) FROM reviews WHERE status = "visible" AND deleted_at IS NULL'),
@@ -103,38 +98,18 @@ $portfolioShowcase = $homeData['portfolioShowcase'];
 $articles = $homeData['articles'];
 $homeFaqs = $homeData['homeFaqs'];
 $reviews = $homeData['reviews'];
-$banners = $homeData['banners'];
 $stats = $homeData['stats'];
 
-$heroBanner = null;
-if (!empty($banners)) {
-    $heroBanner = $banners[0];
-}
-
-$heroTitle = 'ค้นหาช่างภาพมืออาชีพในจังหวัดเชียงราย';
-$heroSubtitle = 'เลือกดูตัวอย่างงานถ่ายภาพจริง ตรวจวันว่าง ส่งคำขอจอง และติดต่อช่างภาพโดยตรง ไม่มีระบบรับชำระเงินในเว็บไซต์';
-$heroButtonText = 'ค้นหาช่างภาพ';
-$heroButtonUrl = '/photographers.php';
+$heroTitle = setting('home_hero_title', 'ค้นหาช่างภาพมืออาชีพในจังหวัดเชียงราย');
+$heroSubtitle = setting('home_hero_subtitle', 'เลือกดูตัวอย่างงานถ่ายภาพจริง ตรวจวันว่าง ส่งคำขอจอง และติดต่อช่างภาพโดยตรง ไม่มีระบบรับชำระเงินในเว็บไซต์');
+$heroButtonText = setting('home_hero_button_text', 'ค้นหาช่างภาพ');
+$heroButtonUrl = setting('home_hero_button_url', '/photographers.php');
 $heroBackground = '/assets/uploads/seed/photo-1511285560929-80b456fea0bc.jpg';
-
-if ($heroBanner) {
-    if (trim((string)$heroBanner['title']) !== '') {
-        $heroTitle = (string)$heroBanner['title'];
-    }
-
-    if (trim((string)$heroBanner['subtitle']) !== '') {
-        $heroSubtitle = (string)$heroBanner['subtitle'];
-    }
-
-    if (trim((string)$heroBanner['button_text']) !== '') {
-        $heroButtonText = (string)$heroBanner['button_text'];
-    }
-
-    if (trim((string)$heroBanner['button_url']) !== '') {
-        $heroButtonUrl = (string)$heroBanner['button_url'];
-    }
-
-    $heroBackground = public_image($heroBanner['image_path'], $heroBackground);
+if (trim($heroTitle) === '') {
+    $heroTitle = 'ค้นหาช่างภาพมืออาชีพในจังหวัดเชียงราย';
+}
+if (trim($heroSubtitle) === '') {
+    $heroSubtitle = 'เลือกดูตัวอย่างงานถ่ายภาพจริง ตรวจวันว่าง ส่งคำขอจอง และติดต่อช่างภาพโดยตรง ไม่มีระบบรับชำระเงินในเว็บไซต์';
 }
 
 $heroImages = [
@@ -145,7 +120,10 @@ $heroImages = [
 ];
 
 $siteUrl = rtrim(APP_URL, '/');
-$pageTitle = 'ค้นหาช่างภาพเชียงราย | จองช่างภาพมืออาชีพ งานแต่ง รับปริญญา โปรไฟล์';
+$pageTitle = setting('home_page_title', 'ค้นหาช่างภาพเชียงราย | จองช่างภาพมืออาชีพ งานแต่ง รับปริญญา โปรไฟล์');
+if (trim($pageTitle) === '') {
+    $pageTitle = 'ค้นหาช่างภาพเชียงราย | จองช่างภาพมืออาชีพ งานแต่ง รับปริญญา โปรไฟล์';
+}
 $pageMetaDescription = 'ค้นหาช่างภาพมืออาชีพในจังหวัดเชียงราย ดูผลงานจริง คะแนนรีวิว วันว่าง และส่งคำขอจองงานแต่ง รับปริญญา ครอบครัว สินค้า อีเวนต์ และโปรไฟล์ได้ง่าย';
 $pageMetaKeywords = 'ช่างภาพเชียงราย, จองช่างภาพเชียงราย, ช่างภาพงานแต่งเชียงราย, ช่างภาพรับปริญญาเชียงราย, ช่างภาพโปรไฟล์, ช่างภาพสินค้า, ช่างภาพอีเวนต์, Chiang Rai photographer';
 $pageCanonical = $siteUrl . '/';
@@ -290,56 +268,6 @@ include __DIR__ . '/includes/header.php';
         </div>
     </div>
 </section>
-
-<?php if ($banners): ?>
-    <section class="stock-shell px-4 py-12 sm:px-6 lg:px-8">
-        <div class="flex flex-wrap items-end justify-between gap-5">
-            <div>
-                <p class="section-kicker">
-                    <i class="fa-solid fa-images mr-2"></i>แบนเนอร์จากผู้ดูแลระบบ
-                </p>
-                <h2 class="mt-2 text-3xl font-black tracking-tight text-neutral-950">ข่าวโปรโมตและทางลัดสำคัญ</h2>
-                <p class="mt-2 text-base font-semibold leading-7 text-neutral-600">ข้อมูลส่วนนี้ดึงจากเมนูผู้ดูแลระบบ &gt; แบนเนอร์ และแสดงตามข้อความปุ่มที่ตั้งไว้</p>
-            </div>
-        </div>
-
-        <div class="mt-8 grid gap-5 lg:grid-cols-3">
-            <?php foreach ($banners as $banner): ?>
-                <?php
-                $bannerImage = public_image($banner['image_path'], '/assets/uploads/seed/photo-1511285560929-80b456fea0bc.jpg');
-                $bannerButtonText = trim((string)$banner['button_text']);
-                $bannerButtonUrl = trim((string)$banner['button_url']);
-                ?>
-                <article class="stock-card overflow-hidden rounded-[1.75rem]">
-                    <div class="relative h-56 bg-neutral-950">
-                        <img class="h-full w-full object-cover opacity-76" loading="lazy" decoding="async" src="<?= h($bannerImage) ?>" alt="">
-                        <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent"></div>
-                        <div class="absolute bottom-0 left-0 right-0 p-5 text-white">
-                            <h3 class="text-2xl font-black leading-tight"><?= h($banner['title']) ?></h3>
-                            <?php if (trim((string)$banner['subtitle']) !== ''): ?>
-                                <p class="mt-2 line-clamp-2 text-sm font-semibold leading-6 text-white/72"><?= h($banner['subtitle']) ?></p>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                    <div class="flex items-center justify-between gap-3 p-5">
-                        <div class="text-sm font-bold text-neutral-500">
-                            <i class="fa-solid fa-arrow-down-1-9 mr-1 text-red-600"></i>ลำดับ <?= (int)$banner['sort_order'] ?>
-                        </div>
-                        <?php if ($bannerButtonText !== '' && $bannerButtonUrl !== ''): ?>
-                            <a href="<?= h($bannerButtonUrl) ?>" class="btn-primary btn-sm">
-                                <i class="fa-solid fa-arrow-right"></i><?= h($bannerButtonText) ?>
-                            </a>
-                        <?php else: ?>
-                            <span class="rounded-full bg-neutral-100 px-4 py-2 text-sm font-black text-neutral-500">
-                                <i class="fa-solid fa-circle-info mr-1"></i>ไม่มีปุ่ม
-                            </span>
-                        <?php endif; ?>
-                    </div>
-                </article>
-            <?php endforeach; ?>
-        </div>
-    </section>
-<?php endif; ?>
 
 <section class="stock-shell px-4 py-16 sm:px-6 lg:px-8">
     <div class="flex flex-wrap items-end justify-between gap-5">

@@ -145,20 +145,6 @@ $overviewMap = [
             ['ความต้องการค้นหา', 'คำค้นพื้นที่ ' . number_format(admin_overview_count('SELECT COUNT(*) FROM search_logs WHERE district_id IS NOT NULL')), 'อำเภอที่ผู้ใช้ค้นหาบ่อยช่วยบอกความต้องการ', '/admin/reports.php', 'ดูรายงานค้นหา', 'fa-chart-line'],
         ],
     ],
-    'banners.php' => [
-        'description' => 'จัดภาพแบนเนอร์หน้าเว็บ ปุ่มลิงก์ และลำดับการแสดงผล',
-        'stats' => [
-            ['แบนเนอร์ทั้งหมด', 'SELECT COUNT(*) FROM banners', 'fa-images', 'text-sky-600', 'รายการแบนเนอร์', '/admin/banners.php'],
-            ['เปิดใช้งาน', 'SELECT COUNT(*) FROM banners WHERE is_active = 1', 'fa-eye', 'text-emerald-600', 'กำลังแสดง', '/admin/banners.php'],
-            ['ปิดใช้งาน', 'SELECT COUNT(*) FROM banners WHERE is_active = 0', 'fa-eye-slash', 'text-rose-600', 'ซ่อนไว้', '/admin/banners.php'],
-            ['มีปุ่มลิงก์', 'SELECT COUNT(*) FROM banners WHERE button_url IS NOT NULL AND button_url <> ""', 'fa-link', 'text-amber-600', 'เชื่อมไปหน้าอื่น', '/admin/banners.php'],
-        ],
-        'cards' => [
-            ['ภาพหลัก', 'ภาพหลักหน้าเว็บ', 'ใช้ควบคุมความรู้สึกแรกของหน้าแรก', '/admin/banners.php', 'จัดแบนเนอร์', 'fa-panorama'],
-            ['ปุ่มนำทาง', 'แบนเนอร์มีปุ่ม ' . number_format(admin_overview_count('SELECT COUNT(*) FROM banners WHERE button_text IS NOT NULL AND button_text <> ""')), 'ตรวจข้อความปุ่มและ URL ปลายทาง', '/admin/banners.php', 'ตรวจปุ่ม', 'fa-arrow-up-right-from-square'],
-            ['การเรียงลำดับ', 'เรียงลำดับแบนเนอร์', 'เลขลำดับน้อยจะแสดงก่อนในชุดแบนเนอร์', '/admin/banners.php', 'จัดลำดับ', 'fa-arrow-down-1-9'],
-        ],
-    ],
     'blogs.php' => [
         'description' => 'จัดบทความเว็บจากผู้ดูแล ใช้เผยแพร่ข่าว บทความ SEO และเนื้อหาส่วนกลาง',
         'stats' => [
@@ -235,7 +221,7 @@ $overviewMap = [
             ['ค่าทั้งหมด', 'SELECT COUNT(*) FROM settings', 'fa-gears', 'text-sky-600', 'ค่าตั้งค่าระบบ', '/admin/settings.php'],
             ['ข้อความติดต่อ', 'SELECT COUNT(*) FROM contact_messages WHERE status = "unread"', 'fa-envelope', 'text-rose-600', 'ยังไม่อ่าน', '/admin/contact_messages.php'],
             ['สมาชิกทั้งหมด', 'SELECT COUNT(*) FROM users WHERE deleted_at IS NULL', 'fa-users', 'text-emerald-600', 'อิงค่าระบบ', '/admin/users.php'],
-            ['แบนเนอร์ใช้งาน', 'SELECT COUNT(*) FROM banners WHERE is_active = 1', 'fa-images', 'text-amber-600', 'หน้าแรก', '/admin/banners.php'],
+            ['ค่าหน้าแรก', 'SELECT COUNT(*) FROM settings WHERE setting_key LIKE "home_%"', 'fa-house', 'text-amber-600', 'หัวข้อหน้าแรก', '/admin/settings.php'],
         ],
         'cards' => [
             ['ตั้งค่าเว็บ', 'ตั้งค่าระบบ', 'ปรับค่าที่ส่งผลกับการแสดงผลหลักของเว็บ', '/admin/settings.php', 'เปิดตั้งค่า', 'fa-sliders'],

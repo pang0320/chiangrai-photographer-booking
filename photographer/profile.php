@@ -4,9 +4,65 @@ requireRole('photographer');
 $user = current_user();
 $profile = photographer_profile_by_user((int)$user['id']);
 if (!$profile) exit('Profile not found');
+
+function photographer_profile_password_errors(string $password, string $confirmation): array
+{
+    $errors = [];
+
+    if (text_length($password) < 8) {
+        $errors['length'] = 'รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร';
+    }
+
+    if (!preg_match('/[a-z]/', $password)) {
+        $errors['lower'] = 'ต้องมีตัวอักษรพิมพ์เล็กอย่างน้อย 1 ตัว';
+    }
+
+    if (!preg_match('/[A-Z]/', $password)) {
+        $errors['upper'] = 'ต้องมีตัวอักษรพิมพ์ใหญ่อย่างน้อย 1 ตัว';
+    }
+
+    if (!preg_match('/[0-9]/', $password)) {
+        $errors['number'] = 'ต้องมีตัวเลขอย่างน้อย 1 ตัว';
+    }
+
+    if (!preg_match('/[^A-Za-z0-9]/', $password)) {
+        $errors['special'] = 'ต้องมีอักขระพิเศษอย่างน้อย 1 ตัว เช่น ! @ #';
+    }
+
+    if ($password === '' || $confirmation === '' || $password !== $confirmation) {
+        $errors['match'] = 'รหัสผ่านใหม่และช่องยืนยันต้องตรงกัน';
+    }
+
+    return $errors;
+}
+
+$passwordErrors = [];
+
 if (is_post()) {
     verify_csrf();
+    $action = (string)($_POST['action'] ?? 'update_profile');
+
     try {
+        if ($action === 'update_password') {
+            $currentPassword = (string)($_POST['current_password'] ?? '');
+            $newPassword = (string)($_POST['password'] ?? '');
+            $passwordConfirmation = (string)($_POST['password_confirmation'] ?? '');
+            $passwordErrors = photographer_profile_password_errors($newPassword, $passwordConfirmation);
+
+            if (!password_verify($currentPassword, (string)$user['password'])) {
+                $passwordErrors['current'] = 'รหัสผ่านปัจจุบันไม่ถูกต้อง';
+            }
+
+            if ($passwordErrors) {
+                flash('error', 'ยังไม่สามารถเปลี่ยนรหัสผ่านได้ กรุณาตรวจรายการที่ขาด');
+            } else {
+                db()->prepare('UPDATE users SET password = ?, updated_at = NOW() WHERE id = ? AND deleted_at IS NULL')
+                    ->execute([password_hash($newPassword, PASSWORD_DEFAULT), (int)$user['id']]);
+                log_activity('update_photographer_password', 'users', (int)$user['id']);
+                flash('success', 'เปลี่ยนรหัสผ่านแล้ว');
+                redirect('/photographer/profile.php');
+            }
+        } elseif ($action === 'update_profile') {
         $profileImageFile = [];
         if (isset($_FILES['profile_image'])) {
             $profileImageFile = $_FILES['profile_image'];
@@ -42,6 +98,9 @@ if (is_post()) {
         log_activity('update_photographer_profile', 'photographer_profiles', (int)$profile['id']);
         flash('success', 'บันทึกโปรไฟล์แล้ว');
         redirect('/photographer/profile.php');
+        } else {
+            throw new RuntimeException('ไม่พบคำสั่งที่ต้องทำรายการ');
+        }
     } catch (Throwable $e) { flash('error', $e->getMessage()); }
 }
 $pageTitle = 'จัดการโปรไฟล์ช่างภาพ';
@@ -57,6 +116,9 @@ include __DIR__ . '/../includes/header.php';
                 <div class="pb-2 text-white">
                     <p class="text-sm font-black uppercase tracking-[0.22em] text-red-200"><i class="fa-solid fa-camera-retro mr-2"></i>โปรไฟล์ช่างภาพ</p>
                     <h1 class="mt-1 text-3xl font-black"><?= h($profile['display_name']) ?></h1>
+                    <a href="#password-settings" data-password-settings-link class="mt-3 inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-black text-neutral-950 shadow-lg transition hover:bg-red-600 hover:text-white">
+                        <i class="fa-solid fa-key"></i>ตั้งค่ารหัสใหม่
+                    </a>
                     <p class="mt-2 text-sm font-semibold text-white/70">รูปโปรไฟล์และรูปหน้าปกนี้จะแสดงในหน้าค้นหาและหน้าโปรไฟล์สาธารณะ</p>
                     <?php if ((int)$profile['is_available'] === 1): ?>
                         <span class="mt-3 inline-flex rounded-full bg-emerald-400/20 px-3 py-1 text-xs font-black text-emerald-100"><i class="fa-solid fa-toggle-on mr-1"></i>เปิดรับงาน</span>
@@ -69,6 +131,7 @@ include __DIR__ . '/../includes/header.php';
 
         <form method="post" enctype="multipart/form-data" class="grid gap-5 p-8">
             <?= csrf_field() ?>
+            <input type="hidden" name="action" value="update_profile">
             <div class="grid gap-4 sm:grid-cols-2">
                 <label class="grid gap-2 text-sm font-black text-slate-700">
                     <span><i class="fa-solid fa-signature mr-2 text-red-600"></i>ชื่อช่างภาพ / ชื่อทีม <?= required_mark() ?></span>
@@ -140,6 +203,93 @@ include __DIR__ . '/../includes/header.php';
             </label>
             <button class="rounded-2xl bg-neutral-950 px-5 py-3 font-black text-white transition hover:bg-red-600"><i class="fa-solid fa-floppy-disk mr-2"></i>บันทึกโปรไฟล์ช่างภาพ</button>
         </form>
+
+        <section id="password-settings" class="scroll-mt-28 border-t border-slate-100 bg-slate-50/70 p-8">
+            <div class="rounded-[2rem] bg-white p-6 shadow-sm ring-1 ring-slate-200">
+                <div class="flex flex-wrap items-start justify-between gap-4">
+                    <div>
+                        <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600"><i class="fa-solid fa-key mr-2"></i>ความปลอดภัยบัญชี</p>
+                        <h2 class="mt-1 text-2xl font-black text-neutral-950">ตั้งค่ารหัสผ่านใหม่</h2>
+                        <p class="mt-2 text-sm font-bold leading-7 text-slate-500">ต้องกรอกรหัสผ่านปัจจุบันก่อน เพื่อยืนยันว่าเป็นเจ้าของบัญชีจริง</p>
+                    </div>
+                    <div class="rounded-2xl bg-red-50 px-4 py-3 text-sm font-black text-red-700">
+                        <i class="fa-solid fa-shield-halved mr-1"></i>แนะนำให้ใช้รหัสที่เดายาก
+                    </div>
+                </div>
+
+                <form method="post" class="mt-6 grid gap-5" novalidate data-profile-password-form>
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="action" value="update_password">
+
+                    <label class="grid gap-2 text-sm font-black text-slate-700">
+                        <span><i class="fa-solid fa-lock mr-2 text-red-600"></i>รหัสผ่านปัจจุบัน <?= required_mark() ?></span>
+                        <input
+                            type="password"
+                            name="current_password"
+                            required
+                            autocomplete="current-password"
+                            placeholder="กรอกรหัสผ่านปัจจุบัน"
+                            class="stock-input rounded-2xl px-4 py-3 font-semibold <?php if (isset($passwordErrors['current'])): ?>border-red-300 bg-red-50 ring-2 ring-red-100<?php endif; ?>">
+                        <?php if (isset($passwordErrors['current'])): ?>
+                            <span class="text-sm font-black text-red-600"><i class="fa-solid fa-circle-exclamation mr-1"></i><?= h($passwordErrors['current']) ?></span>
+                        <?php endif; ?>
+                    </label>
+
+                    <div class="grid gap-4 md:grid-cols-2">
+                        <label class="grid gap-2 text-sm font-black text-slate-700">
+                            <span><i class="fa-solid fa-key mr-2 text-red-600"></i>รหัสผ่านใหม่ <?= required_mark() ?></span>
+                            <input
+                                type="password"
+                                name="password"
+                                required
+                                autocomplete="new-password"
+                                placeholder="อย่างน้อย 8 ตัว มี A-Z, a-z, ตัวเลข และอักขระพิเศษ"
+                                class="stock-input rounded-2xl px-4 py-3 font-semibold <?php if ($passwordErrors && !isset($passwordErrors['current'])): ?>border-red-300 bg-red-50 ring-2 ring-red-100<?php endif; ?>"
+                                data-profile-password-input>
+                        </label>
+
+                        <label class="grid gap-2 text-sm font-black text-slate-700">
+                            <span><i class="fa-solid fa-circle-check mr-2 text-red-600"></i>ยืนยันรหัสผ่านใหม่ <?= required_mark() ?></span>
+                            <input
+                                type="password"
+                                name="password_confirmation"
+                                required
+                                autocomplete="new-password"
+                                placeholder="พิมพ์รหัสผ่านใหม่อีกครั้ง"
+                                class="stock-input rounded-2xl px-4 py-3 font-semibold <?php if (isset($passwordErrors['match'])): ?>border-red-300 bg-red-50 ring-2 ring-red-100<?php endif; ?>"
+                                data-profile-password-confirmation>
+                        </label>
+                    </div>
+
+                    <div class="rounded-[1.5rem] bg-slate-50 p-4">
+                        <p class="text-sm font-black text-neutral-950"><i class="fa-solid fa-list-check mr-2 text-red-600"></i>รหัสผ่านใหม่ต้องมี</p>
+                        <div class="mt-3 grid gap-2 text-sm font-bold md:grid-cols-2" data-profile-password-checklist>
+                            <p data-rule="length"><i class="fa-solid fa-circle-xmark mr-2"></i>อย่างน้อย 8 ตัวอักษร</p>
+                            <p data-rule="lower"><i class="fa-solid fa-circle-xmark mr-2"></i>ตัวอักษรพิมพ์เล็ก a-z</p>
+                            <p data-rule="upper"><i class="fa-solid fa-circle-xmark mr-2"></i>ตัวอักษรพิมพ์ใหญ่ A-Z</p>
+                            <p data-rule="number"><i class="fa-solid fa-circle-xmark mr-2"></i>ตัวเลข 0-9</p>
+                            <p data-rule="special"><i class="fa-solid fa-circle-xmark mr-2"></i>อักขระพิเศษ เช่น ! @ #</p>
+                            <p data-rule="match"><i class="fa-solid fa-circle-xmark mr-2"></i>ช่องยืนยันรหัสผ่านตรงกัน</p>
+                        </div>
+                    </div>
+
+                    <?php if ($passwordErrors): ?>
+                        <div class="rounded-[1.5rem] border border-red-200 bg-red-50 p-4 text-sm font-bold leading-7 text-red-700" data-profile-password-errors>
+                            <p class="font-black"><i class="fa-solid fa-circle-exclamation mr-2"></i>ยังขาดเงื่อนไขต่อไปนี้</p>
+                            <ul class="mt-2 list-inside list-disc">
+                                <?php foreach ($passwordErrors as $message): ?>
+                                    <li><?= h($message) ?></li>
+                                <?php endforeach; ?>
+                            </ul>
+                        </div>
+                    <?php endif; ?>
+
+                    <button class="btn-cta btn-lg rounded-2xl justify-self-start">
+                        <i class="fa-solid fa-floppy-disk"></i>บันทึกรหัสผ่านใหม่
+                    </button>
+                </form>
+            </div>
+        </section>
     </div>
 </section>
 <script>
@@ -156,6 +306,71 @@ document.addEventListener('DOMContentLoaded', function () {
 
     bindImagePreview('profile-image-input', 'profile-image-preview');
     bindImagePreview('cover-image-input', 'cover-preview');
+
+    var passwordLink = document.querySelector('[data-password-settings-link]');
+    var passwordSection = document.getElementById('password-settings');
+    var passwordForm = document.querySelector('[data-profile-password-form]');
+
+    if (passwordLink && passwordSection) {
+        passwordLink.addEventListener('click', function (event) {
+            event.preventDefault();
+            passwordSection.scrollIntoView({behavior: 'smooth', block: 'start'});
+            setTimeout(function () {
+                var currentPassword = passwordSection.querySelector('input[name="current_password"]');
+                if (currentPassword) {
+                    currentPassword.focus({preventScroll: true});
+                }
+            }, 450);
+        });
+    }
+
+    if (passwordForm) {
+        var password = passwordForm.querySelector('[data-profile-password-input]');
+        var confirmation = passwordForm.querySelector('[data-profile-password-confirmation]');
+        var rules = passwordForm.querySelectorAll('[data-profile-password-checklist] [data-rule]');
+
+        function setPasswordRule(name, passed) {
+            rules.forEach(function (rule) {
+                if (rule.getAttribute('data-rule') !== name) {
+                    return;
+                }
+
+                rule.classList.remove('text-emerald-700', 'text-red-600');
+                rule.classList.add(passed ? 'text-emerald-700' : 'text-red-600');
+
+                var icon = rule.querySelector('i');
+                if (icon) {
+                    icon.className = 'fa-solid mr-2 ' + (passed ? 'fa-circle-check' : 'fa-circle-xmark');
+                }
+            });
+        }
+
+        function refreshPasswordChecklist() {
+            var value = password ? password.value || '' : '';
+            var confirmValue = confirmation ? confirmation.value || '' : '';
+
+            setPasswordRule('length', value.length >= 8);
+            setPasswordRule('lower', /[a-z]/.test(value));
+            setPasswordRule('upper', /[A-Z]/.test(value));
+            setPasswordRule('number', /[0-9]/.test(value));
+            setPasswordRule('special', /[^A-Za-z0-9]/.test(value));
+            setPasswordRule('match', value !== '' && confirmValue !== '' && value === confirmValue);
+        }
+
+        if (password) {
+            password.addEventListener('input', refreshPasswordChecklist);
+        }
+        if (confirmation) {
+            confirmation.addEventListener('input', refreshPasswordChecklist);
+        }
+        refreshPasswordChecklist();
+
+        <?php if ($passwordErrors): ?>
+        setTimeout(function () {
+            passwordSection.scrollIntoView({behavior: 'smooth', block: 'start'});
+        }, 450);
+        <?php endif; ?>
+    }
 });
 </script>
 <?php include __DIR__ . '/../includes/footer.php'; ?>

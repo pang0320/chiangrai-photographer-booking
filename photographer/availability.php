@@ -234,7 +234,7 @@ include __DIR__ . '/../includes/header.php';
                     <th>ช่วงเวลา</th>
                     <th>สถานะ</th>
                     <th>หมายเหตุ</th>
-                    <th></th>
+                    <th class="min-w-[360px]">จัดการ</th>
                 </tr>
             </thead>
             <tbody>
@@ -244,15 +244,78 @@ include __DIR__ . '/../includes/header.php';
                         <td><?= h(time_slot_label($item['time_slot'])) ?></td>
                         <td><?= status_badge((string)$item['status']) ?></td>
                         <td><?= h($item['note']) ?></td>
-                        <td>
-                            <form method="post">
-                                <?= csrf_field() ?>
-                                <input type="hidden" name="action" value="delete">
-                                <input type="hidden" name="id" value="<?= (int)$item['id'] ?>">
-                                <button data-confirm="ซ่อนรายการนี้จากหน้าจอง?" data-confirm-text="ระบบจะเปลี่ยนสถานะเป็นไม่ว่าง ข้อมูลเดิมยังอยู่ในฐานข้อมูล" data-confirm-button="ซ่อนรายการ" class="btn-warning btn-sm">
-                                    <i class="fa-solid fa-eye-slash mr-1"></i>ซ่อน
-                                </button>
-                            </form>
+                        <td class="py-3 align-top">
+                            <?php $hasActiveBooking = photographer_availability_has_active_booking($item); ?>
+                            <div class="flex flex-wrap items-start gap-2">
+                                <details class="w-full sm:w-auto">
+                                    <summary class="btn-warning btn-sm inline-flex cursor-pointer list-none items-center gap-1 rounded-full">
+                                        <i class="fa-solid fa-pen"></i>แก้ไข
+                                    </summary>
+                                    <form method="post" class="mt-3 grid min-w-[320px] gap-3 rounded-[1.25rem] border border-amber-100 bg-amber-50 p-4 shadow-sm">
+                                        <?= csrf_field() ?>
+                                        <input type="hidden" name="action" value="update">
+                                        <input type="hidden" name="id" value="<?= (int)$item['id'] ?>">
+
+                                        <label class="grid gap-1 text-xs font-black text-neutral-700">
+                                            <span><i class="fa-solid fa-calendar-day mr-1 text-red-600"></i>วันที่ พ.ศ.</span>
+                                            <input name="available_date" required value="<?= h(format_be_date($item['available_date'])) ?>" placeholder="เช่น 05/05/2569" class="stock-input rounded-xl px-3 py-2 text-sm font-semibold">
+                                        </label>
+
+                                        <div class="grid gap-3 sm:grid-cols-2">
+                                            <label class="grid gap-1 text-xs font-black text-neutral-700">
+                                                <span><i class="fa-solid fa-clock mr-1 text-red-600"></i>ช่วงเวลา</span>
+                                                <select name="time_slot" class="stock-input rounded-xl px-3 py-2 text-sm font-semibold">
+                                                    <?php foreach ($timeSlots as $value => $label): ?>
+                                                        <option value="<?= h($value) ?>" <?php if ((string)$item['time_slot'] === (string)$value): ?>selected<?php endif; ?>><?= h($label) ?></option>
+                                                    <?php endforeach; ?>
+                                                </select>
+                                            </label>
+
+                                            <label class="grid gap-1 text-xs font-black text-neutral-700">
+                                                <span><i class="fa-solid fa-toggle-on mr-1 text-red-600"></i>สถานะ</span>
+                                                <select name="status" class="stock-input rounded-xl px-3 py-2 text-sm font-semibold">
+                                                    <?php foreach ($statuses as $status): ?>
+                                                        <option value="<?= h($status) ?>" <?php if ((string)$item['status'] === (string)$status): ?>selected<?php endif; ?>><?= h(booking_status_label($status)) ?></option>
+                                                    <?php endforeach; ?>
+                                                </select>
+                                            </label>
+                                        </div>
+
+                                        <label class="grid gap-1 text-xs font-black text-neutral-700">
+                                            <span><i class="fa-solid fa-note-sticky mr-1 text-red-600"></i>หมายเหตุ</span>
+                                            <input name="note" value="<?= h($item['note']) ?>" placeholder="หมายเหตุ" class="stock-input rounded-xl px-3 py-2 text-sm font-semibold">
+                                        </label>
+
+                                        <?php if ($hasActiveBooking): ?>
+                                            <div class="rounded-xl bg-white px-3 py-2 text-xs font-black leading-5 text-amber-700">
+                                                <i class="fa-solid fa-triangle-exclamation mr-1"></i>รายการนี้มีคำขอจองที่ยังดำเนินการอยู่ จึงแก้ไขไม่ได้
+                                            </div>
+                                        <?php endif; ?>
+
+                                        <button type="submit" class="btn-success btn-sm justify-self-start" <?php if ($hasActiveBooking): ?>disabled<?php endif; ?>>
+                                            <i class="fa-solid fa-floppy-disk"></i>บันทึกแก้ไข
+                                        </button>
+                                    </form>
+                                </details>
+
+                                <form method="post">
+                                    <?= csrf_field() ?>
+                                    <input type="hidden" name="action" value="hide">
+                                    <input type="hidden" name="id" value="<?= (int)$item['id'] ?>">
+                                    <button type="submit" data-confirm="ซ่อนรายการนี้จากหน้าจอง?" data-confirm-text="ระบบจะเปลี่ยนสถานะเป็นไม่ว่าง ข้อมูลเดิมยังอยู่ในฐานข้อมูล" data-confirm-button="ซ่อนรายการ" class="btn-muted btn-sm" <?php if ($hasActiveBooking): ?>disabled<?php endif; ?>>
+                                        <i class="fa-solid fa-eye-slash"></i>ซ่อน
+                                    </button>
+                                </form>
+
+                                <form method="post">
+                                    <?= csrf_field() ?>
+                                    <input type="hidden" name="action" value="delete">
+                                    <input type="hidden" name="id" value="<?= (int)$item['id'] ?>">
+                                    <button type="submit" data-confirm="ลบรายการวันว่างนี้?" data-confirm-text="ระบบจะลบรายการนี้ออกจากฐานข้อมูล ถ้ามีคำขอจองที่กำลังดำเนินการอยู่จะไม่สามารถลบได้" data-confirm-button="ลบรายการ" class="btn-danger btn-sm" <?php if ($hasActiveBooking): ?>disabled<?php endif; ?>>
+                                        <i class="fa-solid fa-trash"></i>ลบ
+                                    </button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                 <?php endforeach; ?>

@@ -31,6 +31,7 @@ $footerCategories = $footerData['categories'];
 $footerDistricts = $footerData['districts'];
 $footerSiteName = setting('site_name', APP_NAME);
 $footerText = setting('footer_text', '');
+$footerPaymentDisclaimer = trim(setting('payment_disclaimer', PAYMENT_DISCLAIMER));
 $footerLogo = setting('logo', '');
 $footerLogoUrl = '';
 if ($footerLogo !== '') {
@@ -57,7 +58,9 @@ if ($footerLogo !== '') {
                 <?php if ($footerText !== ''): ?>
                     <p class="mt-5 max-w-md text-sm leading-7 text-white/62"><?= h($footerText) ?></p>
                 <?php endif; ?>
-                <p class="mt-3 max-w-md text-sm leading-7 text-white/62"><?= h(PAYMENT_DISCLAIMER) ?></p>
+                <?php if ($footerPaymentDisclaimer !== ''): ?>
+                    <p class="mt-3 max-w-md text-sm leading-7 text-white/62"><?= h($footerPaymentDisclaimer) ?></p>
+                <?php endif; ?>
                 <div class="mt-6 flex gap-3">
                     <a href="#" class="grid h-10 w-10 place-items-center rounded-full bg-white/10 text-white hover:bg-red-600"><i class="fa-brands fa-facebook-f"></i></a>
                     <a href="#" class="grid h-10 w-10 place-items-center rounded-full bg-white/10 text-white hover:bg-red-600"><i class="fa-brands fa-instagram"></i></a>
@@ -175,9 +178,11 @@ if ($footerLogo !== '') {
             </article>
         </div>
 
-        <div class="border-t border-neutral-200 bg-neutral-50 px-6 py-4 text-sm font-bold leading-7 text-neutral-600">
-            <i class="fa-solid fa-circle-info mr-2 text-red-600"></i><?= h(PAYMENT_DISCLAIMER) ?>
-        </div>
+        <?php if ($footerPaymentDisclaimer !== ''): ?>
+            <div class="border-t border-neutral-200 bg-neutral-50 px-6 py-4 text-sm font-bold leading-7 text-neutral-600">
+                <i class="fa-solid fa-circle-info mr-2 text-red-600"></i><?= h($footerPaymentDisclaimer) ?>
+            </div>
+        <?php endif; ?>
     </div>
 </div>
 <?php if ($footerIsWorkspacePage): ?>

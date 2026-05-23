@@ -472,30 +472,37 @@ include __DIR__ . '/includes/header.php';
                                 <div class="flex items-center gap-2">
                                     <span class="text-red-600" title="คะแนนรวม <?= (int)$r['rating_overall'] ?> จาก 5"><?= str_repeat('★', (int)$r['rating_overall']) ?></span>
                                     <?php if ($currentUser): ?>
-                                        <details class="relative">
-                                            <summary class="grid h-9 w-9 cursor-pointer list-none place-items-center rounded-full bg-neutral-100 text-neutral-600 transition hover:bg-neutral-950 hover:text-white" title="เมนูรีวิว">
+                                        <details class="group relative">
+                                            <summary class="grid h-9 w-9 cursor-pointer list-none place-items-center rounded-full bg-neutral-100 text-neutral-600 transition hover:bg-neutral-950 hover:text-white group-open:bg-neutral-950 group-open:text-white" title="เมนูรีวิว">
                                                 <i class="fa-solid fa-ellipsis"></i>
                                             </summary>
-                                            <form method="post" class="mt-3 grid min-w-[280px] gap-3 rounded-2xl border border-neutral-100 bg-neutral-50 p-4 shadow-sm sm:min-w-[420px]">
-                                                <?= csrf_field() ?>
-                                                <input type="hidden" name="action" value="report_review">
-                                                <input type="hidden" name="photographer_id" value="<?= (int)$profile['id'] ?>">
-                                                <input type="hidden" name="target_id" value="<?= (int)$r['id'] ?>">
-                                                <p class="text-sm font-black text-neutral-950">
-                                                    <i class="fa-solid fa-triangle-exclamation mr-1 text-red-600"></i>รายงานรีวิวนี้
-                                                </p>
-                                                <label class="grid gap-1 text-xs font-black text-neutral-600">
-                                                    <span>เหตุผลในการรายงาน</span>
-                                                    <input name="reason" required maxlength="180" placeholder="เช่น รีวิวไม่เหมาะสม" class="stock-input rounded-xl px-3 py-2 text-sm">
-                                                </label>
-                                                <label class="grid gap-1 text-xs font-black text-neutral-600">
-                                                    <span>รายละเอียดเพิ่มเติม</span>
-                                                    <textarea name="detail" required maxlength="2000" rows="2" placeholder="พิมพ์รายละเอียดปัญหาที่ต้องการให้ผู้ดูแลตรวจสอบ" class="stock-input rounded-xl px-3 py-2 text-sm"></textarea>
-                                                </label>
-                                                <button class="btn-danger btn-sm justify-self-start rounded-xl">
-                                                    <i class="fa-solid fa-triangle-exclamation"></i>ส่งรายงาน
-                                                </button>
-                                            </form>
+                                            <div class="absolute right-0 top-11 z-30 w-[min(88vw,420px)] rounded-[1.5rem] border border-neutral-200 bg-white p-4 text-left shadow-2xl shadow-neutral-950/15 ring-1 ring-black/5">
+                                                <div class="mb-3 flex items-start justify-between gap-3">
+                                                    <div>
+                                                        <p class="text-sm font-black text-neutral-950">
+                                                            <i class="fa-solid fa-triangle-exclamation mr-1 text-red-600"></i>รายงานรีวิวนี้
+                                                        </p>
+                                                        <p class="mt-1 text-xs font-bold leading-5 text-neutral-500">ส่งให้ผู้ดูแลระบบตรวจสอบ โดยไม่แจ้งเจ้าของรีวิวว่าใครเป็นผู้รายงาน</p>
+                                                    </div>
+                                                </div>
+                                                <form method="post" class="grid gap-3">
+                                                    <?= csrf_field() ?>
+                                                    <input type="hidden" name="action" value="report_review">
+                                                    <input type="hidden" name="photographer_id" value="<?= (int)$profile['id'] ?>">
+                                                    <input type="hidden" name="target_id" value="<?= (int)$r['id'] ?>">
+                                                    <label class="grid gap-1 text-xs font-black text-neutral-600">
+                                                        <span>เหตุผลในการรายงาน</span>
+                                                        <input name="reason" required maxlength="180" placeholder="เช่น รีวิวไม่เหมาะสม" class="stock-input rounded-xl px-3 py-2 text-sm">
+                                                    </label>
+                                                    <label class="grid gap-1 text-xs font-black text-neutral-600">
+                                                        <span>รายละเอียดเพิ่มเติม</span>
+                                                        <textarea name="detail" required maxlength="2000" rows="3" placeholder="พิมพ์รายละเอียดปัญหาที่ต้องการให้ผู้ดูแลตรวจสอบ" class="stock-input rounded-xl px-3 py-2 text-sm"></textarea>
+                                                    </label>
+                                                    <button class="btn-danger btn-sm justify-self-start rounded-xl">
+                                                        <i class="fa-solid fa-triangle-exclamation"></i>ส่งรายงาน
+                                                    </button>
+                                                </form>
+                                            </div>
                                         </details>
                                     <?php endif; ?>
                                 </div>

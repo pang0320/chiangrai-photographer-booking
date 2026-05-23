@@ -4,7 +4,13 @@ requireRole('admin');
 
 $keys = [
     'site_name',
+    'home_page_title',
+    'home_hero_title',
+    'home_hero_subtitle',
+    'home_hero_button_text',
+    'home_hero_button_url',
     'footer_text',
+    'payment_disclaimer',
     'admin_email',
     'admin_phone',
     'allow_photographer_registration',
@@ -17,6 +23,12 @@ if (is_post()) {
     try {
         foreach ($keys as $key) {
             $value = (string)($_POST[$key] ?? '');
+            if ($key === 'home_hero_button_url') {
+                $value = trim($value);
+                if ($value !== '' && !preg_match('#^https?://#i', $value) && $value[0] !== '/') {
+                    $value = '/' . $value;
+                }
+            }
             set_setting($key, $value);
         }
 
@@ -40,7 +52,13 @@ if (is_post()) {
 
 $settingLabels = [
     'site_name' => 'ชื่อเว็บไซต์',
+    'home_page_title' => 'ชื่อ Title หน้าแรกในแท็บเบราว์เซอร์',
+    'home_hero_title' => 'หัวข้อใหญ่หน้าแรก',
+    'home_hero_subtitle' => 'คำอธิบายใต้หัวข้อหน้าแรก',
+    'home_hero_button_text' => 'ข้อความปุ่มหน้าแรก',
+    'home_hero_button_url' => 'ลิงก์ปุ่มหน้าแรก',
     'footer_text' => 'ข้อความท้ายเว็บไซต์',
+    'payment_disclaimer' => 'ข้อความแจ้งเรื่องไม่มีระบบชำระเงิน',
     'admin_email' => 'อีเมลผู้ดูแลระบบ',
     'admin_phone' => 'เบอร์โทรผู้ดูแลระบบ',
     'allow_photographer_registration' => 'เปิดรับสมัครช่างภาพ',
@@ -48,11 +66,31 @@ $settingLabels = [
 ];
 $settingHelp = [
     'site_name' => 'ใช้แสดงชื่อระบบใน Navbar, Footer และ metadata ของหน้าเว็บ',
-    'footer_text' => 'ข้อความอธิบายสั้น ๆ ด้านล่างเว็บไซต์',
+    'home_page_title' => 'ข้อความในแท็บเบราว์เซอร์และ HTML head ของหน้าแรก',
+    'home_hero_title' => 'ข้อความหัวใหญ่บนหน้าแรก เดิมเคยผูกกับแบนเนอร์ ตอนนี้แก้จากหน้านี้โดยตรง',
+    'home_hero_subtitle' => 'ข้อความอธิบายใต้หัวข้อใหญ่บนหน้าแรก',
+    'home_hero_button_text' => 'ข้อความบนปุ่ม CTA หน้าแรก ถ้าไม่ต้องการปุ่มให้ลบข้อความออก',
+    'home_hero_button_url' => 'ลิงก์ปลายทางของปุ่มหน้าแรก เช่น /photographers.php',
+    'footer_text' => 'ข้อความอธิบายสั้น ๆ ใต้โลโก้ใน Footer ถ้าไม่ต้องการแสดงให้ลบข้อความออก',
+    'payment_disclaimer' => 'ข้อความที่วงใน Footer ถ้าไม่ต้องการแสดงใน Footer ให้ลบช่องนี้ให้ว่าง',
     'admin_email' => 'ใช้เป็นอีเมลติดต่อเว็บไซต์ในหน้า contact.php และข้อมูลท้ายเว็บ',
     'admin_phone' => 'ใช้เป็นเบอร์โทรติดต่อเว็บไซต์ในหน้า contact.php และข้อมูลท้ายเว็บ',
     'allow_photographer_registration' => 'ใส่ 1 = เปิดรับสมัคร, 0 = ปิดรับสมัคร',
     'nearby_radius_km' => 'ใช้กับระบบแนะนำช่างภาพใกล้เคียงเมื่อไม่พบในอำเภอที่เลือก',
+];
+$settingDefaults = [
+    'site_name' => APP_NAME,
+    'home_page_title' => 'ค้นหาช่างภาพเชียงราย | จองช่างภาพมืออาชีพ งานแต่ง รับปริญญา โปรไฟล์',
+    'home_hero_title' => 'ค้นหาช่างภาพมืออาชีพในจังหวัดเชียงราย',
+    'home_hero_subtitle' => 'เลือกดูตัวอย่างงานถ่ายภาพจริง ตรวจวันว่าง ส่งคำขอจอง และติดต่อช่างภาพโดยตรง ไม่มีระบบรับชำระเงินในเว็บไซต์',
+    'home_hero_button_text' => 'ค้นหาช่างภาพ',
+    'home_hero_button_url' => '/photographers.php',
+    'footer_text' => '',
+    'payment_disclaimer' => PAYMENT_DISCLAIMER,
+    'admin_email' => '',
+    'admin_phone' => '',
+    'allow_photographer_registration' => '1',
+    'nearby_radius_km' => '30',
 ];
 $currentLogo = setting('logo', '');
 $currentLogoUrl = '';
@@ -137,7 +175,11 @@ include __DIR__ . '/../includes/header.php';
                 <?php foreach ($keys as $key): ?>
                     <label class="grid gap-2 text-sm font-black text-neutral-700">
                         <span><?= h($settingLabels[$key] ?? $key) ?></span>
-                        <input name="<?= h($key) ?>" value="<?= h(setting($key, '')) ?>" class="stock-input rounded-2xl px-4 py-3 font-semibold">
+                        <?php if (in_array($key, ['home_hero_subtitle', 'footer_text', 'payment_disclaimer'], true)): ?>
+                            <textarea name="<?= h($key) ?>" rows="<?= $key === 'payment_disclaimer' ? '3' : '2' ?>" class="stock-input min-h-[96px] rounded-2xl px-4 py-3 font-semibold leading-7"><?= h(setting($key, $settingDefaults[$key] ?? '')) ?></textarea>
+                        <?php else: ?>
+                            <input name="<?= h($key) ?>" value="<?= h(setting($key, $settingDefaults[$key] ?? '')) ?>" class="stock-input rounded-2xl px-4 py-3 font-semibold">
+                        <?php endif; ?>
                         <?php if (!empty($settingHelp[$key])): ?>
                             <span class="text-xs font-bold leading-6 text-neutral-500"><?= h($settingHelp[$key]) ?></span>
                         <?php endif; ?>

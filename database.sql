@@ -593,12 +593,15 @@ INSERT INTO photographer_articles (photographer_id, title, slug, cover_image, co
 (1, 'เตรียมตัวถ่ายพรีเวดดิ้งในเชียงรายอย่างไรให้ภาพออกมาดี', 'prepare-prewedding-chiangrai', NULL, 'เลือกช่วงเวลาเช้าหรือเย็น เตรียมชุดให้เข้ากับสถานที่ และคุย mood board กับช่างภาพก่อนวันถ่าย', 'published', NOW()),
 (2, 'ไอเดียถ่ายภาพครอบครัวริมแม่น้ำโขง', 'family-photo-mekong', NULL, 'ภาพครอบครัวที่ดีเริ่มจากบรรยากาศสบาย ๆ ให้เด็กและผู้ใหญ่ได้เป็นตัวเอง', 'published', NOW());
 
-INSERT INTO banners (title, subtitle, image_path, button_text, button_url, is_active, sort_order) VALUES
-('ค้นหาช่างภาพมืออาชีพในจังหวัดเชียงราย', 'ดูโปรไฟล์ ตรวจวันว่าง และส่งคำขอจองได้ทันที', NULL, 'ค้นหาช่างภาพ', '/photographers.php', 1, 1);
-
 INSERT INTO settings (setting_key, setting_value) VALUES
 ('site_name', 'Chiang Rai Photographer Booking'),
-('footer_text', 'เว็บไซต์เป็นตัวกลางค้นหาและติดต่อช่างภาพในจังหวัดเชียงราย'),
+('home_page_title', 'ค้นหาช่างภาพเชียงราย | จองช่างภาพมืออาชีพ งานแต่ง รับปริญญา โปรไฟล์'),
+('home_hero_title', 'ค้นหาช่างภาพมืออาชีพในจังหวัดเชียงราย'),
+('home_hero_subtitle', 'เลือกดูตัวอย่างงานถ่ายภาพจริง ตรวจวันว่าง ส่งคำขอจอง และติดต่อช่างภาพโดยตรง ไม่มีระบบรับชำระเงินในเว็บไซต์'),
+('home_hero_button_text', 'ค้นหาช่างภาพ'),
+('home_hero_button_url', '/photographers.php'),
+('footer_text', 'ค้นหาช่างภาพเชียงราย ดูตัวอย่างงาน ตรวจวันว่าง และติดต่อช่างภาพได้โดยตรง'),
+('payment_disclaimer', 'เว็บไซต์เป็นเพียงตัวกลางในการค้นหาและติดต่อช่างภาพเท่านั้น ไม่ได้เป็นตัวกลางรับชำระเงิน'),
 ('admin_email', 'admin@example.com'),
 ('admin_phone', '0890000000'),
 ('allow_photographer_registration', '1'),
@@ -774,10 +777,6 @@ INSERT INTO photographer_articles (photographer_id, title, slug, cover_image, co
 (9, 'ไอเดียถ่ายภาพครอบครัวริมแม่น้ำโขง', 'mekong-family-ideas', 'seed/photo-1511895426328-dc8714191300.jpg', 'เลือกกิจกรรมง่าย ๆ เช่น เดินเล่น จับมือ หรือเล่นกับเด็ก เพื่อให้ภาพมีเรื่องราว', 'published', NOW()),
 (10, 'เช็กลิสต์ก่อนถ่ายงานอีเวนต์องค์กร', 'event-photo-checklist', 'seed/photo-1505373877841-8d25f7d46678.jpg', 'ส่งกำหนดการ รายชื่อบุคคลสำคัญ และจุดที่ต้องเก็บภาพให้ช่างภาพก่อนวันงาน', 'published', NOW()),
 (11, 'เตรียม mood board งานแต่งให้ช่างภาพเข้าใจเร็ว', 'wedding-moodboard-guide', 'seed/photo-1523438885200-e635ba2c371e.jpg', 'รวมโทนสี ตัวอย่างภาพ และสิ่งที่ไม่ชอบไว้ในไฟล์เดียว ช่วยลดการสื่อสารผิดพลาด', 'published', NOW());
-
-INSERT INTO banners (title, subtitle, image_path, button_text, button_url, is_active, sort_order) VALUES
-('ช่างภาพงานแต่งและพรีเวดดิ้งเชียงราย', 'เลือกดูตัวอย่างงานถ่ายภาพและส่งคำขอจองได้ในไม่กี่ขั้นตอน', 'seed/photo-1519741497674-611481863552.jpg', 'ดูช่างภาพงานแต่ง', '/photographers.php?category_id=1', 1, 2),
-('ถ่ายโปรไฟล์ธุรกิจและคอนเทนต์โซเชียล', 'ค้นหาช่างภาพที่เข้าใจภาพลักษณ์มืออาชีพ', 'seed/photo-1512316609839-ce289d3eba0a.jpg', 'ค้นหาโปรไฟล์', '/photographers.php?category_id=6', 1, 3);
 
 UPDATE photographer_profiles p
 SET average_rating = (

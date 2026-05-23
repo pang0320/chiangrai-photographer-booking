@@ -27,7 +27,7 @@ if (is_post()) {
         if ($nextStatus === 1) {
             flash('success', 'เปิดใช้งานอำเภอแล้ว หน้าค้นหาจะเห็นอำเภอนี้ทันที');
         } else {
-            flash('success', 'ปิดใช้งานอำเภอแล้ว อำเภอนี้จะหายจากตัวเลือกค้นหาทันที');
+            flash('success', 'ปิดการใช้งานอำเภอแล้ว');
         }
     } else {
         $districtName = trim((string)($_POST['district_name'] ?? ''));

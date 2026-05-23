@@ -33,7 +33,6 @@ if ($me) {
             ['/admin/blogs.php', 'บทความเว็บ', 'fa-blog'],
             ['/admin/tags.php', 'แท็ก', 'fa-tags'],
             ['/admin/faqs.php', 'คำถามที่พบบ่อย', 'fa-circle-question'],
-            ['/admin/banners.php', 'แบนเนอร์', 'fa-images'],
             ['/admin/reports.php', 'รายงานสรุป', 'fa-chart-line'],
             ['/admin/reports_moderation.php', 'ตรวจรายงานปัญหา', 'fa-shield-halved'],
             ['/admin/contact_messages.php', 'ข้อความติดต่อ', 'fa-envelope-open-text'],

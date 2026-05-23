@@ -659,6 +659,10 @@ function notification_target_url(array $notification, array $user): string
         }
     }
 
+    if ($type === 'report_notice') {
+        return $role === 'customer' ? '/customer/notifications.php' : '/notifications.php';
+    }
+
     if ($type === 'article' && $relatedId > 0) {
         return '/blog.php';
     }

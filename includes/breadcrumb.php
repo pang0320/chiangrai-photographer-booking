@@ -20,7 +20,6 @@ $breadcrumbLabels = [
     'booking_detail.php' => 'รายละเอียดการจอง',
     'reviews.php' => 'รีวิว',
     'articles.php' => 'บทความ',
-    'banners.php' => 'แบนเนอร์',
     'reports.php' => 'รายงาน',
     'activity_logs.php' => 'ประวัติการใช้งาน',
     'settings.php' => 'ตั้งค่า',

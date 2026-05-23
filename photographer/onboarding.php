@@ -75,7 +75,7 @@ include __DIR__ . '/../includes/header.php';
     <div class="dashboard-hero rounded-[2rem] p-6 text-white sm:p-8">
         <div class="grid gap-6 lg:grid-cols-[1fr_340px] lg:items-center">
             <div>
-                <p class="text-sm font-black uppercase tracking-[0.22em] text-white/58">Onboarding</p>
+                <p class="text-sm font-black uppercase tracking-[0.22em] text-white/58">ขั้นตอนเริ่มต้น</p>
                 <h1 class="mt-2 text-3xl font-black sm:text-5xl">ตั้งค่าโปรไฟล์ให้พร้อมรับงาน</h1>
                 <p class="mt-4 max-w-2xl leading-8 text-white/70">ทำครบตามขั้นตอนนี้ โปรไฟล์จะดูน่าเชื่อถือขึ้นและพร้อมแสดงตัวอย่างงานถ่ายภาพแบบมืออาชีพหลังผู้ดูแลระบบอนุมัติ</p>
                 <div class="mt-6 flex flex-wrap gap-3">
@@ -86,7 +86,7 @@ include __DIR__ . '/../includes/header.php';
             <div class="stat-pill rounded-[2rem] p-6">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-sm font-black uppercase tracking-[0.18em] text-white/50">Completion</p>
+                        <p class="text-sm font-black uppercase tracking-[0.18em] text-white/50">ความสมบูรณ์</p>
                         <p class="mt-2 text-6xl font-black"><?= (int)$completionPercent ?>%</p>
                     </div>
                     <div class="grid h-20 w-20 place-items-center rounded-[1.5rem] bg-white text-3xl text-red-600"><i class="fa-solid fa-gauge-high"></i></div>

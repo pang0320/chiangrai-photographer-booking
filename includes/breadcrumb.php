@@ -35,6 +35,9 @@ $breadcrumbLabels = [
     'services.php' => 'ประเภทงาน',
     'service_areas.php' => 'พื้นที่ให้บริการ',
     'notifications.php' => 'แจ้งเตือน',
+    'faq.php' => 'คำถามที่พบบ่อย',
+    'contact.php' => 'ติดต่อเรา',
+    'onboarding.php' => 'เริ่มต้นใช้งาน',
 ];
 $breadcrumbLinks = [
     '/admin' => '/admin/dashboard.php',

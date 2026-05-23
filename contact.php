@@ -41,8 +41,8 @@ include __DIR__ . '/includes/header.php';
         <div class="mt-8 rounded-[1.5rem] border border-white/15 bg-white/10 p-5">
             <p class="text-xs font-black uppercase tracking-[0.22em] text-red-300">ผู้ดูแลและผู้พัฒนา</p>
             <h2 class="mt-2 text-2xl font-black">Creepygame / Game</h2>
-            <p class="mt-2 text-sm font-bold text-white/70"><i class="fa-solid fa-camera-retro mr-2 text-red-300"></i>Photographer from Chiang Rai / Thailand</p>
-            <p class="mt-3 leading-7 text-white/70">สนใจติดต่องาน ทัก IB หรือโทรตามเบอร์ด้านล่างได้เลยครับ</p>
+            <p class="mt-2 text-sm font-bold text-white/70"><i class="fa-solid fa-camera-retro mr-2 text-red-300"></i>ช่างภาพจากเชียงราย / ประเทศไทย</p>
+            <p class="mt-3 leading-7 text-white/70">สนใจติดต่องาน ทักแชท หรือโทรตามเบอร์ด้านล่างได้เลยครับ</p>
         </div>
 
         <div class="mt-8 grid gap-3 sm:grid-cols-2">

@@ -2,7 +2,7 @@
 require_once __DIR__ . '/includes/functions.php';
 ensure_service_categories_deleted_at_column();
 
-$homeData = cache_remember('home_page_public_data_v6', 120, function () {
+$homeData = cache_remember('home_page_public_data_v10', 120, function () {
     $completedJoin = 'LEFT JOIN (
                               SELECT photographer_id, COUNT(*) AS completed_total
                               FROM bookings
@@ -12,13 +12,20 @@ $homeData = cache_remember('home_page_public_data_v6', 120, function () {
 
     return [
         'districts' => db_fetch_all('SELECT * FROM districts WHERE is_active = 1 ORDER BY district_name'),
-        'categories' => db_fetch_all('SELECT sc.*, COUNT(DISTINCT ps.photographer_id) AS photographer_count
+        'categories' => db_fetch_all('SELECT sc.*,
+                                             (SELECT COUNT(*)
+                                              FROM photographer_profiles p2
+                                              JOIN users u2 ON u2.id = p2.user_id
+                                              WHERE p2.approval_status = "approved"
+                                                AND p2.is_available = 1
+                                                AND u2.status = "active"
+                                                AND p2.deleted_at IS NULL
+                                                AND u2.deleted_at IS NULL
+                                                AND EXISTS (SELECT 1 FROM photographer_services ps2 WHERE ps2.photographer_id = p2.id AND ps2.category_id = sc.id AND ps2.is_active = 1)
+                                             ) AS photographer_count
                                       FROM service_categories sc
-                                      LEFT JOIN photographer_services ps ON ps.category_id = sc.id AND ps.is_active = 1
-                                      LEFT JOIN photographer_profiles p ON p.id = ps.photographer_id AND p.approval_status = "approved" AND p.is_available = 1 AND p.deleted_at IS NULL
                                       WHERE sc.is_active = 1
                                         AND sc.deleted_at IS NULL
-                                      GROUP BY sc.id
                                       ORDER BY sc.sort_order, sc.name'),
         'featured' => db_fetch_all('SELECT p.*, d.district_name,
                                     (SELECT image_path FROM photographer_portfolios pp WHERE pp.photographer_id = p.id AND pp.deleted_at IS NULL ORDER BY pp.is_featured DESC, pp.sort_order ASC LIMIT 1) AS featured_image,
@@ -47,12 +54,19 @@ $homeData = cache_remember('home_page_public_data_v6', 120, function () {
                                       AND u.deleted_at IS NULL
                                     ORDER BY ' . ranking_order_sql('p', 'COALESCE(bc.completed_total, 0)') . '
                                     LIMIT 10'),
-        'popularDistricts' => db_fetch_all('SELECT d.id, d.district_name, COUNT(DISTINCT p.id) AS photographer_count
+        'popularDistricts' => db_fetch_all('SELECT d.*,
+                                                   (SELECT COUNT(*)
+                                                    FROM photographer_profiles p3
+                                                    JOIN users u3 ON u3.id = p3.user_id
+                                                    WHERE p3.approval_status = "approved"
+                                                      AND p3.is_available = 1
+                                                      AND u3.status = "active"
+                                                      AND p3.deleted_at IS NULL
+                                                      AND u3.deleted_at IS NULL
+                                                      AND EXISTS (SELECT 1 FROM photographer_service_areas psa3 WHERE psa3.photographer_id = p3.id AND psa3.district_id = d.id AND psa3.is_active = 1)
+                                                   ) AS photographer_count
                                             FROM districts d
-                                            LEFT JOIN photographer_service_areas psa ON psa.district_id = d.id AND psa.is_active = 1
-                                            LEFT JOIN photographer_profiles p ON p.id = psa.photographer_id AND p.approval_status = "approved" AND p.is_available = 1 AND p.deleted_at IS NULL
                                             WHERE d.is_active = 1
-                                            GROUP BY d.id
                                             ORDER BY photographer_count DESC, d.district_name
                                             LIMIT 8'),
         'portfolioShowcase' => db_fetch_all('SELECT pp.*, p.display_name, p.id AS photographer_id
@@ -63,6 +77,8 @@ $homeData = cache_remember('home_page_public_data_v6', 120, function () {
                                                AND p.approval_status = "approved"
                                                AND p.is_available = 1
                                                AND u.status = "active"
+                                               AND p.deleted_at IS NULL
+                                               AND u.deleted_at IS NULL
                                              ORDER BY pp.created_at DESC, pp.is_featured DESC
                                              LIMIT 12'),
         'articles' => db_fetch_all('SELECT a.*, p.display_name

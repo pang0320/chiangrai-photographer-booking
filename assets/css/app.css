@@ -1294,6 +1294,27 @@ body {
     position: sticky;
     top: 5.25rem;
     align-self: start;
+    max-height: calc(100vh - 6rem);
+    overflow-y: auto;
+    padding-right: 0.5rem;
+    scrollbar-width: thin;
+}
+
+.workspace-sidebar::-webkit-scrollbar {
+    width: 4px;
+}
+
+.workspace-sidebar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.workspace-sidebar::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 10px;
+}
+
+.workspace-sidebar:hover::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.15);
 }
 
 .workspace-main {
@@ -1382,6 +1403,9 @@ body {
 
     .workspace-sidebar {
         position: static;
+        max-height: none;
+        overflow-y: visible;
+        padding-right: 0;
     }
 
     .workspace-sidebar nav {

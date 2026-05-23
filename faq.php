@@ -51,11 +51,11 @@ include __DIR__ . '/includes/header.php';
                 </p>
                 <h1 class="mt-2 text-4xl font-black md:text-5xl">คำถามที่พบบ่อย</h1>
                 <p class="mt-4 max-w-3xl text-base font-semibold leading-8 text-white/75 md:text-lg">
-                    FAQ ในระบบนี้เป็นคำถามที่ผู้ดูแลรวบรวมจากการใช้งานจริง ข้อสงสัยของลูกค้าและช่างภาพ แล้วจัดหมวดหมู่เพื่อให้อ่านง่าย
+                    คำถามที่พบบ่อยในระบบนี้เป็นคำถามที่ผู้ดูแลรวบรวมจากการใช้งานจริง ข้อสงสัยของลูกค้าและช่างภาพ แล้วจัดหมวดหมู่เพื่อให้อ่านง่าย
                 </p>
             </div>
             <div class="rounded-[1.75rem] bg-white/12 p-5 backdrop-blur">
-                <p class="text-sm font-black text-white/60"><i class="fa-solid fa-folder-tree mr-2"></i>สรุป FAQ</p>
+                <p class="text-sm font-black text-white/60"><i class="fa-solid fa-folder-tree mr-2"></i>สรุปข้อมูล</p>
                 <div class="mt-4 grid grid-cols-2 gap-3">
                     <div class="rounded-2xl bg-white/10 p-4 text-center">
                         <div class="text-3xl font-black"><?= number_format($totalFaqs) ?></div>

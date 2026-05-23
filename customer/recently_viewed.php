@@ -1,10 +1,11 @@
 <?php
 require_once __DIR__ . '/../includes/functions.php';
 requireRole('customer');
+ensure_service_categories_deleted_at_column();
 $user = current_user();
 $items = db_fetch_all('SELECT p.*, d.district_name, rv.viewed_at,
     (SELECT image_path FROM photographer_portfolios pp WHERE pp.photographer_id = p.id AND pp.deleted_at IS NULL ORDER BY pp.is_featured DESC, pp.sort_order ASC LIMIT 1) AS featured_image,
-    (SELECT GROUP_CONCAT(DISTINCT sc.name ORDER BY sc.sort_order SEPARATOR ", ") FROM photographer_services ps JOIN service_categories sc ON sc.id = ps.category_id WHERE ps.photographer_id = p.id AND ps.is_active = 1) AS services,
+    (SELECT GROUP_CONCAT(DISTINCT sc.name ORDER BY sc.sort_order SEPARATOR ", ") FROM photographer_services ps JOIN service_categories sc ON sc.id = ps.category_id WHERE ps.photographer_id = p.id AND ps.is_active = 1 AND sc.is_active = 1 AND sc.deleted_at IS NULL) AS services,
     (SELECT GROUP_CONCAT(DISTINCT d2.district_name ORDER BY d2.district_name SEPARATOR ", ") FROM photographer_service_areas psa JOIN districts d2 ON d2.id = psa.district_id WHERE psa.photographer_id = p.id AND psa.is_active = 1) AS areas
     FROM recently_viewed_photographers rv
     JOIN photographer_profiles p ON p.id = rv.photographer_id

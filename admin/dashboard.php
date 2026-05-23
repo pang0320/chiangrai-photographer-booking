@@ -19,6 +19,7 @@ function dashboard_activity_action_label(string $action): string
         'admin_show_review' => 'แสดงรีวิว',
         'admin_hide_review' => 'ซ่อนรีวิว',
         'moderate_report' => 'ตรวจรายงานปัญหา',
+        'notify_report_target' => 'ส่งแจ้งเตือนผู้ถูกรายงาน',
         'update_contact_message' => 'จัดการข้อความติดต่อ',
         'manage_banners' => 'จัดการแบนเนอร์',
         'manage_categories' => 'จัดการหมวดหมู่',

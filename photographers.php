@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/includes/functions.php';
+ensure_service_categories_deleted_at_column();
 
 if (defined('CUSTOMER_PHOTOGRAPHERS_PAGE')) {
     requireRole('customer');
@@ -10,13 +11,20 @@ if (defined('CUSTOMER_PHOTOGRAPHERS_PAGE')) {
     $photographerSearchPath = '/customer/photographers.php';
 }
 
-$districts = db_fetch_all_cached('photographer_filter_districts', 300, 'SELECT * FROM districts WHERE is_active = 1 ORDER BY district_name');
-$categories = db_fetch_all_cached('photographer_filter_categories', 300, 'SELECT * FROM service_categories WHERE is_active = 1 ORDER BY sort_order, name');
+$districts = db_fetch_all('SELECT * FROM districts WHERE is_active = 1 ORDER BY district_name');
+$categories = db_fetch_all('SELECT * FROM service_categories WHERE is_active = 1 AND deleted_at IS NULL ORDER BY sort_order, name');
 $cleanContext = clean_context_init(['district_id', 'category_id', 'available_date', 'min_rating', 'max_price', 'q', 'sort', 'page']);
 
 $districtId = 0;
 if (isset($cleanContext['district_id'])) {
     $districtId = (int)$cleanContext['district_id'];
+}
+$activeDistrictIds = [];
+foreach ($districts as $activeDistrict) {
+    $activeDistrictIds[] = (int)$activeDistrict['id'];
+}
+if ($districtId > 0 && !in_array($districtId, $activeDistrictIds, true)) {
+    $districtId = 0;
 }
 $categoryId = 0;
 if (isset($cleanContext['category_id'])) {
@@ -117,8 +125,8 @@ $total = (int)$count->fetchColumn();
 
 $sql = "SELECT p.*, d.district_name,
         (SELECT image_path FROM photographer_portfolios pp WHERE pp.photographer_id = p.id AND pp.deleted_at IS NULL ORDER BY pp.is_featured DESC, pp.sort_order ASC LIMIT 1) featured_image,
-        (SELECT GROUP_CONCAT(DISTINCT d2.district_name ORDER BY d2.district_name SEPARATOR ', ') FROM photographer_service_areas psa JOIN districts d2 ON d2.id = psa.district_id WHERE psa.photographer_id = p.id AND psa.is_active = 1) areas,
-        (SELECT GROUP_CONCAT(DISTINCT sc.name ORDER BY sc.sort_order SEPARATOR ', ') FROM photographer_services ps JOIN service_categories sc ON sc.id = ps.category_id WHERE ps.photographer_id = p.id AND ps.is_active = 1) services
+        (SELECT GROUP_CONCAT(DISTINCT d2.district_name ORDER BY d2.district_name SEPARATOR ', ') FROM photographer_service_areas psa JOIN districts d2 ON d2.id = psa.district_id WHERE psa.photographer_id = p.id AND psa.is_active = 1 AND d2.is_active = 1) areas,
+        (SELECT GROUP_CONCAT(DISTINCT sc.name ORDER BY sc.sort_order SEPARATOR ', ') FROM photographer_services ps JOIN service_categories sc ON sc.id = ps.category_id WHERE ps.photographer_id = p.id AND ps.is_active = 1 AND sc.is_active = 1 AND sc.deleted_at IS NULL) services
         FROM photographer_profiles p
         JOIN users u ON u.id = p.user_id
         LEFT JOIN districts d ON d.id = p.main_district_id
@@ -159,13 +167,13 @@ if (!$photographers && $districtId > 0) {
             SIN(RADIANS(src.latitude)) * SIN(RADIANS(d.latitude))
         )))) AS distance_km,
         (SELECT image_path FROM photographer_portfolios pp WHERE pp.photographer_id = p.id AND pp.deleted_at IS NULL ORDER BY pp.is_featured DESC, pp.sort_order ASC LIMIT 1) featured_image,
-        (SELECT GROUP_CONCAT(DISTINCT d2.district_name ORDER BY d2.district_name SEPARATOR ', ') FROM photographer_service_areas psa2 JOIN districts d2 ON d2.id = psa2.district_id WHERE psa2.photographer_id = p.id AND psa2.is_active = 1) areas,
-        (SELECT GROUP_CONCAT(DISTINCT sc.name ORDER BY sc.sort_order SEPARATOR ', ') FROM photographer_services ps JOIN service_categories sc ON sc.id = ps.category_id WHERE ps.photographer_id = p.id AND ps.is_active = 1) services
+        (SELECT GROUP_CONCAT(DISTINCT d2.district_name ORDER BY d2.district_name SEPARATOR ', ') FROM photographer_service_areas psa2 JOIN districts d2 ON d2.id = psa2.district_id WHERE psa2.photographer_id = p.id AND psa2.is_active = 1 AND d2.is_active = 1) areas,
+        (SELECT GROUP_CONCAT(DISTINCT sc.name ORDER BY sc.sort_order SEPARATOR ', ') FROM photographer_services ps JOIN service_categories sc ON sc.id = ps.category_id WHERE ps.photographer_id = p.id AND ps.is_active = 1 AND sc.is_active = 1 AND sc.deleted_at IS NULL) services
         FROM districts src
         JOIN photographer_service_areas psa ON psa.district_id <> src.id AND psa.is_active = 1
         JOIN photographer_profiles p ON p.id = psa.photographer_id AND p.approval_status = 'approved' AND p.is_available = 1 AND p.deleted_at IS NULL
         JOIN users u ON u.id = p.user_id AND u.status = 'active' AND u.deleted_at IS NULL
-        JOIN districts d ON d.id = psa.district_id
+        JOIN districts d ON d.id = psa.district_id AND d.is_active = 1
         LEFT JOIN districts main_d ON main_d.id = p.main_district_id
         LEFT JOIN (
             SELECT photographer_id, COUNT(*) AS completed_total
@@ -174,6 +182,7 @@ if (!$photographers && $districtId > 0) {
             GROUP BY photographer_id
         ) bc ON bc.photographer_id = p.id
         WHERE src.id = ?
+          AND src.is_active = 1
         {$nearCategorySql}
         GROUP BY p.id
         HAVING distance_km <= ?

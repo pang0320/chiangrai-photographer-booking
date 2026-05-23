@@ -32,6 +32,37 @@ function contact_message_status_badge(string $status): string
     return '<span class="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ' . h($class) . '"><i class="fa-solid ' . h($icon) . '"></i>' . h(contact_message_status_label($status)) . '</span>';
 }
 
+function contact_message_gmail_reply_url(array $message): string
+{
+    $to = trim((string)($message['email'] ?? ''));
+    $subject = trim((string)($message['subject'] ?? ''));
+    $name = trim((string)($message['name'] ?? ''));
+    $originalMessage = trim((string)($message['message'] ?? ''));
+
+    if ($subject === '') {
+        $subject = 'ตอบกลับจาก ChiangRaiPhoto';
+    } else {
+        $subject = 'Re: ' . $subject;
+    }
+
+    $bodyLines = [
+        'สวัสดีคุณ ' . ($name !== '' ? $name : 'ผู้ติดต่อ'),
+        '',
+        'ขอบคุณที่ติดต่อ ChiangRaiPhoto ครับ',
+        '',
+        'รายละเอียดที่คุณส่งมา:',
+        $originalMessage,
+        '',
+        '------------------------------',
+        'เว็บไซต์เป็นเพียงตัวกลางในการค้นหาและติดต่อช่างภาพเท่านั้น ไม่ได้เป็นตัวกลางรับชำระเงิน',
+    ];
+
+    return 'https://mail.google.com/mail/?view=cm&fs=1'
+        . '&to=' . rawurlencode($to)
+        . '&su=' . rawurlencode($subject)
+        . '&body=' . rawurlencode(implode("\n", $bodyLines));
+}
+
 if (is_post()) {
     verify_csrf();
 
@@ -88,7 +119,7 @@ include __DIR__ . '/../includes/header.php';
     <div>
             <p class="section-kicker">กล่องข้อความติดต่อ</p>
             <h1 class="mt-1 text-3xl font-black text-neutral-950"><i class="fa-solid fa-envelope-open-text mr-2 text-red-600"></i>ข้อความจากหน้าติดต่อเว็บไซต์</h1>
-            <p class="mt-2 max-w-3xl text-sm font-bold leading-7 text-neutral-500">ใช้ดูข้อความที่ส่งจากหน้า ติดต่อเว็บไซต์ กรองได้ตามสถานะ วันที่ และคำค้น</p>
+            <p class="mt-2 max-w-3xl text-sm font-bold leading-7 text-neutral-500">ใช้ดูข้อความที่ส่งจากหน้า ติดต่อเว็บไซต์ กรองได้ตามสถานะ วันที่ และคำค้น ปุ่มตอบกลับจะเปิด Gmail เพื่อส่งอีเมลภายนอกระบบ</p>
     </div>
 
     <div class="mt-6 grid gap-4 md:grid-cols-3">
@@ -137,12 +168,27 @@ include __DIR__ . '/../includes/header.php';
                         <td><?= contact_message_status_badge((string)$item['status']) ?></td>
                         <td><?= h(format_be_datetime($item['created_at'])) ?></td>
                         <td>
-                            <form method="post" class="flex flex-wrap gap-2">
-                                <?= csrf_field() ?>
-                                <input type="hidden" name="id" value="<?= (int)$item['id'] ?>">
-                                <button name="status" value="read" class="btn-muted btn-sm"><i class="fa-solid fa-eye"></i>อ่านแล้ว</button>
-                                <button name="status" value="replied" class="btn-success btn-sm"><i class="fa-solid fa-reply"></i>ตอบแล้ว</button>
-                            </form>
+                            <div class="flex flex-wrap gap-2">
+                                <a
+                                    href="<?= h(contact_message_gmail_reply_url($item)) ?>"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    class="btn-success btn-sm">
+                                    <i class="fa-brands fa-google"></i>ตอบกลับ Gmail
+                                </a>
+
+                                <form method="post" class="contents">
+                                    <?= csrf_field() ?>
+                                    <input type="hidden" name="id" value="<?= (int)$item['id'] ?>">
+                                    <button name="status" value="read" class="btn-muted btn-sm"><i class="fa-solid fa-eye"></i>อ่านแล้ว</button>
+                                </form>
+
+                                <form method="post" class="contents">
+                                    <?= csrf_field() ?>
+                                    <input type="hidden" name="id" value="<?= (int)$item['id'] ?>">
+                                    <button name="status" value="replied" class="btn-primary btn-sm"><i class="fa-solid fa-circle-check"></i>ทำเครื่องหมายตอบแล้ว</button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                 <?php endforeach; ?>

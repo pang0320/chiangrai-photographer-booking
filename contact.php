@@ -1,6 +1,14 @@
 <?php
 require_once __DIR__ . '/includes/functions.php';
 
+$contactSiteName = setting('site_name', APP_NAME);
+$contactAdminEmail = setting('admin_email', 'admin@example.com');
+$contactAdminPhone = setting('admin_phone', '099-4344335');
+$contactAdminPhoneHref = preg_replace('/[^0-9+]/', '', $contactAdminPhone);
+if ($contactAdminPhoneHref === '') {
+    $contactAdminPhoneHref = '0994344335';
+}
+
 if (is_post()) {
     verify_csrf();
     $name = trim((string)($_POST['name'] ?? ''));
@@ -38,8 +46,8 @@ include __DIR__ . '/includes/header.php';
         </div>
 
         <div class="mt-8 grid gap-3 sm:grid-cols-2">
-            <a href="tel:0994344335" class="rounded-2xl bg-white px-4 py-4 font-black text-neutral-950 transition hover:bg-red-600 hover:text-white">
-                <i class="fa-solid fa-phone mr-2"></i>โทร 099-4344335
+            <a href="tel:<?= h($contactAdminPhoneHref) ?>" class="rounded-2xl bg-white px-4 py-4 font-black text-neutral-950 transition hover:bg-red-600 hover:text-white">
+                <i class="fa-solid fa-phone mr-2"></i>โทร <?= h($contactAdminPhone) ?>
             </a>
             <button type="button" data-developer-modal-open class="rounded-2xl bg-white/12 px-4 py-4 text-left font-black text-white transition hover:bg-white hover:text-neutral-950">
                 <i class="fa-solid fa-circle-info mr-2"></i>ดูข้อมูลผู้พัฒนา
@@ -67,10 +75,14 @@ include __DIR__ . '/includes/header.php';
 
         <div class="stock-card rounded-[2rem] p-6">
             <p class="section-kicker">ติดต่อผู้ดูแลระบบ</p>
-            <h2 class="mt-2 text-2xl font-black text-neutral-950">ช่องทางติดต่อเว็บไซต์</h2>
+            <h2 class="mt-2 text-2xl font-black text-neutral-950">ช่องทางติดต่อ <?= h($contactSiteName) ?></h2>
+            <p class="mt-2 text-sm font-bold leading-7 text-neutral-500">ข้อมูลส่วนนี้ดึงจากเมนูผู้ดูแลระบบ &gt; ตั้งค่า</p>
             <div class="mt-5 grid gap-3 sm:grid-cols-2">
-                <a href="tel:0994344335" class="rounded-2xl bg-red-50 p-4 font-black text-red-700 transition hover:bg-red-600 hover:text-white">
-                    <i class="fa-solid fa-phone mb-3 block text-2xl"></i>099-4344335
+                <a href="mailto:<?= h($contactAdminEmail) ?>" class="rounded-2xl bg-red-50 p-4 font-black text-red-700 transition hover:bg-red-600 hover:text-white">
+                    <i class="fa-solid fa-envelope mb-3 block text-2xl"></i><?= h($contactAdminEmail) ?>
+                </a>
+                <a href="tel:<?= h($contactAdminPhoneHref) ?>" class="rounded-2xl bg-red-50 p-4 font-black text-red-700 transition hover:bg-red-600 hover:text-white">
+                    <i class="fa-solid fa-phone mb-3 block text-2xl"></i><?= h($contactAdminPhone) ?>
                 </a>
                 <button type="button" data-developer-modal-open class="rounded-2xl bg-neutral-950 p-4 text-left font-black text-white transition hover:bg-red-600">
                     <i class="fa-solid fa-user mb-3 block text-2xl text-red-300"></i>ข้อมูลผู้พัฒนา

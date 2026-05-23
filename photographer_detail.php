@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/includes/functions.php';
+ensure_service_categories_deleted_at_column();
 
 $cleanContext = clean_context_init(['id', 'slug']);
 $id = 0;
@@ -99,7 +100,7 @@ $areas->execute([$id]);
 $areas = $areas->fetchAll();
 ensure_tags_status_column();
 
-$services = db()->prepare('SELECT ps.*, sc.name, sc.icon FROM photographer_services ps JOIN service_categories sc ON sc.id = ps.category_id WHERE ps.photographer_id = ? AND ps.is_active = 1 ORDER BY sc.sort_order');
+$services = db()->prepare('SELECT ps.*, sc.name, sc.icon FROM photographer_services ps JOIN service_categories sc ON sc.id = ps.category_id WHERE ps.photographer_id = ? AND ps.is_active = 1 AND sc.is_active = 1 AND sc.deleted_at IS NULL ORDER BY sc.sort_order');
 $services->execute([$id]);
 $services = $services->fetchAll();
 $portfolio = db()->prepare('SELECT * FROM photographer_portfolios WHERE photographer_id = ? AND deleted_at IS NULL ORDER BY is_featured DESC, sort_order ASC, id DESC');
@@ -149,7 +150,7 @@ $ratingSummaryStmt->execute([$id]);
 $ratingSummary = $ratingSummaryStmt->fetch();
 $similarPhotographers = db_fetch_all('SELECT p.*, d.district_name,
                                       (SELECT image_path FROM photographer_portfolios pp WHERE pp.photographer_id = p.id AND pp.deleted_at IS NULL ORDER BY pp.is_featured DESC, pp.sort_order ASC LIMIT 1) AS featured_image,
-                                      (SELECT GROUP_CONCAT(DISTINCT sc.name ORDER BY sc.sort_order SEPARATOR ", ") FROM photographer_services ps JOIN service_categories sc ON sc.id = ps.category_id WHERE ps.photographer_id = p.id AND ps.is_active = 1) AS services
+                                      (SELECT GROUP_CONCAT(DISTINCT sc.name ORDER BY sc.sort_order SEPARATOR ", ") FROM photographer_services ps JOIN service_categories sc ON sc.id = ps.category_id WHERE ps.photographer_id = p.id AND ps.is_active = 1 AND sc.is_active = 1 AND sc.deleted_at IS NULL) AS services
                                       FROM photographer_profiles p
                                       JOIN users u ON u.id = p.user_id
                                       LEFT JOIN districts d ON d.id = p.main_district_id

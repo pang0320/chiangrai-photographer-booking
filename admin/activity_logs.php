@@ -49,6 +49,7 @@ function activity_action_label(string $action): string
         'restore_tag' => 'เปิดใช้งานแท็ก',
         'hide_portfolio' => 'ซ่อนตัวอย่างงาน',
         'moderate_report' => 'ตรวจรายงานปัญหา',
+        'notify_report_target' => 'ส่งแจ้งเตือนผู้ถูกรายงาน',
         'send_contact_message' => 'ส่งข้อความติดต่อ',
         'update_contact_message' => 'จัดการข้อความติดต่อ',
         'upload_security_rejected' => 'บล็อกไฟล์อัปโหลดเสี่ยง',

@@ -9,23 +9,39 @@ if (is_post()) {
     $id = (int)($_POST['id'] ?? 0);
     $action = (string)($_POST['action'] ?? '');
 
-    $stmt = db()->prepare('SELECT photographer_id FROM reviews WHERE id = ?');
+    $allowedActions = ['show', 'hide', 'delete'];
+    if (!in_array($action, $allowedActions, true)) {
+        flash('error', 'ไม่พบคำสั่งที่ต้องการทำรายการ');
+        redirect('/admin/reviews.php');
+    }
+
+    $stmt = db()->prepare('SELECT photographer_id FROM reviews WHERE id = ? LIMIT 1');
     $stmt->execute([$id]);
-    $photographerId = (int)$stmt->fetchColumn();
+    $review = $stmt->fetch();
+
+    if (!$review) {
+        flash('error', 'ไม่พบรีวิวที่ต้องการจัดการ');
+        redirect('/admin/reviews.php');
+    }
+
+    $photographerId = (int)$review['photographer_id'];
 
     if ($action === 'hide') {
-        $stmt = db()->prepare('UPDATE reviews SET status = "hidden", updated_at = NOW() WHERE id = ?');
+        $stmt = db()->prepare('UPDATE reviews SET status = "hidden", updated_at = NOW() WHERE id = ? AND deleted_at IS NULL');
         $stmt->execute([$id]);
+        flash('success', 'ซ่อนรีวิวแล้ว รีวิวจะไม่แสดงบนหน้าเว็บ แต่ยังเห็นในหลังบ้าน');
     }
 
     if ($action === 'show') {
-        $stmt = db()->prepare('UPDATE reviews SET status = "visible", updated_at = NOW() WHERE id = ?');
+        $stmt = db()->prepare('UPDATE reviews SET status = "visible", updated_at = NOW() WHERE id = ? AND deleted_at IS NULL');
         $stmt->execute([$id]);
+        flash('success', 'เปิดแสดงรีวิวแล้ว');
     }
 
     if ($action === 'delete') {
-        $stmt = db()->prepare('UPDATE reviews SET deleted_at = NOW() WHERE id = ?');
+        $stmt = db()->prepare('UPDATE reviews SET status = "hidden", deleted_at = NOW(), updated_at = NOW() WHERE id = ? AND deleted_at IS NULL');
         $stmt->execute([$id]);
+        flash('success', 'ลบรีวิวออกจากหน้ารายการแล้ว ข้อมูลยังถูกเก็บไว้ในฐานข้อมูล');
     }
 
     if ($photographerId > 0) {
@@ -33,7 +49,6 @@ if (is_post()) {
     }
 
     log_activity('admin_' . $action . '_review', 'reviews', $id);
-    flash('success', 'อัปเดตรีวิวแล้ว');
     redirect('/admin/reviews.php');
 }
 
@@ -78,6 +93,10 @@ include __DIR__ . '/../includes/header.php';
     <div>
         <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">ผู้ดูแลระบบ</p>
         <h1 class="mt-1 text-3xl font-black text-neutral-950">จัดการรีวิว</h1>
+        <p class="mt-2 text-sm font-bold text-neutral-500">
+            <i class="fa-solid fa-circle-info mr-1 text-red-600"></i>
+            แสดง = เปิดให้เห็นบนหน้าเว็บ, ซ่อน = ไม่แสดงหน้าเว็บแต่ยังอยู่ในรายการหลังบ้าน, ลบ = soft delete ข้อมูลยังอยู่ในฐานข้อมูลแต่หายจากรายการปกติ
+        </p>
     </div>
 
     <form method="post" action="/admin/reviews.php" class="stock-card mt-6 grid gap-3 rounded-[1.5rem] p-5 md:grid-cols-4">
@@ -126,9 +145,31 @@ include __DIR__ . '/../includes/header.php';
                             <form method="post" class="flex flex-wrap gap-2">
                                 <?= csrf_field() ?>
                                 <input type="hidden" name="id" value="<?= (int)$review['id'] ?>">
-                                <button name="action" value="show" class="btn-success btn-sm"><i class="fa-solid fa-eye"></i>แสดง</button>
-                                <button name="action" value="hide" class="btn-muted btn-sm"><i class="fa-solid fa-eye-slash"></i>ซ่อน</button>
-                                <button data-confirm="ซ่อนรีวิวนี้?" data-confirm-text="รีวิวจะหายจากหน้าระบบ แต่ข้อมูลเดิมยังอยู่ในฐานข้อมูล" data-confirm-button="ซ่อนรีวิว" name="action" value="delete" class="btn-warning btn-sm"><i class="fa-solid fa-eye-slash"></i>ซ่อน</button>
+                                <button
+                                    name="action"
+                                    value="show"
+                                    class="btn-success btn-sm"
+                                    <?php if ($review['status'] === 'visible'): ?>data-confirm="รีวิวนี้แสดงอยู่แล้ว" data-confirm-text="ต้องการบันทึกสถานะแสดงอีกครั้งหรือไม่?" data-confirm-button="ยืนยันแสดง"<?php endif; ?>>
+                                    <i class="fa-solid fa-eye"></i>แสดง
+                                </button>
+                                <button
+                                    name="action"
+                                    value="hide"
+                                    class="btn-warning btn-sm"
+                                    data-confirm="ยืนยันซ่อนรีวิวนี้?"
+                                    data-confirm-text="รีวิวจะไม่แสดงในหน้าเว็บ แต่ยังอยู่ในรายการหลังบ้าน"
+                                    data-confirm-button="ซ่อนรีวิว">
+                                    <i class="fa-solid fa-eye-slash"></i>ซ่อน
+                                </button>
+                                <button
+                                    data-confirm="ยืนยันลบรีวิวนี้?"
+                                    data-confirm-text="รีวิวจะหายจากหน้าเว็บและรายการปกติของผู้ดูแลระบบ แต่ข้อมูลเดิมยังถูกเก็บไว้ในฐานข้อมูล"
+                                    data-confirm-button="ลบรีวิว"
+                                    name="action"
+                                    value="delete"
+                                    class="btn-danger btn-sm">
+                                    <i class="fa-solid fa-trash"></i>ลบ
+                                </button>
                             </form>
                         </td>
                     </tr>

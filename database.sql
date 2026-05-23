@@ -113,8 +113,10 @@ CREATE TABLE service_categories (
   sort_order INT NOT NULL DEFAULT 0,
   created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  deleted_at TIMESTAMP NULL DEFAULT NULL,
   UNIQUE KEY uk_service_categories_slug (slug),
-  KEY idx_service_categories_active (is_active, sort_order)
+  KEY idx_service_categories_active (is_active, sort_order),
+  KEY idx_service_categories_deleted (deleted_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE photographer_profiles (

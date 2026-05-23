@@ -11,6 +11,12 @@ $workspaceLabel = 'เมนูของฉัน';
 $workspaceIcon = 'fa-gauge';
 $roleHomePath = '/login.php';
 $notificationsHref = '/notifications.php';
+$siteName = setting('site_name', 'Chiang RaiPhoto');
+$siteLogo = setting('logo', '');
+$siteLogoUrl = '';
+if ($siteLogo !== '') {
+    $siteLogoUrl = public_image($siteLogo, '');
+}
 
 if ($me) {
     $unreadCount = unread_notifications_count((int)$me['id']);
@@ -49,9 +55,13 @@ if ($me) {
 <nav class="sticky top-0 z-40 border-b border-black/10 bg-white/92 shadow-sm backdrop-blur-xl">
     <div class="mx-auto flex w-full max-w-[1880px] items-center gap-6 px-5 py-3 sm:px-7 lg:px-10">
         <a href="/index.php" class="flex w-auto shrink-0 items-center gap-3 font-black tracking-tight text-neutral-950 xl:w-[255px]">
-            <span class="grid h-11 w-11 place-items-center rounded-2xl bg-neutral-950 text-white shadow-lg shadow-neutral-950/15"><i class="fa-solid fa-camera-retro"></i></span>
+            <?php if ($siteLogoUrl !== ''): ?>
+                <img class="h-11 w-11 rounded-2xl bg-white object-contain p-1 shadow-lg shadow-neutral-950/15 ring-1 ring-neutral-200" src="<?= h($siteLogoUrl) ?>" alt="<?= h($siteName) ?>">
+            <?php else: ?>
+                <span class="grid h-11 w-11 place-items-center rounded-2xl bg-neutral-950 text-white shadow-lg shadow-neutral-950/15"><i class="fa-solid fa-camera-retro"></i></span>
+            <?php endif; ?>
             <span class="leading-tight">
-                <span class="block text-lg">Chiang Rai<span class="text-red-600">Photo</span></span>
+                <span class="block max-w-[170px] truncate text-lg"><?= h($siteName) ?></span>
                 <span class="hidden text-[10px] font-black uppercase tracking-[0.22em] text-neutral-400 2xl:block">ตลาดช่างภาพ</span>
             </span>
         </a>

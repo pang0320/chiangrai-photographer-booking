@@ -1,8 +1,9 @@
 <?php
 require_once __DIR__ . '/includes/functions.php';
+ensure_service_categories_deleted_at_column();
 
 $districts = db_fetch_all('SELECT * FROM districts WHERE is_active = 1 ORDER BY district_name');
-$categories = db_fetch_all('SELECT * FROM service_categories WHERE is_active = 1 ORDER BY sort_order');
+$categories = db_fetch_all('SELECT * FROM service_categories WHERE is_active = 1 AND deleted_at IS NULL ORDER BY sort_order');
 $allowPhotographer = setting('allow_photographer_registration', '1') === '1';
 $cleanContext = clean_context_init(['role']);
 $selectedAccountType = 'customer';

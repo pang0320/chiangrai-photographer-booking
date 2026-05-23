@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/includes/functions.php';
-$categories = db_fetch_all('SELECT * FROM service_categories WHERE is_active = 1 ORDER BY sort_order');
+ensure_service_categories_deleted_at_column();
+$categories = db_fetch_all('SELECT * FROM service_categories WHERE is_active = 1 AND deleted_at IS NULL ORDER BY sort_order');
 $districts = db_fetch_all('SELECT * FROM districts WHERE is_active = 1 ORDER BY district_name');
 $blogs = db_fetch_all('SELECT title, slug FROM blogs WHERE status = "published" AND deleted_at IS NULL ORDER BY published_at DESC LIMIT 20');
 $photographers = db_fetch_all('SELECT id, display_name FROM photographer_profiles WHERE approval_status = "approved" AND is_featured = 1 AND deleted_at IS NULL ORDER BY display_name LIMIT 20');

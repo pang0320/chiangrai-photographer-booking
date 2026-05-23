@@ -583,6 +583,37 @@ body {
     box-shadow: 0 0 0 4px rgba(226, 27, 45, .12);
 }
 
+.article-editor-panel {
+    position: relative;
+    z-index: 1;
+}
+
+.article-editor-shell .ql-toolbar.ql-snow {
+    border: 0;
+    border-bottom: 1px solid rgba(16, 16, 20, 0.1);
+    background: #fafafa;
+    padding: .8rem;
+}
+
+.article-editor-shell .ql-container.ql-snow {
+    min-height: 280px;
+    border: 0;
+    font-family: "Inter", "Noto Sans Thai", ui-sans-serif, system-ui, sans-serif;
+}
+
+.article-editor-shell .ql-editor {
+    min-height: 280px;
+    font-size: 1rem;
+    line-height: 1.8;
+}
+
+.article-tags-panel {
+    position: relative;
+    z-index: 2;
+    margin-top: .75rem;
+    clear: both;
+}
+
 .stock-button {
     background: var(--cr-red);
     color: #fff;

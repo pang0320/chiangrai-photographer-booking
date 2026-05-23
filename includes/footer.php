@@ -29,21 +29,35 @@ if (!empty($_SESSION['user_id']) && !empty($_SESSION['last_activity_at'])) {
 $footerData = footer_public_data();
 $footerCategories = $footerData['categories'];
 $footerDistricts = $footerData['districts'];
+$footerSiteName = setting('site_name', APP_NAME);
+$footerText = setting('footer_text', '');
+$footerLogo = setting('logo', '');
+$footerLogoUrl = '';
+if ($footerLogo !== '') {
+    $footerLogoUrl = public_image($footerLogo, '');
+}
 ?>
 <footer class="mt-16 border-t border-neutral-200 bg-neutral-950 text-white">
     <div class="stock-shell px-4 py-12 sm:px-6 lg:px-8">
         <div class="grid gap-10 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
             <div>
                 <div class="flex items-center gap-3">
-                    <div class="grid h-12 w-12 place-items-center rounded-2xl bg-red-600 text-white shadow-lg shadow-red-900/30">
-                        <i class="fa-solid fa-camera-retro"></i>
-                    </div>
+                    <?php if ($footerLogoUrl !== ''): ?>
+                        <img class="h-12 w-12 rounded-2xl bg-white object-contain p-1 shadow-lg shadow-red-900/30" src="<?= h($footerLogoUrl) ?>" alt="<?= h($footerSiteName) ?>">
+                    <?php else: ?>
+                        <div class="grid h-12 w-12 place-items-center rounded-2xl bg-red-600 text-white shadow-lg shadow-red-900/30">
+                            <i class="fa-solid fa-camera-retro"></i>
+                        </div>
+                    <?php endif; ?>
                     <div>
-                        <div class="text-xl font-black text-white">Chiang Rai<span class="text-red-500">Photo</span></div>
+                        <div class="text-xl font-black text-white"><?= h($footerSiteName) ?></div>
                         <p class="text-xs font-black uppercase tracking-[0.22em] text-white/38">ตลาดช่างภาพ</p>
                     </div>
                 </div>
-                <p class="mt-5 max-w-md text-sm leading-7 text-white/62"><?= h(PAYMENT_DISCLAIMER) ?></p>
+                <?php if ($footerText !== ''): ?>
+                    <p class="mt-5 max-w-md text-sm leading-7 text-white/62"><?= h($footerText) ?></p>
+                <?php endif; ?>
+                <p class="mt-3 max-w-md text-sm leading-7 text-white/62"><?= h(PAYMENT_DISCLAIMER) ?></p>
                 <div class="mt-6 flex gap-3">
                     <a href="#" class="grid h-10 w-10 place-items-center rounded-full bg-white/10 text-white hover:bg-red-600"><i class="fa-brands fa-facebook-f"></i></a>
                     <a href="#" class="grid h-10 w-10 place-items-center rounded-full bg-white/10 text-white hover:bg-red-600"><i class="fa-brands fa-instagram"></i></a>

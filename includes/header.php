@@ -22,6 +22,7 @@ $pageOgTitle = isset($pageOgTitle) ? trim((string)$pageOgTitle) : (string)$pageT
 $pageOgDescription = isset($pageOgDescription) ? trim((string)$pageOgDescription) : $pageMetaDescription;
 $pageOgImage = isset($pageOgImage) ? trim((string)$pageOgImage) : rtrim(APP_URL, '/') . '/assets/uploads/seed/photo-1511285560929-80b456fea0bc.jpg';
 $pageOgType = isset($pageOgType) ? trim((string)$pageOgType) : 'website';
+$headerSiteName = setting('site_name', APP_NAME);
 $pageJsonLd = isset($pageJsonLd) && is_array($pageJsonLd) ? $pageJsonLd : [];
 ?>
 <!doctype html>
@@ -39,7 +40,7 @@ $pageJsonLd = isset($pageJsonLd) && is_array($pageJsonLd) ? $pageJsonLd : [];
     <meta name="robots" content="<?= h($pageRobots) ?>">
     <link rel="canonical" href="<?= h($pageCanonical) ?>">
     <meta property="og:locale" content="th_TH">
-    <meta property="og:site_name" content="<?= h(APP_NAME) ?>">
+    <meta property="og:site_name" content="<?= h($headerSiteName) ?>">
     <meta property="og:type" content="<?= h($pageOgType) ?>">
     <meta property="og:title" content="<?= h($pageOgTitle) ?>">
     <?php if ($pageOgDescription !== ''): ?>

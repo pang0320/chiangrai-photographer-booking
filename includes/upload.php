@@ -12,7 +12,7 @@ function upload_image(array $file, string $folder): ?string
     $originalName = (string)$file['name'];
     $tmpName = (string)($file['tmp_name'] ?? '');
     $safeFolder = trim($folder, '/');
-    $allowedFolders = ['avatars', 'covers', 'portfolios', 'reviews', 'articles', 'banners'];
+    $allowedFolders = ['avatars', 'covers', 'portfolios', 'reviews', 'articles', 'banners', 'logos'];
     $allowedExt = ['jpg', 'jpeg', 'png', 'webp'];
     $blockedExt = ['php', 'phtml', 'phar', 'exe', 'js', 'html', 'htm', 'svg', 'sh', 'bat', 'cmd', 'com', 'scr', 'cgi', 'pl', 'asp', 'aspx', 'jsp'];
     $allowedMime = [

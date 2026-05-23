@@ -1,10 +1,11 @@
 <?php
 require_once __DIR__ . '/../includes/functions.php';
 requireRole('photographer');
+ensure_service_categories_deleted_at_column();
 
 $profile = photographer_profile_by_user((int)current_user()['id']);
 $pid = (int)$profile['id'];
-$categories = db_fetch_all('SELECT * FROM service_categories WHERE is_active = 1 ORDER BY sort_order');
+$categories = db_fetch_all('SELECT * FROM service_categories WHERE is_active = 1 AND deleted_at IS NULL ORDER BY sort_order');
 
 if (is_post()) {
     verify_csrf();
@@ -81,6 +82,7 @@ $stmt = db()->prepare('SELECT ps.*, sc.name
                        FROM photographer_services ps
                        JOIN service_categories sc ON sc.id = ps.category_id
                        WHERE ps.photographer_id = ?
+                         AND sc.deleted_at IS NULL
                        ORDER BY sc.sort_order');
 $stmt->execute([$pid]);
 $services = $stmt->fetchAll();

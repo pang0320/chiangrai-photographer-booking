@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../includes/functions.php';
+ensure_service_categories_deleted_at_column();
 $cleanContext = clean_context_init(['photographer_id', 'booking_date', 'time_slot']);
 requireRole('customer');
 $user = current_user();
@@ -23,7 +24,7 @@ $stmt->execute([$photographerId]);
 $profile = $stmt->fetch();
 if (!$profile) exit('ช่างภาพไม่พร้อมรับจอง');
 
-$categories = db()->prepare('SELECT sc.* FROM photographer_services ps JOIN service_categories sc ON sc.id=ps.category_id WHERE ps.photographer_id=? AND ps.is_active=1 ORDER BY sc.sort_order');
+$categories = db()->prepare('SELECT sc.* FROM photographer_services ps JOIN service_categories sc ON sc.id=ps.category_id WHERE ps.photographer_id=? AND ps.is_active=1 AND sc.is_active=1 AND sc.deleted_at IS NULL ORDER BY sc.sort_order');
 $categories->execute([$photographerId]);
 $categories = $categories->fetchAll();
 $districts = db()->prepare('SELECT d.* FROM photographer_service_areas psa JOIN districts d ON d.id=psa.district_id WHERE psa.photographer_id=? AND psa.is_active=1 ORDER BY psa.is_primary DESC, d.district_name');

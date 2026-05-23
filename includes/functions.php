@@ -1385,8 +1385,10 @@ function photographer_completion_percent(int $photographerId): int
 function footer_public_data(): array
 {
     return cache_remember('footer_public_data_v2', 300, function () {
+        ensure_service_categories_deleted_at_column();
+
         return [
-            'categories' => db_fetch_all('SELECT id, name, slug FROM service_categories WHERE is_active = 1 ORDER BY sort_order, name LIMIT 6'),
+            'categories' => db_fetch_all('SELECT id, name, slug FROM service_categories WHERE is_active = 1 AND deleted_at IS NULL ORDER BY sort_order, name LIMIT 6'),
             'districts' => db_fetch_all('SELECT district_name FROM districts WHERE is_active = 1 ORDER BY district_name LIMIT 8'),
         ];
     });
@@ -1469,6 +1471,26 @@ function ensure_tags_status_column(): void
     if ($exists === 0) {
         db()->exec('ALTER TABLE tags ADD COLUMN is_active TINYINT(1) NOT NULL DEFAULT 1 AFTER slug');
         db()->exec('ALTER TABLE tags ADD INDEX idx_tags_active (is_active, name)');
+    }
+
+    $checked = true;
+}
+
+function ensure_service_categories_deleted_at_column(): void
+{
+    static $checked = false;
+    if ($checked) {
+        return;
+    }
+
+    $exists = (int)db_fetch_value('SELECT COUNT(*)
+                                  FROM INFORMATION_SCHEMA.COLUMNS
+                                  WHERE TABLE_SCHEMA = DATABASE()
+                                    AND TABLE_NAME = "service_categories"
+                                    AND COLUMN_NAME = "deleted_at"');
+    if ($exists === 0) {
+        db()->exec('ALTER TABLE service_categories ADD COLUMN deleted_at TIMESTAMP NULL DEFAULT NULL AFTER updated_at');
+        db()->exec('ALTER TABLE service_categories ADD INDEX idx_service_categories_deleted (deleted_at)');
     }
 
     $checked = true;

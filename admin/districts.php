@@ -9,8 +9,26 @@ if (is_post()) {
     $action = (string)($_POST['action'] ?? '');
 
     if ($action === 'toggle') {
-        $stmt = db()->prepare('UPDATE districts SET is_active = 1 - is_active WHERE id = ?');
-        $stmt->execute([$id]);
+        $currentStatus = db_fetch_value('SELECT is_active FROM districts WHERE id = ? LIMIT 1', [$id]);
+
+        if ($currentStatus === false) {
+            flash('error', 'ไม่พบอำเภอที่ต้องการเปลี่ยนสถานะ');
+            redirect('/admin/districts.php');
+        }
+
+        $nextStatus = 1;
+        if ((int)$currentStatus === 1) {
+            $nextStatus = 0;
+        }
+
+        $stmt = db()->prepare('UPDATE districts SET is_active = ?, updated_at = NOW() WHERE id = ?');
+        $stmt->execute([$nextStatus, $id]);
+
+        if ($nextStatus === 1) {
+            flash('success', 'เปิดใช้งานอำเภอแล้ว หน้าค้นหาจะเห็นอำเภอนี้ทันที');
+        } else {
+            flash('success', 'ปิดใช้งานอำเภอแล้ว อำเภอนี้จะหายจากตัวเลือกค้นหาทันที');
+        }
     } else {
         $districtName = trim((string)($_POST['district_name'] ?? ''));
         $latitude = (float)($_POST['latitude'] ?? 0);
@@ -27,8 +45,11 @@ if (is_post()) {
         $stmt->execute([$districtName, $latitude, $longitude, $isActive]);
     }
 
+    cache_clear_all();
     log_activity('manage_districts', 'districts', $id);
-    flash('success', 'บันทึกอำเภอแล้ว');
+    if ($action !== 'toggle') {
+        flash('success', 'บันทึกอำเภอแล้ว');
+    }
     redirect('/admin/districts.php');
 }
 
@@ -43,6 +64,7 @@ include __DIR__ . '/../includes/header.php';
         <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">ผู้ดูแลระบบ</p>
         <h1 class="mt-1 text-3xl font-black text-neutral-950">จัดการอำเภอ</h1>
         <p class="mt-2 max-w-3xl text-sm font-bold leading-7 text-neutral-500">พิกัดละติจูด/ลองจิจูดใช้คำนวณช่างภาพใกล้เคียงด้วย Haversine Formula เมื่อไม่พบช่างภาพในอำเภอที่ลูกค้าเลือก</p>
+        <p class="mt-1 max-w-3xl text-sm font-bold leading-7 text-amber-700"><i class="fa-solid fa-circle-info mr-1"></i>เมื่อเปิด/ปิดสถานะ อำเภอในหน้าค้นหาจะเปลี่ยนทันที ไม่ต้องรอ cache</p>
     </div>
 
     <form method="post" class="stock-card mt-6 grid gap-3 rounded-[1.5rem] p-5 md:grid-cols-5">
@@ -88,8 +110,12 @@ include __DIR__ . '/../includes/header.php';
                                 <?= csrf_field() ?>
                                 <input type="hidden" name="action" value="toggle">
                                 <input type="hidden" name="id" value="<?= (int)$item['id'] ?>">
-                                <button class="rounded-full bg-neutral-100 px-3 py-1.5 font-black text-neutral-700">
-                                    <i class="fa-solid fa-arrows-rotate mr-1"></i>สลับสถานะ
+                                <button class="<?= (int)$item['is_active'] === 1 ? 'btn-warning' : 'btn-success' ?> btn-sm">
+                                    <?php if ((int)$item['is_active'] === 1): ?>
+                                        <i class="fa-solid fa-eye-slash"></i>ปิด
+                                    <?php else: ?>
+                                        <i class="fa-solid fa-eye"></i>เปิด
+                                    <?php endif; ?>
                                 </button>
                             </form>
                         </td>

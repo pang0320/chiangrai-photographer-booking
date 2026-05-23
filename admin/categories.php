@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../includes/functions.php';
 requireRole('admin');
+ensure_service_categories_deleted_at_column();
 
 if (is_post()) {
     verify_csrf();
@@ -9,21 +10,31 @@ if (is_post()) {
 
     if ($action === 'delete') {
         $id = (int)($_POST['id'] ?? 0);
-        $stmt = db()->prepare('UPDATE service_categories SET is_active = 0, updated_at = NOW() WHERE id = ?');
+        $stmt = db()->prepare('UPDATE service_categories SET is_active = 0, deleted_at = NOW(), updated_at = NOW() WHERE id = ?');
         $stmt->execute([$id]);
-        flash('success', 'ปิดใช้งานหมวดหมู่งานแล้ว');
+        flash('success', 'ลบหมวดหมู่งานออกจากรายการแล้ว ข้อมูลเดิมยังอยู่ในฐานข้อมูล');
     } elseif ($action === 'toggle') {
         $id = (int)($_POST['id'] ?? 0);
-        $isActive = (int)($_POST['is_active'] ?? 0);
-        $nextStatus = 0;
+        $currentStatus = db_fetch_value('SELECT is_active FROM service_categories WHERE id = ? AND deleted_at IS NULL LIMIT 1', [$id]);
 
-        if ($isActive === 0) {
-            $nextStatus = 1;
+        if ($currentStatus === false) {
+            flash('error', 'ไม่พบหมวดหมู่งานที่ต้องการเปลี่ยนสถานะ');
+            redirect('/admin/categories.php');
         }
 
-        $stmt = db()->prepare('UPDATE service_categories SET is_active = ?, updated_at = NOW() WHERE id = ?');
+        $nextStatus = 1;
+        if ((int)$currentStatus === 1) {
+            $nextStatus = 0;
+        }
+
+        $stmt = db()->prepare('UPDATE service_categories SET is_active = ?, updated_at = NOW() WHERE id = ? AND deleted_at IS NULL');
         $stmt->execute([$nextStatus, $id]);
-        flash('success', 'อัปเดตสถานะหมวดหมู่งานแล้ว');
+
+        if ($nextStatus === 1) {
+            flash('success', 'เปิดใช้งานหมวดหมู่งานแล้ว');
+        } else {
+            flash('success', 'ปิดใช้งานหมวดหมู่งานแล้ว');
+        }
     } else {
         $id = (int)($_POST['id'] ?? 0);
         $name = trim((string)($_POST['name'] ?? ''));
@@ -62,11 +73,12 @@ if (is_post()) {
         flash('success', 'บันทึกหมวดหมู่งานแล้ว');
     }
 
+    cache_clear_all();
     log_activity('manage_categories', 'service_categories', (int)($_POST['id'] ?? 0));
     redirect('/admin/categories.php');
 }
 
-$items = db_fetch_all('SELECT * FROM service_categories ORDER BY sort_order, name');
+$items = db_fetch_all('SELECT * FROM service_categories WHERE deleted_at IS NULL ORDER BY sort_order, name');
 $activeCount = 0;
 $inactiveCount = 0;
 
@@ -176,6 +188,10 @@ include __DIR__ . '/../includes/header.php';
                     <i class="fa-solid fa-pen-to-square mr-2"></i>แก้ไขหมวดหมู่งาน
                 </p>
                 <h2 class="mt-1 text-2xl font-black text-neutral-950">รายการหมวดหมู่ทั้งหมด</h2>
+                <p class="mt-2 text-sm font-bold leading-7 text-neutral-500">
+                    <i class="fa-solid fa-circle-info mr-1 text-red-600"></i>
+                    ปุ่มเหลืองคือปิด/เปิดใช้งานชั่วคราว ส่วนปุ่มลบคือ soft delete ให้หายจากรายการและตัวเลือกค้นหา แต่ข้อมูลเดิมยังอยู่ในฐานข้อมูล
+                </p>
             </div>
             <div class="rounded-full bg-red-50 px-4 py-2 text-sm font-black text-red-700">
                 <i class="fa-solid fa-circle-info mr-1"></i>ตารางแสดงทีละ 5 รายการ
@@ -271,8 +287,8 @@ include __DIR__ . '/../includes/header.php';
                                             <?= csrf_field() ?>
                                             <input type="hidden" name="action" value="delete">
                                             <input type="hidden" name="id" value="<?= (int)$item['id'] ?>">
-                                            <button data-confirm="ปิดใช้งานหมวดหมู่นี้?" data-confirm-text="หมวดนี้จะไม่แสดงให้ลูกค้าหรือช่างภาพเลือก แต่ข้อมูลเดิมจะยังอยู่" class="btn-danger btn-sm" type="submit">
-                                                <i class="fa-solid fa-ban"></i>ปิดใช้
+                                            <button data-confirm="ยืนยันลบหมวดหมู่นี้?" data-confirm-text="หมวดนี้จะหายจากหน้าจัดการและตัวเลือกค้นหา แต่ข้อมูลเดิมยังอยู่ในฐานข้อมูลเพื่อไม่กระทบข้อมูลเก่า" data-confirm-button="ลบหมวดหมู่" class="btn-danger btn-sm" type="submit">
+                                                <i class="fa-solid fa-trash"></i>ลบ
                                             </button>
                                         </form>
                                     </div>

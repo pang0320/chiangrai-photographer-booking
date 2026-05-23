@@ -263,7 +263,7 @@ include __DIR__ . '/../includes/header.php';
                             <input type="hidden" name="action" value="toggle">
                             <input type="hidden" name="id" value="<?= (int)$service['id'] ?>">
                             <input type="hidden" name="is_active" value="<?= $isActive ? 1 : 0 ?>">
-                            <button class="<?= $isActive ? 'btn-warning' : 'btn-success' ?> btn-sm" type="submit">
+                            <button class="<?= $isActive ? 'btn-danger' : 'btn-success' ?> btn-sm" type="submit">
                                 <?php if ($isActive): ?>
                                     <i class="fa-solid fa-eye-slash"></i>ปิดประเภทงานนี้
                                 <?php else: ?>
@@ -276,7 +276,7 @@ include __DIR__ . '/../includes/header.php';
                             <?= csrf_field() ?>
                             <input type="hidden" name="action" value="delete">
                             <input type="hidden" name="id" value="<?= (int)$service['id'] ?>">
-                            <button data-confirm="ซ่อนประเภทงานนี้จากโปรไฟล์?" data-confirm-text="ข้อมูลบริการเดิมยังอยู่ สามารถเปิดกลับมาแสดงได้ภายหลัง" data-confirm-button="ซ่อนรายการ" class="btn-warning btn-sm" type="submit">
+                            <button data-confirm="ซ่อนประเภทงานนี้จากโปรไฟล์?" data-confirm-text="ข้อมูลบริการเดิมยังอยู่ สามารถเปิดกลับมาแสดงได้ภายหลัง" data-confirm-button="ซ่อนรายการ" class="btn-muted btn-sm" type="submit">
                                 <i class="fa-solid fa-eye-slash"></i>ซ่อน
                             </button>
                         </form>

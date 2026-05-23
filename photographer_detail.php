@@ -91,6 +91,14 @@ $id = (int)$profile['id'];
 db()->prepare('UPDATE photographer_profiles SET profile_views = profile_views + 1 WHERE id = ?')->execute([$id]);
 
 $currentUser = current_user();
+$isOwnPhotographerProfile = false;
+if ($currentUser && (string)$currentUser['role_name'] === 'photographer' && (int)$profile['user_id'] === (int)$currentUser['id']) {
+    $isOwnPhotographerProfile = true;
+}
+$canSendBookingRequest = true;
+if ($isOwnPhotographerProfile) {
+    $canSendBookingRequest = false;
+}
 if ($currentUser && $currentUser['role_name'] === 'customer') {
     record_recently_viewed((int)$currentUser['id'], $id);
 }
@@ -236,7 +244,11 @@ include __DIR__ . '/includes/header.php';
                     </div>
                 </div>
                 <div class="mt-4 grid gap-2">
-                    <a href="#availability" class="btn-cta btn-lg block w-full text-center"><i class="fa-solid fa-calendar-days mr-2"></i>เลือกวันว่างเพื่อจอง</a>
+                    <?php if ($canSendBookingRequest): ?>
+                        <a href="#availability" class="btn-cta btn-lg block w-full text-center"><i class="fa-solid fa-calendar-days mr-2"></i>เลือกวันว่างเพื่อจอง</a>
+                    <?php else: ?>
+                        <a href="/photographer/profile.php" class="btn-muted btn-lg block w-full text-center"><i class="fa-solid fa-user-check mr-2"></i>นี่คือโปรไฟล์ของคุณ</a>
+                    <?php endif; ?>
                     <?php if ($currentUser && $currentUser['role_name'] === 'customer'): ?>
                         <form method="post">
                             <?= csrf_field() ?>
@@ -277,8 +289,8 @@ include __DIR__ . '/includes/header.php';
     </div>
 </section>
 
-<section class="stock-shell px-4 py-12 sm:px-6 lg:px-8">
-    <div class="grid gap-8 lg:grid-cols-[1fr_340px]">
+<section class="mx-auto w-full max-w-[1760px] px-4 py-12 sm:px-6 lg:px-8">
+    <div class="grid gap-8 lg:grid-cols-[minmax(0,1fr)_300px] xl:grid-cols-[minmax(0,1fr)_280px]">
         <div class="space-y-12">
             <div id="services" class="scroll-mt-28">
                 <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600"><i class="fa-solid fa-layer-group mr-2"></i>ประเภทงาน</p>
@@ -309,34 +321,66 @@ include __DIR__ . '/includes/header.php';
             </div>
 
             <div id="availability" class="scroll-mt-28">
+                <?php
+                $availabilityCount = count($availability);
+                $availabilityIsSlider = $availabilityCount > 4;
+                $availabilityLayoutClass = 'mt-6 grid gap-4';
+                $availabilityCardClass = 'stock-card stock-card-hover min-h-[152px] w-full rounded-[1.35rem] p-5 text-left transition hover:-translate-y-1 hover:shadow-2xl';
+                $availabilityStaticCardClass = 'stock-card min-h-[152px] w-full rounded-[1.35rem] p-5 text-left';
+
+                if ($availabilityCount === 2) {
+                    $availabilityLayoutClass .= ' sm:grid-cols-2';
+                } elseif ($availabilityCount === 3) {
+                    $availabilityLayoutClass .= ' sm:grid-cols-2 xl:grid-cols-3';
+                } elseif ($availabilityCount === 4) {
+                    $availabilityLayoutClass .= ' sm:grid-cols-2 xl:grid-cols-4';
+                } elseif ($availabilityIsSlider) {
+                    $availabilityLayoutClass = 'mt-6 flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth pb-4 pr-2';
+                    $availabilityCardClass = 'stock-card stock-card-hover min-h-[152px] w-[82vw] shrink-0 snap-start rounded-[1.35rem] p-5 text-left transition hover:-translate-y-1 hover:shadow-2xl sm:w-[330px] lg:w-[calc((100%_-_3rem)/4)] lg:min-w-[260px]';
+                    $availabilityStaticCardClass = 'stock-card min-h-[152px] w-[82vw] shrink-0 snap-start rounded-[1.35rem] p-5 text-left sm:w-[330px] lg:w-[calc((100%_-_3rem)/4)] lg:min-w-[260px]';
+                }
+                ?>
                 <div class="flex flex-wrap items-end justify-between gap-4">
                     <div>
                         <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600"><i class="fa-solid fa-calendar-days mr-2"></i>วันที่ต้องการจ้าง</p>
                         <h2 class="mt-1 text-3xl font-black text-neutral-950">ปฏิทินวันว่างสำหรับส่งคำขอจอง</h2>
                         <p class="mt-2 max-w-2xl text-base font-semibold leading-7 text-neutral-600">เลือกได้เฉพาะวันที่ช่างภาพเปิดว่าง ระบบจะตรวจซ้ำอีกครั้งตอนส่งคำขอจอง</p>
                     </div>
+                    <?php if ($availabilityIsSlider): ?>
+                        <div class="rounded-full bg-red-50 px-4 py-2 text-sm font-black text-red-700">
+                            <i class="fa-solid fa-arrows-left-right mr-1"></i>เลื่อนซ้าย-ขวาเพื่อดูวันว่างทั้งหมด
+                        </div>
+                    <?php endif; ?>
                 </div>
-                <div class="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <div class="<?= h($availabilityLayoutClass) ?>">
                     <?php foreach ($availability as $a): ?>
                         <?php
                         $availabilityCard = '<p class="font-black text-neutral-950"><i class="fa-solid fa-calendar-day mr-2 text-red-600"></i>' . h(format_be_date($a['available_date'])) . '</p>'
                             . '<p class="mt-2 text-sm font-bold text-neutral-600"><i class="fa-solid fa-clock mr-1 text-red-600"></i>' . h(time_slot_label($a['time_slot'])) . '</p>'
                             . '<p class="mt-4 inline-flex items-center rounded-full bg-red-600 px-4 py-2 text-sm font-black text-white shadow-lg shadow-red-600/20"><i class="fa-solid fa-calendar-check mr-2"></i>เลือกวันนี้และจอง</p>';
-                        echo clean_context_button(
-                            '/customer/create_booking.php',
-                            [
-                                'photographer_id' => (int)$profile['id'],
-                                'booking_date' => (string)$a['available_date'],
-                                'time_slot' => (string)$a['time_slot'],
-                            ],
-                            $availabilityCard,
-                            'stock-card stock-card-hover w-full rounded-[1.35rem] p-5 text-left transition hover:-translate-y-1 hover:shadow-2xl',
-                            'contents'
-                        );
+                        if ($canSendBookingRequest) {
+                            echo clean_context_button(
+                                '/customer/create_booking.php',
+                                [
+                                    'photographer_id' => (int)$profile['id'],
+                                    'booking_date' => (string)$a['available_date'],
+                                    'time_slot' => (string)$a['time_slot'],
+                                ],
+                                $availabilityCard,
+                                $availabilityCardClass,
+                                'contents'
+                            );
+                        } else {
+                            echo '<div class="' . h($availabilityStaticCardClass) . '">'
+                                . '<p class="font-black text-neutral-950"><i class="fa-solid fa-calendar-day mr-2 text-red-600"></i>' . h(format_be_date($a['available_date'])) . '</p>'
+                                . '<p class="mt-2 text-sm font-bold text-neutral-600"><i class="fa-solid fa-clock mr-1 text-red-600"></i>' . h(time_slot_label($a['time_slot'])) . '</p>'
+                                . '<p class="mt-4 inline-flex items-center rounded-full bg-neutral-100 px-4 py-2 text-sm font-black text-neutral-600"><i class="fa-solid fa-user-check mr-2"></i>วันว่างในโปรไฟล์ของคุณ</p>'
+                                . '</div>';
+                        }
                         ?>
                     <?php endforeach; ?>
                     <?php if (!$availability): ?>
-                        <div class="empty-state rounded-[2rem] p-10 text-center sm:col-span-2 lg:col-span-3">
+                        <div class="empty-state w-full rounded-[2rem] p-10 text-center">
                             <i class="fa-solid fa-calendar-xmark text-4xl text-red-600"></i>
                             <h3 class="mt-3 text-xl font-black">ยังไม่มีวันว่างที่เปิดไว้</h3>
                             <p class="mt-2 text-neutral-600">ติดต่อช่างภาพโดยตรงเพื่อสอบถามวันว่างเพิ่มเติมได้</p>
@@ -346,10 +390,11 @@ include __DIR__ . '/includes/header.php';
             </div>
 
             <div id="portfolio" class="scroll-mt-28">
-                <div class="flex items-end justify-between gap-4">
+                <div class="flex flex-wrap items-end justify-between gap-4">
                     <div>
-                        <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">อัลบั้มตัวอย่างงาน</p>
+                        <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600"><i class="fa-solid fa-images mr-2"></i>อัลบั้มตัวอย่างงาน</p>
                         <h2 class="mt-1 text-3xl font-black text-neutral-950">ตัวอย่างงานถ่ายภาพ</h2>
+                        <p class="mt-2 max-w-2xl text-base font-semibold leading-7 text-neutral-600">ขยายพื้นที่แสดงภาพให้กว้างขึ้น เพื่อเห็นโทนงานและรายละเอียดภาพได้ชัดเจนกว่าเดิม</p>
                     </div>
                 </div>
                 <?php if (!$portfolio): ?>
@@ -359,7 +404,7 @@ include __DIR__ . '/includes/header.php';
                         <p class="mt-2 text-neutral-600">เมื่อช่างภาพอัปโหลดอัลบั้มตัวอย่างงาน รูปจะแสดงในส่วนนี้</p>
                     </div>
                 <?php endif; ?>
-                <div class="masonry-gallery mt-6">
+                <div class="masonry-gallery photographer-detail-portfolio-gallery mt-6">
                     <?php foreach ($portfolio as $i => $item): ?>
                         <?php
                         $portfolioImageClass = 'min-h-[240px]';
@@ -424,28 +469,38 @@ include __DIR__ . '/includes/header.php';
                         <article class="stock-card rounded-[1.5rem] p-6">
                             <div class="flex flex-wrap items-center justify-between gap-3">
                                 <b class="text-neutral-950"><?= h($r['customer_name']) ?></b>
-                                <span class="text-red-600" title="คะแนนรวม <?= (int)$r['rating_overall'] ?> จาก 5"><?= str_repeat('★', (int)$r['rating_overall']) ?></span>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-red-600" title="คะแนนรวม <?= (int)$r['rating_overall'] ?> จาก 5"><?= str_repeat('★', (int)$r['rating_overall']) ?></span>
+                                    <?php if ($currentUser): ?>
+                                        <details class="relative">
+                                            <summary class="grid h-9 w-9 cursor-pointer list-none place-items-center rounded-full bg-neutral-100 text-neutral-600 transition hover:bg-neutral-950 hover:text-white" title="เมนูรีวิว">
+                                                <i class="fa-solid fa-ellipsis"></i>
+                                            </summary>
+                                            <form method="post" class="mt-3 grid min-w-[280px] gap-3 rounded-2xl border border-neutral-100 bg-neutral-50 p-4 shadow-sm sm:min-w-[420px]">
+                                                <?= csrf_field() ?>
+                                                <input type="hidden" name="action" value="report_review">
+                                                <input type="hidden" name="photographer_id" value="<?= (int)$profile['id'] ?>">
+                                                <input type="hidden" name="target_id" value="<?= (int)$r['id'] ?>">
+                                                <p class="text-sm font-black text-neutral-950">
+                                                    <i class="fa-solid fa-triangle-exclamation mr-1 text-red-600"></i>รายงานรีวิวนี้
+                                                </p>
+                                                <label class="grid gap-1 text-xs font-black text-neutral-600">
+                                                    <span>เหตุผลในการรายงาน</span>
+                                                    <input name="reason" required maxlength="180" placeholder="เช่น รีวิวไม่เหมาะสม" class="stock-input rounded-xl px-3 py-2 text-sm">
+                                                </label>
+                                                <label class="grid gap-1 text-xs font-black text-neutral-600">
+                                                    <span>รายละเอียดเพิ่มเติม</span>
+                                                    <textarea name="detail" required maxlength="2000" rows="2" placeholder="พิมพ์รายละเอียดปัญหาที่ต้องการให้ผู้ดูแลตรวจสอบ" class="stock-input rounded-xl px-3 py-2 text-sm"></textarea>
+                                                </label>
+                                                <button class="btn-danger btn-sm justify-self-start rounded-xl">
+                                                    <i class="fa-solid fa-triangle-exclamation"></i>ส่งรายงาน
+                                                </button>
+                                            </form>
+                                        </details>
+                                    <?php endif; ?>
+                                </div>
                             </div>
                             <p class="mt-3 leading-7 text-neutral-700"><?= nl2br(h($r['comment'])) ?></p>
-                            <?php if ($currentUser): ?>
-                                <form method="post" class="mt-4 grid gap-3 rounded-2xl bg-neutral-50 p-4">
-                                    <?= csrf_field() ?>
-                                    <input type="hidden" name="action" value="report_review">
-                                    <input type="hidden" name="photographer_id" value="<?= (int)$profile['id'] ?>">
-                                    <input type="hidden" name="target_id" value="<?= (int)$r['id'] ?>">
-                                    <div class="grid gap-3 md:grid-cols-2">
-                                        <label class="grid gap-1 text-xs font-black text-neutral-600">
-                                            <span><i class="fa-solid fa-triangle-exclamation mr-1 text-red-600"></i>เหตุผลในการรายงาน</span>
-                                            <input name="reason" required maxlength="180" placeholder="เช่น รีวิวไม่เหมาะสม" class="stock-input rounded-xl px-3 py-2 text-sm">
-                                        </label>
-                                        <label class="grid gap-1 text-xs font-black text-neutral-600">
-                                            <span><i class="fa-solid fa-pen-to-square mr-1 text-red-600"></i>รายละเอียดเพิ่มเติม</span>
-                                            <textarea name="detail" required maxlength="2000" rows="2" placeholder="พิมพ์รายละเอียดปัญหาที่ต้องการให้ผู้ดูแลตรวจสอบ" class="stock-input rounded-xl px-3 py-2 text-sm"></textarea>
-                                        </label>
-                                    </div>
-                                    <button class="btn-danger btn-sm justify-self-start rounded-xl"><i class="fa-solid fa-triangle-exclamation"></i>รายงานรีวิว</button>
-                                </form>
-                            <?php endif; ?>
                         </article>
                     <?php endforeach; ?>
                     <?php if (!$reviews): ?>

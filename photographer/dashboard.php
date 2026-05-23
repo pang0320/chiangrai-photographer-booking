@@ -354,6 +354,7 @@ include __DIR__ . '/../includes/header.php';
                 <p class="mt-4 max-w-3xl leading-8 text-white/70">สรุปคำขอจอง คะแนน รีวิว วันว่าง และความพร้อมของโปรไฟล์ในหน้าจอเดียว เว็บไซต์เป็นเพียงตัวกลางค้นหา จอง และติดต่อช่างภาพโดยตรง ไม่มีระบบชำระเงิน</p>
                 <div class="mt-6 flex flex-wrap gap-3">
                     <?= clean_context_button('/photographer/bookings.php', ['status' => 'pending'], '<i class="fa-solid fa-bell mr-2"></i>ดูคำขอใหม่', 'rounded-full bg-white px-5 py-3 font-black text-neutral-950 transition hover:bg-red-600 hover:text-white') ?>
+                    <?= clean_context_button('/photographer_detail.php', ['id' => $pid], '<i class="fa-solid fa-camera-retro mr-2"></i>ดูหน้าโปรไฟล์ช่างภาพ', 'rounded-full bg-red-600 px-5 py-3 font-black text-white transition hover:bg-white hover:text-neutral-950') ?>
                     <a href="/photographer/availability.php" class="rounded-full bg-white/12 px-5 py-3 font-black text-white transition hover:bg-white hover:text-neutral-950"><i class="fa-solid fa-calendar-plus mr-2"></i>เพิ่มวันว่าง</a>
                     <a href="/photographer/portfolio.php" class="rounded-full bg-white/12 px-5 py-3 font-black text-white transition hover:bg-white hover:text-neutral-950"><i class="fa-solid fa-images mr-2"></i>เพิ่มตัวอย่างงาน</a>
                     <a href="/photographer/profile.php" class="rounded-full bg-white/12 px-5 py-3 font-black text-white transition hover:bg-white hover:text-neutral-950"><i class="fa-solid fa-user-pen mr-2"></i>แก้ไขโปรไฟล์</a>
@@ -621,6 +622,7 @@ include __DIR__ . '/../includes/header.php';
             <p class="section-kicker">Quick Actions</p>
             <h2 class="mt-1 text-xl font-black text-neutral-950"><i class="fa-solid fa-wand-magic-sparkles mr-2 text-red-600"></i>ทางลัดจัดการโปรไฟล์</h2>
             <div class="mt-5 grid gap-3 sm:grid-cols-2">
+                <?= clean_context_button('/photographer_detail.php', ['id' => $pid], '<i class="fa-solid fa-camera-retro mb-3 block text-2xl text-red-300"></i>ดูหน้าโปรไฟล์ช่างภาพ', 'rounded-[1.35rem] bg-neutral-950 p-4 font-black text-white transition hover:-translate-y-1 hover:bg-red-600', 'contents') ?>
                 <a href="/photographer/profile.php" class="rounded-[1.35rem] bg-neutral-950 p-4 font-black text-white transition hover:-translate-y-1 hover:bg-red-600"><i class="fa-solid fa-id-card mb-3 block text-2xl text-red-300"></i>แก้ไขโปรไฟล์</a>
                 <a href="/photographer/portfolio.php" class="rounded-[1.35rem] bg-red-50 p-4 font-black text-red-700 transition hover:-translate-y-1 hover:bg-red-600 hover:text-white"><i class="fa-solid fa-images mb-3 block text-2xl"></i>เพิ่มตัวอย่างงาน</a>
                 <a href="/photographer/availability.php" class="rounded-[1.35rem] bg-amber-50 p-4 font-black text-amber-700 transition hover:-translate-y-1 hover:bg-amber-500 hover:text-white"><i class="fa-solid fa-calendar-plus mb-3 block text-2xl"></i>เพิ่มวันว่าง</a>

@@ -2,7 +2,7 @@
 require_once __DIR__ . '/includes/functions.php';
 ensure_service_categories_deleted_at_column();
 
-$homeData = cache_remember('home_page_public_data_v4', 120, function () {
+$homeData = cache_remember('home_page_public_data_v5', 120, function () {
     $completedJoin = 'LEFT JOIN (
                               SELECT photographer_id, COUNT(*) AS completed_total
                               FROM bookings
@@ -79,6 +79,11 @@ $homeData = cache_remember('home_page_public_data_v4', 120, function () {
                                    WHERE r.status = "visible" AND r.deleted_at IS NULL
                                    ORDER BY r.created_at DESC
                                    LIMIT 6'),
+        'banners' => db_fetch_all('SELECT *
+                                   FROM banners
+                                   WHERE is_active = 1
+                                   ORDER BY sort_order, id DESC
+                                   LIMIT 6'),
         'stats' => [
             'photographers' => db_fetch_value('SELECT COUNT(*) FROM photographer_profiles p JOIN users u ON u.id = p.user_id WHERE p.approval_status = "approved" AND p.is_available = 1 AND p.deleted_at IS NULL AND u.status = "active" AND u.deleted_at IS NULL'),
             'reviews' => db_fetch_value('SELECT COUNT(*) FROM reviews WHERE status = "visible" AND deleted_at IS NULL'),
@@ -98,7 +103,39 @@ $portfolioShowcase = $homeData['portfolioShowcase'];
 $articles = $homeData['articles'];
 $homeFaqs = $homeData['homeFaqs'];
 $reviews = $homeData['reviews'];
+$banners = $homeData['banners'];
 $stats = $homeData['stats'];
+
+$heroBanner = null;
+if (!empty($banners)) {
+    $heroBanner = $banners[0];
+}
+
+$heroTitle = 'ค้นหาช่างภาพมืออาชีพในจังหวัดเชียงราย';
+$heroSubtitle = 'เลือกดูตัวอย่างงานถ่ายภาพจริง ตรวจวันว่าง ส่งคำขอจอง และติดต่อช่างภาพโดยตรง ไม่มีระบบรับชำระเงินในเว็บไซต์';
+$heroButtonText = 'ค้นหาช่างภาพ';
+$heroButtonUrl = '/photographers.php';
+$heroBackground = '/assets/uploads/seed/photo-1511285560929-80b456fea0bc.jpg';
+
+if ($heroBanner) {
+    if (trim((string)$heroBanner['title']) !== '') {
+        $heroTitle = (string)$heroBanner['title'];
+    }
+
+    if (trim((string)$heroBanner['subtitle']) !== '') {
+        $heroSubtitle = (string)$heroBanner['subtitle'];
+    }
+
+    if (trim((string)$heroBanner['button_text']) !== '') {
+        $heroButtonText = (string)$heroBanner['button_text'];
+    }
+
+    if (trim((string)$heroBanner['button_url']) !== '') {
+        $heroButtonUrl = (string)$heroBanner['button_url'];
+    }
+
+    $heroBackground = public_image($heroBanner['image_path'], $heroBackground);
+}
 
 $heroImages = [
     '/assets/uploads/seed/photo-1519741497674-611481863552.jpg',
@@ -169,7 +206,7 @@ include __DIR__ . '/includes/header.php';
 
 <section class="hero-frame relative bg-neutral-950 text-white">
     <div class="absolute inset-0">
-        <img class="h-full w-full object-cover opacity-45" src="/assets/uploads/seed/photo-1511285560929-80b456fea0bc.jpg" alt="">
+        <img class="h-full w-full object-cover opacity-45" src="<?= h($heroBackground) ?>" alt="">
         <div class="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(226,27,45,.38),transparent_28rem),linear-gradient(110deg,rgba(0,0,0,.92),rgba(0,0,0,.62)_48%,rgba(0,0,0,.28))]"></div>
     </div>
     <div class="relative stock-shell grid min-h-[calc(100vh-5rem)] gap-12 px-4 py-16 sm:px-6 lg:grid-cols-[1.05fr_.95fr] lg:items-center lg:px-8">
@@ -177,7 +214,8 @@ include __DIR__ . '/includes/header.php';
             <div class="inline-flex rounded-full bg-white/12 px-4 py-2 text-xs font-black uppercase tracking-[0.22em] text-white/78 backdrop-blur">
                 Chiang Rai Photographer Marketplace
             </div>
-            <h1 class="mt-6 max-w-4xl text-4xl font-black leading-tight tracking-tight sm:text-6xl lg:text-7xl">ค้นหาช่างภาพมืออาชีพในจังหวัดเชียงราย</h1>
+            <h1 class="mt-6 max-w-4xl text-4xl font-black leading-tight tracking-tight sm:text-6xl lg:text-7xl"><?= h($heroTitle) ?></h1>
+            <p class="mt-5 max-w-3xl text-lg font-semibold leading-9 text-white/78"><?= h($heroSubtitle) ?></p>
 
             <form action="/photographers.php" class="hero-search-form glass-panel mt-9 grid gap-3 rounded-[2rem] p-3 text-neutral-950 lg:grid-cols-[1fr_1fr_minmax(330px,1.15fr)_auto]">
                 <select name="district_id" class="stock-input rounded-[1.4rem] px-5 py-4 font-bold">
@@ -197,8 +235,13 @@ include __DIR__ . '/includes/header.php';
             </form>
             <div class="mt-5 max-w-3xl rounded-[1.5rem] border border-white/12 bg-black/28 px-5 py-4 text-base font-semibold leading-8 text-white/80 backdrop-blur">
                 <i class="fa-solid fa-circle-info mr-2 text-red-300"></i>
-                เลือกดูตัวอย่างงานถ่ายภาพจริง ตรวจวันว่าง ส่งคำขอจอง และติดต่อช่างภาพโดยตรง ไม่มีระบบรับชำระเงินในเว็บไซต์
+                เว็บไซต์เป็นเพียงตัวกลางค้นหา ส่งคำขอจอง และติดต่อช่างภาพ การตกลงราคาและชำระเงินทำกับช่างภาพโดยตรง
             </div>
+            <?php if ($heroButtonText !== '' && $heroButtonUrl !== ''): ?>
+                <a href="<?= h($heroButtonUrl) ?>" class="mt-5 inline-flex items-center rounded-full bg-white px-6 py-3 text-base font-black text-neutral-950 shadow-2xl transition hover:-translate-y-0.5 hover:bg-red-600 hover:text-white">
+                    <i class="fa-solid fa-arrow-right mr-2"></i><?= h($heroButtonText) ?>
+                </a>
+            <?php endif; ?>
 
             <div class="relative z-10 mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
                 <div class="stat-pill rounded-3xl p-4">
@@ -247,6 +290,56 @@ include __DIR__ . '/includes/header.php';
         </div>
     </div>
 </section>
+
+<?php if ($banners): ?>
+    <section class="stock-shell px-4 py-12 sm:px-6 lg:px-8">
+        <div class="flex flex-wrap items-end justify-between gap-5">
+            <div>
+                <p class="section-kicker">
+                    <i class="fa-solid fa-images mr-2"></i>แบนเนอร์จากผู้ดูแลระบบ
+                </p>
+                <h2 class="mt-2 text-3xl font-black tracking-tight text-neutral-950">ข่าวโปรโมตและทางลัดสำคัญ</h2>
+                <p class="mt-2 text-base font-semibold leading-7 text-neutral-600">ข้อมูลส่วนนี้ดึงจากเมนูผู้ดูแลระบบ &gt; แบนเนอร์ และแสดงตามข้อความปุ่มที่ตั้งไว้</p>
+            </div>
+        </div>
+
+        <div class="mt-8 grid gap-5 lg:grid-cols-3">
+            <?php foreach ($banners as $banner): ?>
+                <?php
+                $bannerImage = public_image($banner['image_path'], '/assets/uploads/seed/photo-1511285560929-80b456fea0bc.jpg');
+                $bannerButtonText = trim((string)$banner['button_text']);
+                $bannerButtonUrl = trim((string)$banner['button_url']);
+                ?>
+                <article class="stock-card overflow-hidden rounded-[1.75rem]">
+                    <div class="relative h-56 bg-neutral-950">
+                        <img class="h-full w-full object-cover opacity-76" loading="lazy" decoding="async" src="<?= h($bannerImage) ?>" alt="">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent"></div>
+                        <div class="absolute bottom-0 left-0 right-0 p-5 text-white">
+                            <h3 class="text-2xl font-black leading-tight"><?= h($banner['title']) ?></h3>
+                            <?php if (trim((string)$banner['subtitle']) !== ''): ?>
+                                <p class="mt-2 line-clamp-2 text-sm font-semibold leading-6 text-white/72"><?= h($banner['subtitle']) ?></p>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between gap-3 p-5">
+                        <div class="text-sm font-bold text-neutral-500">
+                            <i class="fa-solid fa-arrow-down-1-9 mr-1 text-red-600"></i>ลำดับ <?= (int)$banner['sort_order'] ?>
+                        </div>
+                        <?php if ($bannerButtonText !== '' && $bannerButtonUrl !== ''): ?>
+                            <a href="<?= h($bannerButtonUrl) ?>" class="btn-primary btn-sm">
+                                <i class="fa-solid fa-arrow-right"></i><?= h($bannerButtonText) ?>
+                            </a>
+                        <?php else: ?>
+                            <span class="rounded-full bg-neutral-100 px-4 py-2 text-sm font-black text-neutral-500">
+                                <i class="fa-solid fa-circle-info mr-1"></i>ไม่มีปุ่ม
+                            </span>
+                        <?php endif; ?>
+                    </div>
+                </article>
+            <?php endforeach; ?>
+        </div>
+    </section>
+<?php endif; ?>
 
 <section class="stock-shell px-4 py-16 sm:px-6 lg:px-8">
     <div class="flex flex-wrap items-end justify-between gap-5">

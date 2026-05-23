@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/../includes/functions.php';
-requireRole('customer');
+requireRole(['customer', 'photographer']);
 $user = current_user();
 $cleanContext = clean_context_init(['booking_id']);
 $bookingId = (int)clean_context_value($cleanContext, 'booking_id', ($_POST['booking_id'] ?? 0));

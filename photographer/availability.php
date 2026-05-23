@@ -7,41 +7,142 @@ $pid = (int)$profile['id'];
 $timeSlots = ['morning' => 'เช้า', 'afternoon' => 'บ่าย', 'evening' => 'เย็น', 'full_day' => 'เต็มวัน'];
 $statuses = ['available', 'unavailable'];
 
+function photographer_availability_row(int $id, int $photographerId): ?array
+{
+    $stmt = db()->prepare('SELECT * FROM photographer_availability WHERE id = ? AND photographer_id = ? LIMIT 1');
+    $stmt->execute([$id, $photographerId]);
+    $row = $stmt->fetch();
+
+    if (!$row) {
+        return null;
+    }
+
+    return $row;
+}
+
+function photographer_availability_has_active_booking(array $row): bool
+{
+    $stmt = db()->prepare('SELECT COUNT(*)
+                           FROM bookings
+                           WHERE photographer_id = ?
+                             AND booking_date = ?
+                             AND status IN ("pending", "accepted", "confirmed")
+                             AND deleted_at IS NULL
+                             AND (time_slot = ? OR time_slot = "full_day" OR ? = "full_day")');
+    $stmt->execute([
+        (int)$row['photographer_id'],
+        (string)$row['available_date'],
+        (string)$row['time_slot'],
+        (string)$row['time_slot'],
+    ]);
+
+    return (int)$stmt->fetchColumn() > 0;
+}
+
+function validate_availability_payload(array $timeSlots, array $statuses): array
+{
+    $availableDate = parse_be_date_to_iso((string)($_POST['available_date'] ?? ''));
+    $timeSlot = (string)($_POST['time_slot'] ?? '');
+    $status = (string)($_POST['status'] ?? 'available');
+    $note = trim((string)($_POST['note'] ?? ''));
+
+    if ($availableDate === '') {
+        flash('error', 'รูปแบบวันที่ไม่ถูกต้อง กรุณากรอกแบบ วว/ดด/พ.ศ.');
+        redirect('/photographer/availability.php');
+    }
+
+    if ($availableDate < date('Y-m-d')) {
+        flash('error', 'ไม่สามารถป้อนวันย้อนหลังได้');
+        redirect('/photographer/availability.php');
+    }
+
+    if (!array_key_exists($timeSlot, $timeSlots)) {
+        flash('error', 'ช่วงเวลาไม่ถูกต้อง');
+        redirect('/photographer/availability.php');
+    }
+
+    if (!in_array($status, $statuses, true)) {
+        flash('error', 'สถานะไม่ถูกต้อง');
+        redirect('/photographer/availability.php');
+    }
+
+    return [$availableDate, $timeSlot, $status, $note];
+}
+
 if (is_post()) {
     verify_csrf();
 
     $action = (string)($_POST['action'] ?? '');
 
-    if ($action === 'delete') {
+    if ($action === 'hide') {
         $id = (int)($_POST['id'] ?? 0);
+        $row = photographer_availability_row($id, $pid);
+
+        if (!$row) {
+            flash('error', 'ไม่พบรายการวันว่างที่ต้องการซ่อน');
+            redirect('/photographer/availability.php');
+        }
+
+        if (photographer_availability_has_active_booking($row)) {
+            flash('error', 'รายการนี้มีคำขอจองที่ยังดำเนินการอยู่ จึงซ่อนไม่ได้');
+            redirect('/photographer/availability.php');
+        }
+
         $stmt = db()->prepare('UPDATE photographer_availability SET status = "unavailable", updated_at = NOW() WHERE id = ? AND photographer_id = ?');
         $stmt->execute([$id, $pid]);
         flash('success', 'ซ่อนวันว่างจากหน้าจองแล้ว ข้อมูลเดิมยังอยู่');
+    } elseif ($action === 'delete') {
+        $id = (int)($_POST['id'] ?? 0);
+        $row = photographer_availability_row($id, $pid);
+
+        if (!$row) {
+            flash('error', 'ไม่พบรายการวันว่างที่ต้องการลบ');
+            redirect('/photographer/availability.php');
+        }
+
+        if (photographer_availability_has_active_booking($row)) {
+            flash('error', 'รายการนี้มีคำขอจองที่ยังดำเนินการอยู่ จึงลบไม่ได้');
+            redirect('/photographer/availability.php');
+        }
+
+        $stmt = db()->prepare('DELETE FROM photographer_availability WHERE id = ? AND photographer_id = ? AND status <> "booked"');
+        $stmt->execute([$id, $pid]);
+        flash('success', 'ลบรายการวันว่างแล้ว');
+    } elseif ($action === 'update') {
+        $id = (int)($_POST['id'] ?? 0);
+        $row = photographer_availability_row($id, $pid);
+
+        if (!$row) {
+            flash('error', 'ไม่พบรายการวันว่างที่ต้องการแก้ไข');
+            redirect('/photographer/availability.php');
+        }
+
+        if (photographer_availability_has_active_booking($row)) {
+            flash('error', 'รายการนี้มีคำขอจองที่ยังดำเนินการอยู่ จึงแก้ไขไม่ได้');
+            redirect('/photographer/availability.php');
+        }
+
+        [$availableDate, $timeSlot, $status, $note] = validate_availability_payload($timeSlots, $statuses);
+        $duplicateId = db_fetch_value('SELECT id
+                                       FROM photographer_availability
+                                       WHERE photographer_id = ?
+                                         AND available_date = ?
+                                         AND time_slot = ?
+                                         AND id <> ?
+                                       LIMIT 1', [$pid, $availableDate, $timeSlot, $id]);
+
+        if ($duplicateId !== false) {
+            flash('error', 'มีวันและช่วงเวลานี้อยู่แล้ว กรุณาแก้รายการเดิมแทน');
+            redirect('/photographer/availability.php');
+        }
+
+        $stmt = db()->prepare('UPDATE photographer_availability
+                               SET available_date = ?, time_slot = ?, status = ?, note = ?, updated_at = NOW()
+                               WHERE id = ? AND photographer_id = ? AND status <> "booked"');
+        $stmt->execute([$availableDate, $timeSlot, $status, $note, $id, $pid]);
+        flash('success', 'แก้ไขวันว่างแล้ว');
     } else {
-        $availableDate = parse_be_date_to_iso((string)($_POST['available_date'] ?? ''));
-        $timeSlot = (string)($_POST['time_slot'] ?? '');
-        $status = (string)($_POST['status'] ?? 'available');
-        $note = trim((string)($_POST['note'] ?? ''));
-
-        if ($availableDate === '') {
-            flash('error', 'รูปแบบวันที่ไม่ถูกต้อง กรุณากรอกแบบ วว/ดด/พ.ศ.');
-            redirect('/photographer/availability.php');
-        }
-
-        if ($availableDate < date('Y-m-d')) {
-            flash('error', 'ไม่สามารถป้อนวันย้อนหลังได้');
-            redirect('/photographer/availability.php');
-        }
-
-        if (!array_key_exists($timeSlot, $timeSlots)) {
-            flash('error', 'ช่วงเวลาไม่ถูกต้อง');
-            redirect('/photographer/availability.php');
-        }
-
-        if (!in_array($status, $statuses, true)) {
-            flash('error', 'สถานะไม่ถูกต้อง');
-            redirect('/photographer/availability.php');
-        }
+        [$availableDate, $timeSlot, $status, $note] = validate_availability_payload($timeSlots, $statuses);
 
         $stmt = db()->prepare('INSERT INTO photographer_availability (photographer_id, available_date, time_slot, status, note, created_at, updated_at)
                                VALUES (?, ?, ?, ?, ?, NOW(), NOW())

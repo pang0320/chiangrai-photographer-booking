@@ -592,6 +592,24 @@ function notification_target_url(array $notification, array $user): string
             return '/customer/booking_detail.php?id=' . $relatedId;
         }
         if ($role === 'photographer') {
+            $bookingRole = request_cache_remember('notification_booking_role:' . (int)$user['id'] . ':' . $relatedId, function () use ($user, $relatedId) {
+                $stmt = db()->prepare('SELECT b.customer_id, p.user_id AS photographer_user_id
+                                       FROM bookings b
+                                       JOIN photographer_profiles p ON p.id = b.photographer_id
+                                       WHERE b.id = ?
+                                       LIMIT 1');
+                $stmt->execute([$relatedId]);
+                return $stmt->fetch();
+            });
+
+            if ($bookingRole && (int)$bookingRole['customer_id'] === (int)$user['id']) {
+                return '/customer/booking_detail.php?id=' . $relatedId;
+            }
+
+            if ($bookingRole && (int)$bookingRole['photographer_user_id'] === (int)$user['id']) {
+                return '/photographer/booking_detail.php?id=' . $relatedId;
+            }
+
             return '/photographer/booking_detail.php?id=' . $relatedId;
         }
         if ($role === 'admin') {

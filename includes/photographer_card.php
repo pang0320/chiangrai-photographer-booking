@@ -69,6 +69,15 @@ if (isset($p['is_featured'])) {
     $cardIsFeatured = (int)$p['is_featured'] === 1;
 }
 
+$cardCurrentUser = current_user();
+$cardIsOwnPhotographerProfile = false;
+if ($cardCurrentUser && (string)$cardCurrentUser['role_name'] === 'photographer') {
+    $cardOwnPhotographerId = photographer_id_for_user((int)$cardCurrentUser['id']);
+    if ($cardOwnPhotographerId > 0 && $cardOwnPhotographerId === $cardId) {
+        $cardIsOwnPhotographerProfile = true;
+    }
+}
+
 $cardFormId = 'photographer-card-link-' . $cardId . '-' . substr(md5(uniqid('', true)), 0, 8);
 ?>
 <article class="stock-card stock-card-hover flex h-full flex-col overflow-hidden rounded-[1.75rem]" data-clickable-card data-card-form="<?= h($cardFormId) ?>" tabindex="0" role="link" aria-label="ดูโปรไฟล์ <?= h($cardName) ?>">
@@ -101,7 +110,13 @@ $cardFormId = 'photographer-card-link-' . $cardId . '-' . substr(md5(uniqid('', 
         <div class="mt-auto grid auto-rows-fr gap-3 pt-5 sm:grid-cols-2">
             <?= clean_context_button('/photographer_detail.php', $cardDetailParams, '<i class="fa-solid fa-eye mr-1"></i>ดูโปรไฟล์', 'btn-primary btn-sm min-h-[44px] w-full whitespace-nowrap text-center', 'contents') ?>
             <?= clean_context_button('/compare.php', ['ids' => $cardId], '<i class="fa-solid fa-code-compare mr-1"></i>เปรียบเทียบ', 'btn-muted btn-sm min-h-[44px] w-full whitespace-nowrap text-center', 'contents') ?>
-            <?= clean_context_button('/customer/create_booking.php', ['photographer_id' => $cardId], '<i class="fa-solid fa-calendar-check mr-1"></i>จอง', 'btn-cta btn-sm min-h-[44px] w-full whitespace-nowrap text-center sm:col-span-2', 'contents') ?>
+            <?php if ($cardIsOwnPhotographerProfile): ?>
+                <span class="btn-muted btn-sm min-h-[44px] w-full whitespace-nowrap text-center sm:col-span-2">
+                    <i class="fa-solid fa-user-check mr-1"></i>โปรไฟล์ของฉัน
+                </span>
+            <?php else: ?>
+                <?= clean_context_button('/customer/create_booking.php', ['photographer_id' => $cardId], '<i class="fa-solid fa-calendar-check mr-1"></i>จอง', 'btn-cta btn-sm min-h-[44px] w-full whitespace-nowrap text-center sm:col-span-2', 'contents') ?>
+            <?php endif; ?>
         </div>
     </div>
 </article>

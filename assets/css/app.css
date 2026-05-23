@@ -1070,6 +1070,18 @@ body {
     }
 }
 
+@media (min-width: 1280px) {
+    .photographer-detail-portfolio-gallery {
+        columns: 4;
+    }
+}
+
+@media (min-width: 1536px) {
+    .photographer-detail-portfolio-gallery {
+        columns: 5;
+    }
+}
+
 .timeline-dot {
     position: relative;
 }

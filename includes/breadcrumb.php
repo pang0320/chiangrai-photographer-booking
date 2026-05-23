@@ -37,6 +37,11 @@ $breadcrumbLabels = [
     'service_areas.php' => 'พื้นที่ให้บริการ',
     'notifications.php' => 'แจ้งเตือน',
 ];
+$breadcrumbLinks = [
+    '/admin' => '/admin/dashboard.php',
+    '/customer' => '/customer/dashboard.php',
+    '/photographer' => '/photographer/dashboard.php',
+];
 
 if ($breadcrumbPath !== '/' && $breadcrumbPath !== '/index.php'):
     $parts = array_values(array_filter(explode('/', trim($breadcrumbPath, '/'))));
@@ -55,7 +60,7 @@ if ($breadcrumbPath !== '/' && $breadcrumbPath !== '/index.php'):
                 }
                 ?>
                 <span class="text-neutral-300">/</span>
-                <a href="<?= h($runningPath) ?>" class="hover:text-red-600"><?= h($label) ?></a>
+                <a href="<?= h($breadcrumbLinks[$runningPath] ?? $runningPath) ?>" class="hover:text-red-600"><?= h($label) ?></a>
             <?php endforeach; ?>
         </nav>
     </div>

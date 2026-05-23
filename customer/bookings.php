@@ -1,8 +1,9 @@
 <?php
 require_once __DIR__ . '/../includes/functions.php';
-requireRole('customer');
+requireRole(['customer', 'photographer']);
 
 $user = current_user();
+$isPhotographerHiring = (string)$user['role_name'] === 'photographer';
 $cleanContext = clean_context_init(['tab']);
 $tab = (string)clean_context_value($cleanContext, 'tab', 'active');
 $allowedTabs = ['all', 'active', 'pending', 'accepted', 'completed'];
@@ -63,14 +64,29 @@ if ($countRow) {
 }
 
 $pageTitle = 'รายการจองของฉัน';
+if ($isPhotographerHiring) {
+    $pageTitle = 'งานที่ฉันจ้าง';
+}
 include __DIR__ . '/../includes/header.php';
 ?>
 
 <section class="px-4 py-8 sm:px-6 lg:px-8">
     <div>
-        <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">พื้นที่ลูกค้า</p>
-        <h1 class="mt-1 text-3xl font-black text-neutral-950">ประวัติการจอง</h1>
-        <p class="mt-2 text-sm font-bold text-neutral-500">แยกดูงานที่กำลังดำเนินการและงานที่เสร็จสิ้นแล้วได้ชัดเจน</p>
+        <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">
+            <?php if ($isPhotographerHiring): ?>
+                <i class="fa-solid fa-camera-retro mr-2"></i>บัญชีช่างภาพในฐานะผู้จ้าง
+            <?php else: ?>
+                <i class="fa-solid fa-user mr-2"></i>พื้นที่ลูกค้า
+            <?php endif; ?>
+        </p>
+        <h1 class="mt-1 text-3xl font-black text-neutral-950"><?= $isPhotographerHiring ? 'งานที่ฉันจ้าง' : 'ประวัติการจอง' ?></h1>
+        <p class="mt-2 text-sm font-bold text-neutral-500">
+            <?php if ($isPhotographerHiring): ?>
+                รายการนี้คือคำขอจองที่คุณส่งไปหาช่างภาพคนอื่น ไม่รวมคำขอจองที่ลูกค้าส่งมาหาคุณ
+            <?php else: ?>
+                แยกดูงานที่กำลังดำเนินการและงานที่เสร็จสิ้นแล้วได้ชัดเจน
+            <?php endif; ?>
+        </p>
     </div>
 
     <?php

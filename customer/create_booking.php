@@ -2,7 +2,7 @@
 require_once __DIR__ . '/../includes/functions.php';
 ensure_service_categories_deleted_at_column();
 $cleanContext = clean_context_init(['photographer_id', 'booking_date', 'time_slot']);
-requireRole('customer');
+requireRole(['customer', 'photographer']);
 $user = current_user();
 $photographerId = (int)clean_context_value($cleanContext, 'photographer_id', ($_POST['photographer_id'] ?? 0));
 $selectedBookingDate = parse_be_date_to_iso((string)clean_context_value($cleanContext, 'booking_date', ''));
@@ -23,6 +23,11 @@ $stmt = db()->prepare('SELECT p.*, u.id AS photographer_user_id
 $stmt->execute([$photographerId]);
 $profile = $stmt->fetch();
 if (!$profile) exit('ช่างภาพไม่พร้อมรับจอง');
+
+if ($user && (string)$user['role_name'] === 'photographer' && (int)$profile['photographer_user_id'] === (int)$user['id']) {
+    flash('warning', 'ไม่สามารถส่งคำขอจองให้โปรไฟล์ช่างภาพของตัวเองได้');
+    clean_redirect('/photographers.php', []);
+}
 
 $categories = db()->prepare('SELECT sc.* FROM photographer_services ps JOIN service_categories sc ON sc.id=ps.category_id WHERE ps.photographer_id=? AND ps.is_active=1 AND sc.is_active=1 AND sc.deleted_at IS NULL ORDER BY sc.sort_order');
 $categories->execute([$photographerId]);
@@ -118,6 +123,11 @@ if (is_post()) {
     clean_redirect('/customer/booking_detail.php', ['id' => $bookingId]);
 }
 
+$bookingActorLabel = 'ลูกค้า';
+if ($user && (string)$user['role_name'] === 'photographer') {
+    $bookingActorLabel = 'ช่างภาพผู้จ้าง';
+}
+
 $pageTitle = 'ส่งคำขอจอง';
 include __DIR__ . '/../includes/header.php';
 ?>
@@ -131,6 +141,9 @@ include __DIR__ . '/../includes/header.php';
                 <h1 class="mt-2 text-3xl font-black md:text-4xl">ส่งคำขอจองช่างภาพ</h1>
                 <p class="mt-3 max-w-3xl text-base font-semibold leading-8 text-white/75 md:text-lg">
                     กรอกข้อมูลสำคัญให้ครบใน 5 ส่วน เพื่อให้ช่างภาพประเมินงานและตอบกลับได้เร็วขึ้น
+                    <?php if ($bookingActorLabel === 'ช่างภาพผู้จ้าง'): ?>
+                        บัญชีช่างภาพสามารถส่งคำขอจองช่างภาพคนอื่นได้เหมือนลูกค้า
+                    <?php endif; ?>
                 </p>
             </div>
             <div class="rounded-[1.75rem] bg-white/12 p-5 backdrop-blur">
@@ -244,6 +257,7 @@ include __DIR__ . '/../includes/header.php';
             <section class="stock-card rounded-[1.75rem] p-6">
                 <p class="section-kicker"><i class="fa-solid fa-address-book mr-2"></i>ช่องทางติดต่อ</p>
                 <h2 class="mt-1 text-2xl font-black text-neutral-950">ข้อมูลสำหรับให้ช่างภาพติดต่อกลับ</h2>
+                <p class="mt-2 text-base font-semibold leading-7 text-neutral-600">ผู้ส่งคำขอนี้คือ <?= h($bookingActorLabel) ?> ระบบจะบันทึกคำขอนี้ในเมนูงานที่ฉันจ้าง</p>
                 <div class="mt-5 grid gap-4 sm:grid-cols-2">
                     <label class="block">
                         <span class="text-sm font-black text-neutral-700"><i class="fa-solid fa-user mr-2 text-red-600"></i>ชื่อผู้ติดต่อ</span>

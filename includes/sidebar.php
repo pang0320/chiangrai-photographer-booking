@@ -64,6 +64,7 @@ if ($me) {
             ['/photographer/portfolio.php', 'ตัวอย่างงาน', 'fa-images'],
             ['/photographer/availability.php', 'วันว่าง', 'fa-calendar'],
             ['/photographer/bookings.php', 'คำขอจอง', 'fa-calendar-check', $pendingBookings > 0 ? $pendingBookings : $activeBookings],
+            ['/customer/bookings.php', 'งานที่ฉันจ้าง', 'fa-briefcase'],
             ['/photographer/articles.php', 'บทความ', 'fa-newspaper'],
             ['/photographer/reviews.php', 'รีวิว', 'fa-star'],
             ['/notifications.php', 'แจ้งเตือน', 'fa-bell', $unreadNotifications],
@@ -75,13 +76,13 @@ if ($me) {
         $roleIcon = 'fa-user';
         $navItems = [
             ['/customer/dashboard.php', 'แดชบอร์ด', 'fa-gauge'],
+            ['/customer/profile.php', 'ตั้งค่าโปรไฟล์', 'fa-id-card'],
             ['/customer/photographers.php', 'ค้นหาช่างภาพ', 'fa-magnifying-glass'],
             ['/customer/bookings.php', 'รายการจองของฉัน', 'fa-calendar-check'],
             ['/customer/reviews.php', 'รีวิวของฉัน', 'fa-star'],
             ['/customer/reports.php', 'รายงานปัญหาของฉัน', 'fa-shield-halved'],
             ['/customer/favorites.php', 'รายการโปรด', 'fa-heart'],
             ['/customer/recently_viewed.php', 'ช่างภาพที่เคยดู', 'fa-clock-rotate-left'],
-            ['/customer/profile.php', 'โปรไฟล์', 'fa-id-card'],
             ['/notifications.php', 'แจ้งเตือน', 'fa-bell'],
         ];
     }

@@ -25,7 +25,7 @@ if (is_post()) {
         $stmt->execute([$nextStatus, $id]);
 
         if ($nextStatus === 1) {
-            flash('success', 'เปิดใช้งานอำเภอแล้ว หน้าค้นหาจะเห็นอำเภอนี้ทันที');
+            flash('success', 'เปิดใช้งานอำเภอแล้ว');
         } else {
             flash('success', 'ปิดการใช้งานอำเภอแล้ว');
         }

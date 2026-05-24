@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/includes/functions.php';
 ensure_tags_status_column();
+ensure_photographer_articles_excerpt_column();
 
 $context = clean_context_init(['source', 'q', 'category', 'page']);
 $currentUser = current_user();
@@ -47,7 +48,7 @@ $baseSql = 'FROM (
         a.title,
         a.slug,
         a.cover_image,
-        LEFT(a.content, 240) AS excerpt,
+        COALESCE(NULLIF(a.excerpt, ""), LEFT(a.content, 240)) AS excerpt,
         a.content,
         p.display_name AS author_name,
         "ช่างภาพ" AS author_role,

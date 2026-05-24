@@ -107,6 +107,7 @@ $areas = db()->prepare('SELECT d.* FROM photographer_service_areas psa JOIN dist
 $areas->execute([$id]);
 $areas = $areas->fetchAll();
 ensure_tags_status_column();
+ensure_photographer_articles_excerpt_column();
 
 $services = db()->prepare('SELECT ps.*, sc.name, sc.icon FROM photographer_services ps JOIN service_categories sc ON sc.id = ps.category_id WHERE ps.photographer_id = ? AND ps.is_active = 1 AND sc.is_active = 1 AND sc.deleted_at IS NULL ORDER BY sc.sort_order');
 $services->execute([$id]);
@@ -147,6 +148,22 @@ $articles = $articles->fetchAll();
 $reviews = db()->prepare('SELECT r.*, u.name customer_name FROM reviews r JOIN users u ON u.id = r.customer_id WHERE r.photographer_id = ? AND r.status = "visible" AND r.deleted_at IS NULL ORDER BY r.created_at DESC');
 $reviews->execute([$id]);
 $reviews = $reviews->fetchAll();
+$reviewImages = [];
+$reviewIds = [];
+foreach ($reviews as $reviewRow) {
+    $reviewIds[] = (int)$reviewRow['id'];
+}
+if ($reviewIds) {
+    $placeholders = implode(',', array_fill(0, count($reviewIds), '?'));
+    $imageRows = db_fetch_all('SELECT review_id, image_path FROM review_images WHERE review_id IN (' . $placeholders . ') ORDER BY id ASC', $reviewIds);
+    foreach ($imageRows as $imageRow) {
+        $reviewId = (int)$imageRow['review_id'];
+        if (!isset($reviewImages[$reviewId])) {
+            $reviewImages[$reviewId] = [];
+        }
+        $reviewImages[$reviewId][] = (string)$imageRow['image_path'];
+    }
+}
 $completedJobs = db_fetch_value('SELECT COUNT(*) FROM bookings WHERE photographer_id = ? AND status = "completed" AND deleted_at IS NULL', [$id]);
 $favoriteCount = favorite_count($id);
 $isFavorite = false;
@@ -466,6 +483,12 @@ include __DIR__ . '/includes/header.php';
                 </div>
                 <div class="mt-6 grid gap-4">
                     <?php foreach ($reviews as $r): ?>
+                        <?php
+                        $currentReviewImages = [];
+                        if (isset($reviewImages[(int)$r['id']])) {
+                            $currentReviewImages = $reviewImages[(int)$r['id']];
+                        }
+                        ?>
                         <article class="stock-card rounded-[1.5rem] p-6">
                             <div class="flex flex-wrap items-center justify-between gap-3">
                                 <b class="text-neutral-950"><?= h($r['customer_name']) ?></b>
@@ -508,6 +531,23 @@ include __DIR__ . '/includes/header.php';
                                 </div>
                             </div>
                             <p class="mt-3 leading-7 text-neutral-700"><?= nl2br(h($r['comment'])) ?></p>
+                            <?php if ($currentReviewImages): ?>
+                                <div class="mt-5">
+                                    <p class="mb-3 text-sm font-black text-neutral-700">
+                                        <i class="fa-solid fa-images mr-2 text-red-600"></i>รูปภาพประกอบรีวิว
+                                    </p>
+                                    <div class="flex gap-3 overflow-x-auto pb-2 sm:grid sm:grid-cols-4 sm:overflow-visible">
+                                        <?php foreach ($currentReviewImages as $imagePath): ?>
+                                            <a href="<?= h(public_image($imagePath, '/assets/uploads/seed/photo-1516035069371-29a1b244cc32.jpg')) ?>" target="_blank" class="group relative h-28 w-36 shrink-0 overflow-hidden rounded-2xl bg-neutral-100 shadow-sm sm:h-32 sm:w-full">
+                                                <img src="<?= h(public_image($imagePath, '/assets/uploads/seed/photo-1516035069371-29a1b244cc32.jpg')) ?>" alt="รูปภาพประกอบรีวิว" class="h-full w-full object-cover transition duration-300 group-hover:scale-105">
+                                                <span class="absolute inset-0 grid place-items-center bg-neutral-950/0 text-white opacity-0 transition group-hover:bg-neutral-950/35 group-hover:opacity-100">
+                                                    <i class="fa-solid fa-up-right-and-down-left-from-center"></i>
+                                                </span>
+                                            </a>
+                                        <?php endforeach; ?>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
                         </article>
                     <?php endforeach; ?>
                     <?php if (!$reviews): ?>
@@ -538,7 +578,13 @@ include __DIR__ . '/includes/header.php';
                                     <?php endforeach; ?>
                                 </div>
                             <?php endif; ?>
-                            <p class="mt-3 line-clamp-3 text-sm leading-7 text-neutral-600"><?= h(strip_tags($a['content'])) ?></p>
+                            <?php
+                            $articleExcerpt = trim((string)($a['excerpt'] ?? ''));
+                            if ($articleExcerpt === '') {
+                                $articleExcerpt = strip_tags((string)$a['content']);
+                            }
+                            ?>
+                            <p class="mt-3 line-clamp-3 text-sm leading-7 text-neutral-600"><?= h($articleExcerpt) ?></p>
                             <?= clean_context_button('/article_detail.php', ['slug' => $a['slug']], '<i class="fa-solid fa-eye mr-1"></i>อ่านต่อ', 'mt-4 inline-flex rounded-full bg-neutral-950 px-4 py-2 text-xs font-black text-white hover:bg-red-600') ?>
                         </article>
                     <?php endforeach; ?>

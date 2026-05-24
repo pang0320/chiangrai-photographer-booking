@@ -6,6 +6,9 @@ USE chiangrai_photographer_booking;
 
 SET FOREIGN_KEY_CHECKS = 0;
 
+DROP VIEW IF EXISTS tag_usage;
+DROP VIEW IF EXISTS articles;
+
 DROP TABLE IF EXISTS review_images;
 DROP TABLE IF EXISTS blog_tags;
 DROP TABLE IF EXISTS article_tags;
@@ -26,7 +29,6 @@ DROP TABLE IF EXISTS photographer_portfolios;
 DROP TABLE IF EXISTS photographer_service_areas;
 DROP TABLE IF EXISTS photographer_services;
 DROP TABLE IF EXISTS photographer_articles;
-DROP TABLE IF EXISTS banners;
 DROP TABLE IF EXISTS notifications;
 DROP TABLE IF EXISTS activity_logs;
 DROP TABLE IF EXISTS login_attempts;
@@ -72,21 +74,36 @@ CREATE TABLE users (
 CREATE TABLE password_resets (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   email VARCHAR(190) NOT NULL,
+  user_id INT UNSIGNED NULL,
   token VARCHAR(128) NOT NULL,
   expires_at DATETIME NOT NULL,
+  requested_ip VARCHAR(64) NULL,
+  requested_user_agent VARCHAR(255) NULL,
+  used_at DATETIME NULL,
+  used_ip VARCHAR(64) NULL,
+  used_user_agent VARCHAR(255) NULL,
+  invalidated_at DATETIME NULL,
   created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_password_resets_user (user_id),
   KEY idx_password_resets_email (email),
+  KEY idx_password_resets_used (used_at),
+  KEY idx_password_resets_active (email, used_at, invalidated_at, expires_at),
   UNIQUE KEY uk_password_resets_token (token)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE login_attempts (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   email VARCHAR(190) NOT NULL,
+  user_id INT UNSIGNED NULL,
   ip_address VARCHAR(64) NOT NULL,
   success TINYINT(1) NOT NULL DEFAULT 0,
+  failure_reason VARCHAR(120) NULL,
   user_agent VARCHAR(255) NULL,
   attempted_at DATETIME NOT NULL,
+  cleared_at DATETIME NULL,
+  KEY idx_login_attempts_user (user_id),
   KEY idx_login_attempts_email_ip_time (email, ip_address, attempted_at),
+  KEY idx_login_attempts_block (email, ip_address, success, cleared_at, attempted_at),
   KEY idx_login_attempts_attempted_at (attempted_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -305,6 +322,7 @@ CREATE TABLE photographer_articles (
   title VARCHAR(220) NOT NULL,
   slug VARCHAR(240) NOT NULL,
   cover_image VARCHAR(255) NULL,
+  excerpt TEXT NULL,
   content MEDIUMTEXT NOT NULL,
   status ENUM('draft','published','hidden') NOT NULL DEFAULT 'draft',
   published_at DATETIME NULL,
@@ -343,20 +361,6 @@ CREATE TABLE activity_logs (
   KEY idx_activity_table (table_name, record_id),
   KEY idx_activity_created (created_at),
   CONSTRAINT fk_activity_user FOREIGN KEY (user_id) REFERENCES users(id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE banners (
-  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  title VARCHAR(180) NOT NULL,
-  subtitle VARCHAR(255) NULL,
-  image_path VARCHAR(255) NULL,
-  button_text VARCHAR(100) NULL,
-  button_url VARCHAR(255) NULL,
-  is_active TINYINT(1) NOT NULL DEFAULT 1,
-  sort_order INT NOT NULL DEFAULT 0,
-  created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  KEY idx_banners_active (is_active, sort_order)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE settings (
@@ -502,6 +506,53 @@ CREATE TABLE blog_tags (
   CONSTRAINT fk_blog_tags_blog FOREIGN KEY (blog_id) REFERENCES blogs(id),
   CONSTRAINT fk_blog_tags_tag FOREIGN KEY (tag_id) REFERENCES tags(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE VIEW articles AS
+SELECT
+  CONCAT('photographer:', pa.id) AS uid,
+  pa.id AS source_id,
+  'photographer_articles' AS source_table,
+  2 AS role_id,
+  pp.user_id AS author_user_id,
+  pa.photographer_id,
+  pa.title,
+  pa.slug,
+  pa.cover_image,
+  pa.excerpt,
+  pa.content,
+  pa.status,
+  pa.published_at,
+  pa.created_at,
+  pa.updated_at,
+  pa.deleted_at
+FROM photographer_articles pa
+JOIN photographer_profiles pp ON pp.id = pa.photographer_id
+UNION ALL
+SELECT
+  CONCAT('admin:', b.id) AS uid,
+  b.id AS source_id,
+  'blogs' AS source_table,
+  3 AS role_id,
+  b.admin_id AS author_user_id,
+  NULL AS photographer_id,
+  b.title,
+  b.slug,
+  b.cover_image,
+  b.excerpt,
+  b.content,
+  b.status,
+  b.published_at,
+  b.created_at,
+  b.updated_at,
+  b.deleted_at
+FROM blogs b;
+
+CREATE VIEW tag_usage AS
+SELECT 'photographer_article' AS target_type, article_id AS target_id, tag_id FROM article_tags
+UNION ALL
+SELECT 'blog' AS target_type, blog_id AS target_id, tag_id FROM blog_tags
+UNION ALL
+SELECT 'portfolio' AS target_type, portfolio_id AS target_id, tag_id FROM portfolio_tags;
 
 INSERT INTO roles (id, name, display_name) VALUES
 (1, 'customer', 'ลูกค้า'),

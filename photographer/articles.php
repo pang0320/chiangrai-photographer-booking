@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../includes/functions.php';
 requireRole('photographer');
+ensure_photographer_articles_excerpt_column();
 
 $profile = photographer_profile_by_user((int)current_user()['id']);
 if (!$profile) {
@@ -65,6 +66,7 @@ if (is_post()) {
         }
 
         $title = trim((string)($_POST['title'] ?? ''));
+        $excerpt = trim((string)($_POST['excerpt'] ?? ''));
         $status = (string)($_POST['status'] ?? 'draft');
         $content = trim((string)($_POST['content'] ?? ''));
         $contentFallback = trim((string)($_POST['content_fallback'] ?? ''));
@@ -115,19 +117,19 @@ if (is_post()) {
         if ($articleId > 0) {
             $slug = unique_slug('photographer_articles', $title, $articleId);
             $stmt = db()->prepare('UPDATE photographer_articles
-                                   SET title = ?, slug = ?, cover_image = ?, content = ?, status = ?,
+                                   SET title = ?, slug = ?, cover_image = ?, excerpt = ?, content = ?, status = ?,
                                        deleted_at = NULL,
                                        published_at = IF(? = "published", IFNULL(published_at, NOW()), published_at),
                                        updated_at = NOW()
                                    WHERE id = ? AND photographer_id = ?');
-            $stmt->execute([$title, $slug, $cover, $content, $status, $status, $articleId, $pid]);
+            $stmt->execute([$title, $slug, $cover, $excerpt, $content, $status, $status, $articleId, $pid]);
             sync_article_tag_relations('article_tags', 'article_id', $articleId, $tagIds);
             log_activity('manage_articles', 'photographer_articles', $articleId);
             flash('success', 'แก้ไขบทความแล้ว');
         } else {
-            $stmt = db()->prepare('INSERT INTO photographer_articles (photographer_id, title, slug, cover_image, content, status, published_at, created_at, updated_at)
-                                   VALUES (?, ?, ?, ?, ?, ?, IF(? = "published", NOW(), NULL), NOW(), NOW())');
-            $stmt->execute([$pid, $title, unique_slug('photographer_articles', $title), $cover, $content, $status, $status]);
+            $stmt = db()->prepare('INSERT INTO photographer_articles (photographer_id, title, slug, cover_image, excerpt, content, status, published_at, created_at, updated_at)
+                                   VALUES (?, ?, ?, ?, ?, ?, ?, IF(? = "published", NOW(), NULL), NOW(), NOW())');
+            $stmt->execute([$pid, $title, unique_slug('photographer_articles', $title), $cover, $excerpt, $content, $status, $status]);
             $articleId = (int)db()->lastInsertId();
             sync_article_tag_relations('article_tags', 'article_id', $articleId, $tagIds);
             log_activity('manage_articles', 'photographer_articles', $articleId);
@@ -240,6 +242,11 @@ include __DIR__ . '/../includes/header.php';
                 <span class="text-xs font-bold leading-6 text-neutral-500"><?= h(UPLOAD_IMAGE_HELP_TEXT) ?> <?php if ($editArticle && !empty($editArticle['cover_image'])): ?>ถ้าไม่เลือกไฟล์ใหม่ ระบบจะใช้รูปเดิม<?php endif; ?></span>
             </label>
 
+            <label class="grid gap-2 text-sm font-black text-neutral-700">
+                <span><i class="fa-solid fa-align-left mr-2 text-red-600"></i>คำโปรยบทความ</span>
+                <textarea name="excerpt" rows="2" maxlength="500" placeholder="สรุปสั้น ๆ ที่จะแสดงบนการ์ดบทความ" class="stock-input rounded-2xl px-4 py-3 font-semibold"><?php if ($editArticle): ?><?= h($editArticle['excerpt'] ?? '') ?><?php endif; ?></textarea>
+            </label>
+
             <div class="article-editor-panel">
                 <label class="mb-2 block text-sm font-black text-neutral-700"><i class="fa-solid fa-file-lines mr-2 text-red-600"></i>เนื้อหาบทความ</label>
                 <div class="article-editor-shell overflow-hidden rounded-[1.35rem] border border-neutral-200 bg-white">
@@ -343,7 +350,13 @@ include __DIR__ . '/../includes/header.php';
                             <?php endforeach; ?>
                         </div>
                     <?php endif; ?>
-                    <p class="mt-2 line-clamp-2 text-sm leading-7 text-neutral-600"><?= h(strip_tags($item['content'])) ?></p>
+                    <?php
+                    $itemExcerpt = trim((string)($item['excerpt'] ?? ''));
+                    if ($itemExcerpt === '') {
+                        $itemExcerpt = strip_tags((string)$item['content']);
+                    }
+                    ?>
+                    <p class="mt-2 line-clamp-2 text-sm leading-7 text-neutral-600"><?= h($itemExcerpt) ?></p>
                 </div>
 
                 <div class="flex flex-wrap gap-2">

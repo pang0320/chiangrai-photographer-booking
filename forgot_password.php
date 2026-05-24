@@ -64,11 +64,24 @@ if (is_post()) {
         $user = $stmt->fetch();
 
         if ($user) {
+            ensure_password_resets_audit_columns();
             $email = (string)$user['email'];
             $userId = (int)$user['id'];
             $token = bin2hex(random_bytes(32));
-            db()->prepare('DELETE FROM password_resets WHERE email = ?')->execute([$email]);
-            db()->prepare('INSERT INTO password_resets (email, token, expires_at, created_at) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 1 HOUR), NOW())')->execute([$email, $token]);
+            db()->prepare('UPDATE password_resets
+                           SET invalidated_at = NOW()
+                           WHERE email = ?
+                             AND used_at IS NULL
+                             AND invalidated_at IS NULL
+                             AND expires_at > NOW()')->execute([$email]);
+            db()->prepare('INSERT INTO password_resets (email, user_id, token, expires_at, requested_ip, requested_user_agent, created_at)
+                           VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL 1 HOUR), ?, ?, NOW())')->execute([
+                $email,
+                $userId,
+                $token,
+                client_ip(),
+                substr((string)($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 255),
+            ]);
             $resetUrl = password_reset_url($token);
 
             if (!send_password_reset_email($email, $resetUrl)) {

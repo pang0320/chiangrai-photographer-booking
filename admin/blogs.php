@@ -24,7 +24,7 @@ if (is_post()) {
         $stmt = db()->prepare('UPDATE blogs SET deleted_at = NOW(), updated_at = NOW() WHERE id = ?');
         $stmt->execute([$id]);
         log_activity('hide_blog', 'blogs', $id);
-        flash('success', 'ซ่อนบทความแล้ว ข้อมูลเดิมยังอยู่');
+        flash('success', 'ลบบทความออกจากรายการแล้ว ข้อมูลเดิมยังอยู่');
         clean_redirect('/admin/blogs.php', []);
     }
 
@@ -44,31 +44,60 @@ if (is_post()) {
         clean_redirect('/admin/blogs.php', []);
     }
 
+    $currentBlog = null;
+    $currentCover = '';
+    if ($id > 0) {
+        $stmt = db()->prepare('SELECT * FROM blogs WHERE id = ? AND deleted_at IS NULL LIMIT 1');
+        $stmt->execute([$id]);
+        $currentBlog = $stmt->fetch();
+        if ($currentBlog) {
+            $currentCover = (string)($currentBlog['cover_image'] ?? '');
+        } else {
+            flash('error', 'ไม่พบบทความที่ต้องการแก้ไข');
+            clean_redirect('/admin/blogs.php', []);
+        }
+    }
+
     $title = trim((string)($_POST['title'] ?? ''));
     $excerpt = trim((string)($_POST['excerpt'] ?? ''));
     $content = trim((string)($_POST['content'] ?? ''));
+    $contentFallback = trim((string)($_POST['content_fallback'] ?? ''));
     $status = (string)($_POST['status'] ?? 'draft');
     $tagIds = selected_article_tag_ids_from_post();
+
+    if ($content === '' && $contentFallback !== '') {
+        $fallbackParagraphs = [];
+        $fallbackLines = preg_split('/\R+/', $contentFallback);
+        if (!is_array($fallbackLines)) {
+            $fallbackLines = [$contentFallback];
+        }
+
+        foreach ($fallbackLines as $fallbackLine) {
+            $fallbackLine = trim((string)$fallbackLine);
+            if ($fallbackLine !== '') {
+                $fallbackParagraphs[] = '<p>' . h($fallbackLine) . '</p>';
+            }
+        }
+
+        $content = implode('', $fallbackParagraphs);
+    }
+
+    if ($content === '' && $currentBlog && !empty($currentBlog['content'])) {
+        $content = (string)$currentBlog['content'];
+    }
 
     if (!in_array($status, ['draft', 'published', 'hidden'], true)) {
         $status = 'draft';
     }
 
-    if ($title === '' || $content === '') {
+    $plainContent = trim(strip_tags($content));
+    if ($title === '' || $plainContent === '') {
         flash('error', 'กรุณากรอกหัวข้อและเนื้อหาบทความ');
-        clean_redirect('/admin/blogs.php', []);
-    }
-
-    $currentCover = '';
-    if ($id > 0) {
-        $currentCover = (string)db_fetch_value('SELECT cover_image FROM blogs WHERE id = ? LIMIT 1', [$id]);
+        clean_redirect('/admin/blogs.php', $id > 0 ? ['edit' => $id] : []);
     }
 
     try {
-        $coverImage = null;
-        if (isset($_FILES['cover_image'])) {
-            $coverImage = upload_image($_FILES['cover_image'], 'articles');
-        }
+        $coverImage = upload_image($_FILES['cover_image'] ?? [], 'articles');
         if (!$coverImage) {
             $coverImage = $currentCover;
         }
@@ -111,6 +140,10 @@ if ($editId > 0) {
     }
 }
 $tagSelectorHtml = article_tag_selector_html($editTagIds);
+$editStatus = '';
+if ($editBlog) {
+    $editStatus = (string)$editBlog['status'];
+}
 
 $q = trim((string)clean_context_value($cleanContext, 'q', ''));
 $statusFilter = (string)clean_context_value($cleanContext, 'status', '');
@@ -140,6 +173,8 @@ $pageTitle = 'จัดการบทความเว็บ';
 include __DIR__ . '/../includes/header.php';
 ?>
 
+<link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
+
 <section class="px-4 py-8 sm:px-6 lg:px-8">
     <div class="flex flex-wrap items-end justify-between gap-4">
         <div>
@@ -150,45 +185,79 @@ include __DIR__ . '/../includes/header.php';
         <a href="/blog.php" target="_blank" class="rounded-full border border-neutral-200 px-5 py-3 text-sm font-black hover:bg-neutral-950 hover:text-white"><i class="fa-solid fa-eye mr-2"></i>ดูหน้าบทความ</a>
     </div>
 
-    <form method="post" enctype="multipart/form-data" class="stock-card mt-6 grid gap-4 rounded-[1.75rem] p-6">
+    <form id="article-form" method="post" enctype="multipart/form-data" class="mt-6 grid gap-6">
         <?= csrf_field() ?>
+        <input type="hidden" name="action" value="save">
         <input type="hidden" name="id" value="<?php if ($editBlog): ?><?= (int)$editBlog['id'] ?><?php endif; ?>">
-        <div class="grid gap-4 lg:grid-cols-3">
-            <label class="grid gap-2 text-sm font-black text-neutral-700 lg:col-span-2">
-                <span><i class="fa-solid fa-heading mr-1 text-red-600"></i>หัวข้อ</span>
-                <input name="title" required value="<?php if ($editBlog): ?><?= h($editBlog['title']) ?><?php endif; ?>" class="stock-input rounded-2xl px-4 py-3 font-semibold">
-            </label>
+        <input id="article-content" type="hidden" name="content" value="<?php if ($editBlog): ?><?= h($editBlog['content']) ?><?php endif; ?>">
+
+        <div class="stock-card grid gap-4 rounded-[1.75rem] p-6">
+            <div class="flex flex-wrap items-end justify-between gap-3">
+                <div>
+                    <p class="section-kicker"><i class="fa-solid fa-pen-to-square mr-2"></i><?= $editBlog ? 'แก้ไขบทความเว็บ' : 'เพิ่มบทความเว็บใหม่' ?></p>
+                    <h2 class="mt-1 text-2xl font-black text-neutral-950"><?= $editBlog ? h($editBlog['title']) : 'เขียนบทความใหม่' ?></h2>
+                    <p class="mt-2 text-sm font-bold leading-7 text-neutral-500">รูปแบบการลงบทความหน้านี้ใช้ชุดเดียวกับบทความของช่างภาพ เพื่อให้แก้ไขและเผยแพร่ได้เหมือนกัน</p>
+                </div>
+                <?php if ($editBlog): ?>
+                    <button type="submit" form="article-reset-form" class="btn-muted btn-md">
+                        <i class="fa-solid fa-plus mr-2"></i>เพิ่มบทความใหม่
+                    </button>
+                <?php endif; ?>
+            </div>
+
+            <input name="title" required value="<?php if ($editBlog): ?><?= h($editBlog['title']) ?><?php endif; ?>" placeholder="หัวข้อบทความ" class="stock-input rounded-2xl px-4 py-3 font-semibold">
+
             <label class="grid gap-2 text-sm font-black text-neutral-700">
-                <span><i class="fa-solid fa-signal mr-1 text-red-600"></i>สถานะ</span>
+                <span><i class="fa-solid fa-image mr-2 text-red-600"></i>รูปปกบทความ</span>
+                <input type="file" name="cover_image" accept="image/jpeg,image/png,image/webp" class="stock-input rounded-2xl px-4 py-3 font-semibold">
+                <span class="text-xs font-bold leading-6 text-neutral-500"><?= h(UPLOAD_IMAGE_HELP_TEXT) ?> <?php if ($editBlog && !empty($editBlog['cover_image'])): ?>ถ้าไม่เลือกไฟล์ใหม่ ระบบจะใช้รูปเดิม<?php endif; ?></span>
+            </label>
+
+            <label class="grid gap-2 text-sm font-black text-neutral-700">
+                <span><i class="fa-solid fa-align-left mr-2 text-red-600"></i>คำโปรยบทความ</span>
+                <textarea name="excerpt" rows="2" placeholder="สรุปสั้น ๆ ที่จะแสดงบนการ์ดบทความ" class="stock-input rounded-2xl px-4 py-3 font-semibold"><?php if ($editBlog): ?><?= h($editBlog['excerpt']) ?><?php endif; ?></textarea>
+            </label>
+
+            <div class="article-editor-panel">
+                <label class="mb-2 block text-sm font-black text-neutral-700"><i class="fa-solid fa-file-lines mr-2 text-red-600"></i>เนื้อหาบทความ</label>
+                <div class="article-editor-shell overflow-hidden rounded-[1.35rem] border border-neutral-200 bg-white">
+                    <div id="article-editor" class="hidden"></div>
+                    <textarea
+                        id="article-content-fallback"
+                        name="content_fallback"
+                        rows="10"
+                        placeholder="พิมพ์เนื้อหาบทความ"
+                        class="min-h-[280px] w-full resize-y border-0 bg-white px-4 py-4 text-base font-semibold leading-8 text-neutral-800 outline-none focus:ring-0"><?php if ($editBlog): ?><?= h(strip_tags((string)$editBlog['content'])) ?><?php endif; ?></textarea>
+                </div>
+                <p class="mt-2 text-xs font-bold leading-6 text-neutral-500">ถ้า editor แบบ Word โหลดไม่ขึ้น ระบบจะใช้ช่องพิมพ์สำรองนี้เพื่อให้ยังบันทึกบทความได้</p>
+            </div>
+        </div>
+
+        <div class="article-tags-panel stock-card grid gap-3 rounded-[1.75rem] border-red-100 bg-red-50/45 p-6">
+            <div>
+                <label class="block text-sm font-black text-neutral-700"><i class="fa-solid fa-tags mr-2 text-red-600"></i>แท็กบทความ</label>
+                <p class="mt-1 text-xs font-bold leading-6 text-neutral-500">ส่วนนี้แยกออกจากช่องพิมพ์เนื้อหาแล้ว เลือกจากแท็กที่ระบบกำหนดไว้เพื่อให้ค้นหาและจัดกลุ่มบทความได้ตรงกัน</p>
+            </div>
+            <?= $tagSelectorHtml ?>
+        </div>
+
+        <div class="stock-card grid gap-4 rounded-[1.75rem] p-6 md:grid-cols-[1fr_auto] md:items-end">
+            <label class="grid gap-2 text-sm font-black text-neutral-700">
+                <span><i class="fa-solid fa-toggle-on mr-2 text-red-600"></i>สถานะบทความ</span>
                 <select name="status" class="stock-input rounded-2xl px-4 py-3 font-semibold">
-                    <?php foreach (['draft', 'published', 'hidden'] as $status): ?>
-                        <option value="<?= h($status) ?>" <?php if ($editBlog && $editBlog['status'] === $status): ?>selected<?php endif; ?>><?= h(booking_status_label($status)) ?></option>
+                    <?php foreach (['draft' => 'ฉบับร่าง', 'published' => 'เผยแพร่', 'hidden' => 'ซ่อน'] as $status => $label): ?>
+                        <option value="<?= h($status) ?>" <?php if ($editStatus === $status): ?>selected<?php endif; ?>><?= h($label) ?></option>
                     <?php endforeach; ?>
                 </select>
             </label>
+            <button class="stock-button rounded-full px-5 py-3 font-black"><i class="fa-solid fa-floppy-disk mr-2"></i>บันทึกบทความ</button>
         </div>
-        <label class="grid gap-2 text-sm font-black text-neutral-700">
-            <span><i class="fa-solid fa-align-left mr-1 text-red-600"></i>คำโปรย</span>
-            <textarea name="excerpt" rows="2" class="stock-input rounded-2xl px-4 py-3 font-semibold"><?php if ($editBlog): ?><?= h($editBlog['excerpt']) ?><?php endif; ?></textarea>
-        </label>
-        <label class="grid gap-2 text-sm font-black text-neutral-700">
-            <span><i class="fa-solid fa-pen-nib mr-1 text-red-600"></i>เนื้อหา</span>
-            <textarea name="content" rows="8" required class="stock-input rounded-2xl px-4 py-3 font-semibold"><?php if ($editBlog): ?><?= h($editBlog['content']) ?><?php endif; ?></textarea>
-        </label>
-        <div class="grid gap-4 lg:grid-cols-2">
-            <div class="grid gap-2 text-sm font-black text-neutral-700">
-                <span><i class="fa-solid fa-tags mr-1 text-red-600"></i>แท็กบทความ</span>
-                <p class="text-xs font-bold leading-6 text-neutral-500">เลือกจากแท็กที่ระบบกำหนดไว้ หน้า public จะแสดง 4 แท็กแรก และแสดง +จำนวนที่เหลืออัตโนมัติ</p>
-                <?= $tagSelectorHtml ?>
-            </div>
-            <label class="grid gap-2 text-sm font-black text-neutral-700">
-                <span><i class="fa-solid fa-image mr-1 text-red-600"></i>รูปปก</span>
-                <input type="file" name="cover_image" accept="image/jpeg,image/png,image/webp" class="stock-input rounded-2xl px-4 py-3 font-semibold">
-                <span class="text-xs font-bold leading-6 text-neutral-500"><?= h(UPLOAD_IMAGE_HELP_TEXT) ?></span>
-            </label>
-        </div>
-        <button class="stock-button rounded-2xl px-5 py-3 font-black"><i class="fa-solid fa-floppy-disk mr-2"></i>บันทึกบทความ</button>
     </form>
+    <?php if ($editBlog): ?>
+        <form id="article-reset-form" method="post" action="/admin/blogs.php" class="hidden">
+            <?= clean_context_inputs([]) ?>
+        </form>
+    <?php endif; ?>
 
     <form method="post" action="/admin/blogs.php" class="stock-card mt-6 grid gap-3 rounded-[1.5rem] p-5 md:grid-cols-4">
         <?= clean_context_inputs([]) ?>
@@ -241,14 +310,18 @@ include __DIR__ . '/../includes/header.php';
                                     <?= csrf_field() ?>
                                     <input type="hidden" name="action" value="status">
                                     <input type="hidden" name="id" value="<?= (int)$item['id'] ?>">
-                                    <button name="status" value="published" class="btn-success btn-sm"><i class="fa-solid fa-check"></i>เผยแพร่</button>
-                                    <button name="status" value="hidden" class="btn-muted btn-sm"><i class="fa-solid fa-eye-slash"></i>ซ่อน</button>
+                                    <?php if ($item['status'] !== 'published'): ?>
+                                        <button name="status" value="published" class="btn-success btn-sm"><i class="fa-solid fa-check"></i>เผยแพร่</button>
+                                    <?php endif; ?>
+                                    <?php if ($item['status'] !== 'hidden'): ?>
+                                        <button name="status" value="hidden" class="btn-muted btn-sm"><i class="fa-solid fa-eye-slash"></i>ซ่อน</button>
+                                    <?php endif; ?>
                                 </form>
                                 <form method="post">
                                     <?= csrf_field() ?>
                                     <input type="hidden" name="action" value="delete">
                                     <input type="hidden" name="id" value="<?= (int)$item['id'] ?>">
-                                    <button data-confirm="ซ่อนบทความนี้?" data-confirm-text="บทความจะหายจากหน้าระบบ แต่ข้อมูลเดิมยังอยู่ในฐานข้อมูล" data-confirm-button="ซ่อนบทความ" class="btn-warning btn-sm"><i class="fa-solid fa-eye-slash"></i>ซ่อน</button>
+                                    <button data-confirm="ลบบทความออกจากรายการ?" data-confirm-text="บทความจะหายจากหน้าจัดการและหน้าสาธารณะ แต่ข้อมูลเดิมยังอยู่ในฐานข้อมูล" data-confirm-button="ลบออกจากรายการ" class="btn-danger btn-sm"><i class="fa-solid fa-trash"></i>ลบ</button>
                                 </form>
                             </div>
                         </td>
@@ -258,5 +331,48 @@ include __DIR__ . '/../includes/header.php';
         </table>
     </div>
 </section>
+
+<script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var hiddenInput = document.getElementById('article-content');
+    var editorElement = document.getElementById('article-editor');
+    var fallbackElement = document.getElementById('article-content-fallback');
+    var form = document.getElementById('article-form');
+    if (!hiddenInput || !editorElement || !form) return;
+
+    if (!window.Quill) {
+        form.addEventListener('submit', function () {
+            hiddenInput.value = '';
+        });
+        return;
+    }
+
+    editorElement.classList.remove('hidden');
+
+    if (fallbackElement) {
+        fallbackElement.classList.add('hidden');
+    }
+
+    var quill = new Quill(editorElement, {
+        theme: 'snow',
+        modules: {
+            toolbar: [
+                [{ header: [2, 3, false] }],
+                ['bold', 'italic', 'underline'],
+                [{ list: 'ordered' }, { list: 'bullet' }],
+                ['blockquote'],
+                ['clean']
+            ]
+        }
+    });
+
+    quill.root.innerHTML = hiddenInput.value || '';
+
+    form.addEventListener('submit', function () {
+        hiddenInput.value = quill.root.innerHTML;
+    });
+});
+</script>
 
 <?php include __DIR__ . '/../includes/footer.php'; ?>

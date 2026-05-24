@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/includes/functions.php';
 ensure_tags_status_column();
+ensure_photographer_articles_excerpt_column();
 
 $cleanContext = clean_context_init(['slug']);
 $slug = trim((string)clean_context_value($cleanContext, 'slug', ''));

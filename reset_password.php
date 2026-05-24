@@ -34,7 +34,8 @@ function password_policy_errors(string $password, string $confirmation): array
 
 $cleanContext = clean_context_init(['token']);
 $token = (string)clean_context_value($cleanContext, 'token', ($_POST['token'] ?? ''));
-$stmt = db()->prepare('SELECT * FROM password_resets WHERE token = ? AND expires_at > NOW() LIMIT 1');
+ensure_password_resets_audit_columns();
+$stmt = db()->prepare('SELECT * FROM password_resets WHERE token = ? AND expires_at > NOW() AND used_at IS NULL AND invalidated_at IS NULL LIMIT 1');
 $stmt->execute([$token]);
 $reset = $stmt->fetch();
 $passwordErrors = [];
@@ -71,8 +72,16 @@ if (is_post()) {
         flash('error', 'รหัสผ่านยังไม่ผ่านเงื่อนไข กรุณาตรวจรายการที่ขาด');
     } else {
         db()->prepare('UPDATE users SET password = ?, updated_at = NOW() WHERE email = ? AND deleted_at IS NULL')->execute([password_hash($password, PASSWORD_DEFAULT), $reset['email']]);
-        db()->prepare('DELETE FROM password_resets WHERE email = ?')->execute([$reset['email']]);
-        log_activity('reset_password', 'users', null, 'email=' . (string)$reset['email']);
+        db()->prepare('UPDATE password_resets
+                       SET used_at = NOW(),
+                           used_ip = ?,
+                           used_user_agent = ?
+                       WHERE id = ?')->execute([
+            client_ip(),
+            substr((string)($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 255),
+            (int)$reset['id'],
+        ]);
+        log_activity('reset_password', 'users', isset($reset['user_id']) ? (int)$reset['user_id'] : null, 'email=' . (string)$reset['email']);
         flash('success', 'ตั้งรหัสผ่านใหม่สำเร็จ');
         redirect('/login.php');
     }

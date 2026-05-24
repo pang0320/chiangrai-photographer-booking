@@ -11,12 +11,13 @@ if (is_post()) {
     $password = (string)($_POST['password'] ?? '');
 
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        record_login_attempt($email, false);
+        record_login_attempt($email, false, null, 'invalid_email');
         flash('error', 'รูปแบบอีเมลไม่ถูกต้อง');
         redirect('/login.php');
     }
 
     if (is_login_blocked($email)) {
+        record_login_attempt($email, false, null, 'blocked_too_many_attempts');
         flash('error', 'พยายามเข้าสู่ระบบหลายครั้งเกินไป กรุณารอ 15 นาที');
         redirect('/login.php');
     }
@@ -26,7 +27,7 @@ if (is_post()) {
     $user = $stmt->fetch();
 
     if ($user && $user['status'] !== 'suspended' && password_verify($password, $user['password'])) {
-        record_login_attempt($email, true);
+        record_login_attempt($email, true, (int)$user['id']);
         clear_failed_login_attempts($email);
         session_regenerate_id(true);
         $_SESSION['user_id'] = (int)$user['id'];
@@ -42,7 +43,13 @@ if (is_post()) {
         redirect(user_workspace_path($user));
     }
 
-    record_login_attempt($email, false);
+    $failureReason = 'user_not_found';
+    $failedUserId = null;
+    if ($user) {
+        $failedUserId = (int)$user['id'];
+        $failureReason = $user['status'] === 'suspended' ? 'user_suspended' : 'wrong_password';
+    }
+    record_login_attempt($email, false, $failedUserId, $failureReason);
     flash('error', 'อีเมลหรือรหัสผ่านไม่ถูกต้อง');
 }
 

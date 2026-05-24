@@ -21,7 +21,6 @@ function dashboard_activity_action_label(string $action): string
         'moderate_report' => 'ตรวจรายงานปัญหา',
         'notify_report_target' => 'ส่งแจ้งเตือนผู้ถูกรายงาน',
         'update_contact_message' => 'จัดการข้อความติดต่อ',
-        'manage_banners' => 'จัดการแบนเนอร์',
         'manage_categories' => 'จัดการหมวดหมู่',
         'manage_districts' => 'จัดการอำเภอ',
         'update_settings' => 'แก้ไขตั้งค่า',

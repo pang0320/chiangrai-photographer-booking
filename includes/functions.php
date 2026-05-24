@@ -687,27 +687,106 @@ function recent_notifications(int $userId, int $limit = 20): array
     return $stmt->fetchAll();
 }
 
+function db_column_exists(string $table, string $column): bool
+{
+    return (int)db_fetch_value('SELECT COUNT(*)
+                               FROM INFORMATION_SCHEMA.COLUMNS
+                               WHERE TABLE_SCHEMA = DATABASE()
+                                 AND TABLE_NAME = ?
+                                 AND COLUMN_NAME = ?', [$table, $column]) > 0;
+}
+
+function ensure_password_resets_audit_columns(): void
+{
+    static $checked = false;
+    if ($checked) {
+        return;
+    }
+
+    if (!db_column_exists('password_resets', 'user_id')) {
+        db()->exec('ALTER TABLE password_resets ADD COLUMN user_id INT UNSIGNED NULL AFTER email');
+        db()->exec('ALTER TABLE password_resets ADD INDEX idx_password_resets_user (user_id)');
+    }
+
+    if (!db_column_exists('password_resets', 'requested_ip')) {
+        db()->exec('ALTER TABLE password_resets ADD COLUMN requested_ip VARCHAR(64) NULL AFTER expires_at');
+    }
+
+    if (!db_column_exists('password_resets', 'requested_user_agent')) {
+        db()->exec('ALTER TABLE password_resets ADD COLUMN requested_user_agent VARCHAR(255) NULL AFTER requested_ip');
+    }
+
+    if (!db_column_exists('password_resets', 'used_at')) {
+        db()->exec('ALTER TABLE password_resets ADD COLUMN used_at DATETIME NULL AFTER requested_user_agent');
+        db()->exec('ALTER TABLE password_resets ADD INDEX idx_password_resets_used (used_at)');
+    }
+
+    if (!db_column_exists('password_resets', 'used_ip')) {
+        db()->exec('ALTER TABLE password_resets ADD COLUMN used_ip VARCHAR(64) NULL AFTER used_at');
+    }
+
+    if (!db_column_exists('password_resets', 'used_user_agent')) {
+        db()->exec('ALTER TABLE password_resets ADD COLUMN used_user_agent VARCHAR(255) NULL AFTER used_ip');
+    }
+
+    if (!db_column_exists('password_resets', 'invalidated_at')) {
+        db()->exec('ALTER TABLE password_resets ADD COLUMN invalidated_at DATETIME NULL AFTER used_user_agent');
+        db()->exec('ALTER TABLE password_resets ADD INDEX idx_password_resets_active (email, used_at, invalidated_at, expires_at)');
+    }
+
+    $checked = true;
+}
+
+function ensure_login_attempts_audit_columns(): void
+{
+    static $checked = false;
+    if ($checked) {
+        return;
+    }
+
+    if (!db_column_exists('login_attempts', 'user_id')) {
+        db()->exec('ALTER TABLE login_attempts ADD COLUMN user_id INT UNSIGNED NULL AFTER email');
+        db()->exec('ALTER TABLE login_attempts ADD INDEX idx_login_attempts_user (user_id)');
+    }
+
+    if (!db_column_exists('login_attempts', 'failure_reason')) {
+        db()->exec('ALTER TABLE login_attempts ADD COLUMN failure_reason VARCHAR(120) NULL AFTER success');
+    }
+
+    if (!db_column_exists('login_attempts', 'cleared_at')) {
+        db()->exec('ALTER TABLE login_attempts ADD COLUMN cleared_at DATETIME NULL AFTER attempted_at');
+        db()->exec('ALTER TABLE login_attempts ADD INDEX idx_login_attempts_block (email, ip_address, success, cleared_at, attempted_at)');
+    }
+
+    $checked = true;
+}
+
 function is_login_blocked(string $email): bool
 {
-    $stmt = db()->prepare('SELECT COUNT(*) FROM login_attempts WHERE email = ? AND ip_address = ? AND success = 0 AND attempted_at >= DATE_SUB(NOW(), INTERVAL 15 MINUTE)');
+    ensure_login_attempts_audit_columns();
+    $stmt = db()->prepare('SELECT COUNT(*) FROM login_attempts WHERE email = ? AND ip_address = ? AND success = 0 AND cleared_at IS NULL AND attempted_at >= DATE_SUB(NOW(), INTERVAL 15 MINUTE)');
     $stmt->execute([$email, client_ip()]);
     return (int)$stmt->fetchColumn() >= 5;
 }
 
-function record_login_attempt(string $email, bool $success): void
+function record_login_attempt(string $email, bool $success, ?int $userId = null, string $failureReason = ''): void
 {
-    $stmt = db()->prepare('INSERT INTO login_attempts (email, ip_address, success, user_agent, attempted_at) VALUES (?, ?, ?, ?, NOW())');
+    ensure_login_attempts_audit_columns();
+    $stmt = db()->prepare('INSERT INTO login_attempts (email, user_id, ip_address, success, failure_reason, user_agent, attempted_at) VALUES (?, ?, ?, ?, ?, ?, NOW())');
     $stmt->execute([
         $email,
+        $userId,
         client_ip(),
         $success ? 1 : 0,
+        $success ? null : substr($failureReason, 0, 120),
         substr((string)($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 255),
     ]);
 }
 
 function clear_failed_login_attempts(string $email): void
 {
-    $stmt = db()->prepare('DELETE FROM login_attempts WHERE email = ? AND ip_address = ?');
+    ensure_login_attempts_audit_columns();
+    $stmt = db()->prepare('UPDATE login_attempts SET cleared_at = NOW() WHERE email = ? AND ip_address = ? AND success = 0 AND cleared_at IS NULL');
     $stmt->execute([$email, client_ip()]);
 }
 
@@ -1513,6 +1592,20 @@ function ensure_service_categories_deleted_at_column(): void
     if ($exists === 0) {
         db()->exec('ALTER TABLE service_categories ADD COLUMN deleted_at TIMESTAMP NULL DEFAULT NULL AFTER updated_at');
         db()->exec('ALTER TABLE service_categories ADD INDEX idx_service_categories_deleted (deleted_at)');
+    }
+
+    $checked = true;
+}
+
+function ensure_photographer_articles_excerpt_column(): void
+{
+    static $checked = false;
+    if ($checked) {
+        return;
+    }
+
+    if (!db_column_exists('photographer_articles', 'excerpt')) {
+        db()->exec('ALTER TABLE photographer_articles ADD COLUMN excerpt TEXT NULL AFTER cover_image');
     }
 
     $checked = true;

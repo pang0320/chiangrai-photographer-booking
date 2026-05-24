@@ -11,6 +11,29 @@ if (defined('CUSTOMER_PHOTOGRAPHERS_PAGE')) {
     $photographerSearchPath = '/customer/photographers.php';
 }
 
+$isGet = ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET';
+$hasGetParams = false;
+foreach (['district_id', 'category_id', 'available_date', 'min_rating', 'max_price', 'q', 'sort', 'page'] as $key) {
+    if (isset($_GET[$key])) {
+        $hasGetParams = true;
+        break;
+    }
+}
+
+if ($isGet && !$hasGetParams) {
+    if (!empty($_SESSION['clean_context_prg'][$photographerSearchPath])) {
+        unset($_SESSION['clean_context_prg'][$photographerSearchPath]);
+    } else {
+        $referer = $_SERVER['HTTP_REFERER'] ?? '';
+        $parsedReferer = $referer !== '' ? parse_url($referer, PHP_URL_PATH) : '';
+        if ($parsedReferer !== $photographerSearchPath) {
+            if (isset($_SESSION['clean_page_context'][$photographerSearchPath])) {
+                unset($_SESSION['clean_page_context'][$photographerSearchPath]);
+            }
+        }
+    }
+}
+
 $districts = db_fetch_all('SELECT * FROM districts WHERE is_active = 1 ORDER BY district_name');
 $categories = db_fetch_all('SELECT * FROM service_categories WHERE is_active = 1 AND deleted_at IS NULL ORDER BY sort_order, name');
 $cleanContext = clean_context_init(['district_id', 'category_id', 'available_date', 'min_rating', 'max_price', 'q', 'sort', 'page']);

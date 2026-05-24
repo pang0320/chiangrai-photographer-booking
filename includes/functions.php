@@ -164,6 +164,7 @@ function clean_context_init(array $allowedKeys, ?string $path = null): array
             }
         }
         clean_context_set($path, $incoming);
+        $_SESSION['clean_context_prg'][$path] = true;
         redirect($path);
     }
 
@@ -176,6 +177,7 @@ function clean_context_init(array $allowedKeys, ?string $path = null): array
 
         if ($incoming) {
             clean_context_set($path, $incoming);
+            $_SESSION['clean_context_prg'][$path] = true;
             redirect($path);
         }
     }

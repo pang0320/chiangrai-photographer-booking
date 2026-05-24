@@ -489,66 +489,68 @@ include __DIR__ . '/includes/header.php';
                             $currentReviewImages = $reviewImages[(int)$r['id']];
                         }
                         ?>
-                        <article class="stock-card rounded-[1.5rem] p-6">
-                            <div class="flex flex-wrap items-center justify-between gap-3">
-                                <b class="text-neutral-950"><?= h($r['customer_name']) ?></b>
-                                <div class="flex items-center gap-2">
+                        <div class="relative">
+                            <article class="stock-card rounded-[1.5rem] p-6">
+                                <div class="flex flex-wrap items-center gap-3 pr-10 sm:pr-14">
+                                    <b class="text-neutral-950"><?= h($r['customer_name']) ?></b>
                                     <span class="text-red-600" title="คะแนนรวม <?= (int)$r['rating_overall'] ?> จาก 5"><?= str_repeat('★', (int)$r['rating_overall']) ?></span>
-                                    <?php if ($currentUser): ?>
-                                        <details class="group relative">
-                                            <summary class="grid h-9 w-9 cursor-pointer list-none place-items-center rounded-full bg-neutral-100 text-neutral-600 transition hover:bg-neutral-950 hover:text-white group-open:bg-neutral-950 group-open:text-white" title="เมนูรีวิว">
-                                                <i class="fa-solid fa-ellipsis"></i>
+                                </div>
+                                <p class="mt-3 leading-7 text-neutral-700"><?= nl2br(h($r['comment'])) ?></p>
+                                <?php if ($currentReviewImages): ?>
+                                    <div class="mt-5">
+                                        <p class="mb-3 text-sm font-black text-neutral-700">
+                                            <i class="fa-solid fa-images mr-2 text-red-600"></i>รูปภาพประกอบรีวิว
+                                        </p>
+                                        <div class="flex gap-3 overflow-x-auto pb-2 sm:grid sm:grid-cols-4 sm:overflow-visible">
+                                            <?php foreach ($currentReviewImages as $imagePath): ?>
+                                                <a href="<?= h(public_image($imagePath, '/assets/uploads/seed/photo-1516035069371-29a1b244cc32.jpg')) ?>" target="_blank" class="group relative h-28 w-36 shrink-0 overflow-hidden rounded-2xl bg-neutral-100 shadow-sm sm:h-32 sm:w-full">
+                                                    <img src="<?= h(public_image($imagePath, '/assets/uploads/seed/photo-1516035069371-29a1b244cc32.jpg')) ?>" alt="รูปภาพประกอบรีวิว" class="h-full w-full object-cover transition duration-300 group-hover:scale-105">
+                                                    <span class="absolute inset-0 grid place-items-center bg-neutral-950/0 text-white opacity-0 transition group-hover:bg-neutral-950/35 group-hover:opacity-100">
+                                                        <i class="fa-solid fa-up-right-and-down-left-from-center"></i>
+                                                    </span>
+                                                </a>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    </div>
+                                <?php endif; ?>
+                            </article>
+
+                            <?php if ($currentUser): ?>
+                                <details class="group absolute -right-2 -top-2 z-20 open:z-50 hover:z-50 focus-within:z-50">
+                                    <summary class="grid h-9 w-9 cursor-pointer list-none place-items-center rounded-full bg-white border border-neutral-200 text-neutral-600 shadow-md transition hover:bg-neutral-950 hover:text-white group-open:bg-neutral-950 group-open:text-white" title="เมนูรีวิว">
+                                        <i class="fa-solid fa-ellipsis"></i>
+                                    </summary>
+                                    <div class="absolute right-0 top-11 w-72 rounded-2xl border border-neutral-200 bg-white p-2 text-left shadow-2xl shadow-neutral-950/15 ring-1 ring-black/5">
+                                        <details class="group/report">
+                                            <summary class="flex cursor-pointer list-none items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-black text-neutral-700 hover:bg-neutral-50 hover:text-red-600 group-open/report:bg-neutral-50 group-open/report:text-red-600">
+                                                <i class="fa-solid fa-triangle-exclamation"></i>
+                                                รายงานรีวิวนี้
                                             </summary>
-                                            <div class="absolute right-0 top-11 z-30 w-[min(88vw,420px)] rounded-[1.5rem] border border-neutral-200 bg-white p-4 text-left shadow-2xl shadow-neutral-950/15 ring-1 ring-black/5">
-                                                <div class="mb-3 flex items-start justify-between gap-3">
-                                                    <div>
-                                                        <p class="text-sm font-black text-neutral-950">
-                                                            <i class="fa-solid fa-triangle-exclamation mr-1 text-red-600"></i>รายงานรีวิวนี้
-                                                        </p>
-                                                        <p class="mt-1 text-xs font-bold leading-5 text-neutral-500">ส่งให้ผู้ดูแลระบบตรวจสอบ โดยไม่แจ้งเจ้าของรีวิวว่าใครเป็นผู้รายงาน</p>
-                                                    </div>
-                                                </div>
+                                            <div class="mt-2 border-t border-neutral-100 pt-3">
+                                                <p class="mb-3 text-[11px] font-bold leading-5 text-neutral-500">ส่งให้ผู้ดูแลระบบตรวจสอบ โดยไม่แจ้งเจ้าของรีวิวว่าใครเป็นผู้รายงาน</p>
                                                 <form method="post" class="grid gap-3">
                                                     <?= csrf_field() ?>
                                                     <input type="hidden" name="action" value="report_review">
                                                     <input type="hidden" name="photographer_id" value="<?= (int)$profile['id'] ?>">
                                                     <input type="hidden" name="target_id" value="<?= (int)$r['id'] ?>">
-                                                    <label class="grid gap-1 text-xs font-black text-neutral-600">
+                                                    <label class="grid gap-1 text-[11px] font-black text-neutral-600">
                                                         <span>เหตุผลในการรายงาน</span>
                                                         <input name="reason" required maxlength="180" placeholder="เช่น รีวิวไม่เหมาะสม" class="stock-input rounded-xl px-3 py-2 text-sm">
                                                     </label>
-                                                    <label class="grid gap-1 text-xs font-black text-neutral-600">
+                                                    <label class="grid gap-1 text-[11px] font-black text-neutral-600">
                                                         <span>รายละเอียดเพิ่มเติม</span>
                                                         <textarea name="detail" required maxlength="2000" rows="3" placeholder="พิมพ์รายละเอียดปัญหาที่ต้องการให้ผู้ดูแลตรวจสอบ" class="stock-input rounded-xl px-3 py-2 text-sm"></textarea>
                                                     </label>
-                                                    <button class="btn-danger btn-sm justify-self-start rounded-xl">
+                                                    <button class="btn-danger btn-sm w-full rounded-xl">
                                                         <i class="fa-solid fa-triangle-exclamation"></i>ส่งรายงาน
                                                     </button>
                                                 </form>
                                             </div>
                                         </details>
-                                    <?php endif; ?>
-                                </div>
-                            </div>
-                            <p class="mt-3 leading-7 text-neutral-700"><?= nl2br(h($r['comment'])) ?></p>
-                            <?php if ($currentReviewImages): ?>
-                                <div class="mt-5">
-                                    <p class="mb-3 text-sm font-black text-neutral-700">
-                                        <i class="fa-solid fa-images mr-2 text-red-600"></i>รูปภาพประกอบรีวิว
-                                    </p>
-                                    <div class="flex gap-3 overflow-x-auto pb-2 sm:grid sm:grid-cols-4 sm:overflow-visible">
-                                        <?php foreach ($currentReviewImages as $imagePath): ?>
-                                            <a href="<?= h(public_image($imagePath, '/assets/uploads/seed/photo-1516035069371-29a1b244cc32.jpg')) ?>" target="_blank" class="group relative h-28 w-36 shrink-0 overflow-hidden rounded-2xl bg-neutral-100 shadow-sm sm:h-32 sm:w-full">
-                                                <img src="<?= h(public_image($imagePath, '/assets/uploads/seed/photo-1516035069371-29a1b244cc32.jpg')) ?>" alt="รูปภาพประกอบรีวิว" class="h-full w-full object-cover transition duration-300 group-hover:scale-105">
-                                                <span class="absolute inset-0 grid place-items-center bg-neutral-950/0 text-white opacity-0 transition group-hover:bg-neutral-950/35 group-hover:opacity-100">
-                                                    <i class="fa-solid fa-up-right-and-down-left-from-center"></i>
-                                                </span>
-                                            </a>
-                                        <?php endforeach; ?>
                                     </div>
-                                </div>
+                                </details>
                             <?php endif; ?>
-                        </article>
+                        </div>
                     <?php endforeach; ?>
                     <?php if (!$reviews): ?>
                         <div class="empty-state rounded-[2rem] p-10 text-center">

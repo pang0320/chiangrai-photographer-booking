@@ -392,7 +392,7 @@ include __DIR__ . '/includes/header.php';
         </div>
         <div class="masonry-gallery mt-8">
             <?php foreach ($portfolioShowcase as $item): ?>
-                <?= clean_context_button('/photographer_detail.php', ['id' => (int)$item['photographer_id']], '<img class="min-h-[220px]" loading="lazy" decoding="async" src="' . h(public_image($item['image_path'], '/assets/uploads/seed/photo-1516035069371-29a1b244cc32.jpg')) . '" alt=""><div class="media-overlay p-5 opacity-100"><div><b>' . h($item['title']) . '</b><p class="mt-1 text-sm text-white/72">' . h($item['display_name']) . '</p></div></div>', 'media-tile block w-full rounded-[1.5rem] text-left shadow-xl', 'contents') ?>
+                <?= clean_context_button('/photographer_detail.php', ['id' => (int)$item['photographer_id']], '<img class="min-h-[220px]" loading="lazy" decoding="async" src="' . h(public_image($item['image_path'], '/assets/uploads/seed/photo-1516035069371-29a1b244cc32.jpg')) . '" alt=""><div class="media-overlay p-5 opacity-100"><div><b>' . h($item['title']) . '</b><p class="mt-1 text-sm text-white/72">' . h($item['display_name']) . '</p></div></div>', 'media-tile block w-full rounded-[1.5rem] text-left shadow-xl my-1.5', 'contents') ?>
             <?php endforeach; ?>
         </div>
     </div>

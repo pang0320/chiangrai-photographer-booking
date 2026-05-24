@@ -418,11 +418,15 @@ include __DIR__ . '/includes/header.php';
             <?php endforeach; ?>
         </div>
     </div>
-    <div class="dashboard-hero rounded-[2rem] p-8 text-white">
-        <p class="text-sm font-black uppercase tracking-[0.22em] text-white/58">Join as photographer</p>
-        <h2 class="mt-3 text-4xl font-black">มีตัวอย่างงานถ่ายภาพดี ให้ลูกค้าเชียงรายค้นเจอ</h2>
-        <p class="mt-4 leading-8 text-white/68">สร้างโปรไฟล์ อัปโหลดตัวอย่างงานถ่ายภาพ กำหนดพื้นที่ วันว่าง และรับคำขอจองผ่านระบบเดียว</p>
-        <?= clean_context_button('/register.php', ['role' => 'photographer'], '<i class="fa-solid fa-user-plus mr-2"></i>สมัครเป็นช่างภาพ', 'mt-8 inline-flex rounded-full bg-white px-6 py-3 font-black text-neutral-950 hover:bg-red-600 hover:text-white') ?>
+    <div class="relative overflow-hidden rounded-[2rem] p-8 text-white min-h-[400px] flex flex-col justify-end">
+        <img class="absolute inset-0 h-full w-full object-cover transition-transform duration-700 hover:scale-105" src="/assets/uploads/seed/photo-1516035069371-29a1b244cc32.jpg" alt="">
+        <div class="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-950/80 to-neutral-950/20"></div>
+        <div class="relative z-10">
+            <p class="text-sm font-black uppercase tracking-[0.22em] text-red-400">Join as photographer</p>
+            <h2 class="mt-3 text-3xl font-black sm:text-4xl">มีตัวอย่างงานถ่ายภาพดี ให้ลูกค้าเชียงรายค้นเจอ</h2>
+            <p class="mt-4 leading-8 text-white/80">สร้างโปรไฟล์ อัปโหลดตัวอย่างงานถ่ายภาพ กำหนดพื้นที่ วันว่าง และรับคำขอจองผ่านระบบเดียว</p>
+            <?= clean_context_button('/register.php', ['role' => 'photographer'], '<i class="fa-solid fa-user-plus mr-2"></i>สมัครเป็นช่างภาพ', 'mt-8 inline-flex rounded-full bg-white px-6 py-3 font-black text-neutral-950 transition hover:bg-red-600 hover:text-white') ?>
+        </div>
     </div>
 </section>
 

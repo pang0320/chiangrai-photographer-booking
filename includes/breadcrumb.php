@@ -14,6 +14,7 @@ $breadcrumbLabels = [
     'dashboard.php' => 'แดชบอร์ด',
     'users.php' => 'สมาชิก',
     'photographers.php' => 'ช่างภาพ',
+    'photographer_detail.php' => 'รายละเอียดช่างภาพ',
     'categories.php' => 'หมวดหมู่',
     'districts.php' => 'อำเภอ',
     'bookings.php' => 'คำขอจอง',
@@ -38,6 +39,14 @@ $breadcrumbLabels = [
     'faq.php' => 'คำถามที่พบบ่อย',
     'contact.php' => 'ติดต่อเรา',
     'onboarding.php' => 'เริ่มต้นใช้งาน',
+    'compare.php' => 'เปรียบเทียบช่างภาพ',
+    'register.php' => 'สมัครสมาชิก',
+    'login.php' => 'เข้าสู่ระบบ',
+    'forgot_password.php' => 'ลืมรหัสผ่าน',
+    'reset_password.php' => 'ตั้งรหัสผ่านใหม่',
+    'about.php' => 'เกี่ยวกับเรา',
+    'privacy.php' => 'นโยบายความเป็นส่วนตัว',
+    'terms.php' => 'ข้อตกลงการใช้งาน',
 ];
 $breadcrumbLinks = [
     '/admin' => '/admin/dashboard.php',
@@ -49,7 +58,7 @@ if ($breadcrumbPath !== '/' && $breadcrumbPath !== '/index.php'):
     $parts = array_values(array_filter(explode('/', trim($breadcrumbPath, '/'))));
     $runningPath = '';
 ?>
-    <div class="stock-shell px-4 pt-4 sm:px-6 lg:px-8">
+    <div class="stock-shell px-4 py-4 sm:px-6 lg:px-8">
         <nav class="flex flex-wrap items-center gap-2 text-xs font-black uppercase tracking-[0.12em] text-neutral-500">
             <a href="/index.php" class="hover:text-red-600">หน้าแรก</a>
             <?php foreach ($parts as $part): ?>

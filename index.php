@@ -392,7 +392,16 @@ include __DIR__ . '/includes/header.php';
         </div>
         <div class="masonry-gallery mt-8">
             <?php foreach ($portfolioShowcase as $item): ?>
-                <?= clean_context_button('/photographer_detail.php', ['id' => (int)$item['photographer_id']], '<img class="min-h-[220px]" loading="lazy" decoding="async" src="' . h(public_image($item['image_path'], '/assets/uploads/seed/photo-1516035069371-29a1b244cc32.jpg')) . '" alt=""><div class="media-overlay p-5 opacity-100"><div><b>' . h($item['title']) . '</b><p class="mt-1 text-sm text-white/72">' . h($item['display_name']) . '</p></div></div>', 'media-tile block w-full rounded-[1.5rem] text-left shadow-xl my-1.5', 'contents') ?>
+                <div class="media-tile block w-full rounded-[1.5rem] text-left shadow-xl my-1.5 cursor-pointer relative overflow-hidden group" 
+                     onclick="openPortfolioModal('<?= h(public_image($item['image_path'], '/assets/uploads/seed/photo-1516035069371-29a1b244cc32.jpg')) ?>', '<?= h(addslashes($item['title'])) ?>', '<?= h(addslashes($item['display_name'])) ?>', <?= (int)$item['photographer_id'] ?>)">
+                    <img class="min-h-[220px] w-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" decoding="async" src="<?= h(public_image($item['image_path'], '/assets/uploads/seed/photo-1516035069371-29a1b244cc32.jpg')) ?>" alt="">
+                    <div class="media-overlay p-5 opacity-100">
+                        <div>
+                            <b><?= h($item['title']) ?></b>
+                            <p class="mt-1 text-sm text-white/72"><?= h($item['display_name']) ?></p>
+                        </div>
+                    </div>
+                </div>
             <?php endforeach; ?>
         </div>
     </div>
@@ -489,5 +498,77 @@ include __DIR__ . '/includes/header.php';
         </div>
     </div>
 </section>
+
+<!-- Portfolio Modal -->
+<div id="portfolio-modal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-neutral-950/90 px-4 py-8 backdrop-blur-md" aria-hidden="true">
+    <div data-portfolio-modal-backdrop class="absolute inset-0 cursor-pointer"></div>
+    <div class="relative z-10 flex max-h-full w-full max-w-5xl flex-col overflow-hidden rounded-[2rem] bg-neutral-900 shadow-2xl ring-1 ring-white/10">
+        <div class="flex items-center justify-between border-b border-white/10 bg-neutral-950/50 px-6 py-4">
+            <h3 class="text-xl font-black text-white line-clamp-1 flex-1 pr-4" id="portfolio-modal-title"></h3>
+            <button type="button" data-portfolio-modal-close class="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-white/10 text-white transition hover:bg-white hover:text-neutral-950" aria-label="ปิดหน้าต่าง">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+        </div>
+        <div class="flex-1 overflow-y-auto p-4 md:p-8 flex flex-col items-center justify-center bg-black/50">
+            <img id="portfolio-modal-img" class="max-h-[60vh] w-auto max-w-full rounded-xl object-contain shadow-lg" src="" alt="">
+            <div class="mt-8 flex flex-col items-center gap-4 text-center sm:flex-row sm:text-left">
+                <div>
+                    <p class="text-sm font-bold text-neutral-400">ภาพโดย</p>
+                    <p class="text-lg font-black text-white" id="portfolio-modal-owner"></p>
+                </div>
+                <div class="hidden sm:block h-8 w-px bg-white/20"></div>
+                <a id="portfolio-modal-link" href="#" class="inline-flex rounded-full bg-red-600 px-6 py-3 text-sm font-black text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-red-700 hover:shadow-red-600/25">
+                    <i class="fa-solid fa-user mr-2"></i>ดูโปรไฟล์ช่างภาพ
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const portfolioModal = document.getElementById('portfolio-modal');
+    const portfolioModalImg = document.getElementById('portfolio-modal-img');
+    const portfolioModalTitle = document.getElementById('portfolio-modal-title');
+    const portfolioModalOwner = document.getElementById('portfolio-modal-owner');
+    const portfolioModalLink = document.getElementById('portfolio-modal-link');
+    const portfolioCloseButtons = document.querySelectorAll('[data-portfolio-modal-close], [data-portfolio-modal-backdrop]');
+
+    function openPortfolioModal(imgSrc, title, owner, photographerId) {
+        if (!portfolioModal) return;
+        
+        portfolioModalImg.src = imgSrc;
+        portfolioModalTitle.textContent = title;
+        portfolioModalOwner.textContent = owner;
+        portfolioModalLink.href = '/photographer_detail.php?id=' + photographerId;
+
+        portfolioModal.classList.remove('hidden');
+        portfolioModal.classList.add('flex');
+        portfolioModal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closePortfolioModal() {
+        if (!portfolioModal) return;
+        portfolioModal.classList.add('hidden');
+        portfolioModal.classList.remove('flex');
+        portfolioModal.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+        
+        // Reset 
+        setTimeout(() => {
+            portfolioModalImg.src = '';
+        }, 300);
+    }
+
+    portfolioCloseButtons.forEach(btn => {
+        btn.addEventListener('click', closePortfolioModal);
+    });
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && portfolioModal && !portfolioModal.classList.contains('hidden')) {
+            closePortfolioModal();
+        }
+    });
+</script>
 
 <?php include __DIR__ . '/includes/footer.php'; ?>

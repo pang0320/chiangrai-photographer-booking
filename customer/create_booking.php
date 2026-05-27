@@ -43,13 +43,14 @@ if ($selectedBookingDate !== '' && $selectedTimeSlot !== '' && can_book_slot($ph
     $lockedTimeSlot = $selectedTimeSlot;
 }
 
-$calendarRows = db_fetch_all('SELECT pa.available_date, pa.status,
+$calendarRows = db_fetch_all('SELECT pa.available_date, pa.status, pa.time_slot,
                               (SELECT b.status
                                FROM bookings b
                                WHERE b.photographer_id = pa.photographer_id
                                  AND b.booking_date = pa.available_date
                                  AND b.status IN ("pending","accepted","confirmed")
                                  AND b.deleted_at IS NULL
+                                 AND (b.time_slot = pa.time_slot OR b.time_slot = "full_day" OR pa.time_slot = "full_day")
                                ORDER BY FIELD(b.status, "confirmed", "accepted", "pending")
                                LIMIT 1) AS booking_status
                               FROM photographer_availability pa
@@ -59,6 +60,8 @@ $GLOBALS['calendar_date_statuses']['booking_date'] = [];
 $GLOBALS['calendar_date_default_status']['booking_date'] = 'unavailable';
 $GLOBALS['calendar_date_selectable_statuses']['booking_date'] = ['available'];
 $calendarStatusPriority = ['unavailable' => 0, 'available' => 1, 'pending' => 2, 'booked' => 3];
+$availableSlotsByDate = [];
+
 foreach ($calendarRows as $row) {
     $dateKey = (string)$row['available_date'];
     $statusKey = (string)$row['status'];
@@ -67,6 +70,14 @@ foreach ($calendarRows as $row) {
     } elseif (in_array((string)$row['booking_status'], ['accepted', 'confirmed'], true)) {
         $statusKey = 'booked';
     }
+    
+    if ($statusKey === 'available') {
+        if (!isset($availableSlotsByDate[$dateKey])) {
+            $availableSlotsByDate[$dateKey] = [];
+        }
+        $availableSlotsByDate[$dateKey][] = (string)$row['time_slot'];
+    }
+
     $currentStatus = $GLOBALS['calendar_date_statuses']['booking_date'][$dateKey] ?? 'unavailable';
     if (($calendarStatusPriority[$statusKey] ?? 0) >= ($calendarStatusPriority[$currentStatus] ?? 0)) {
         $GLOBALS['calendar_date_statuses']['booking_date'][$dateKey] = $statusKey;
@@ -428,4 +439,57 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 <?php endif; ?>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const availableSlotsByDate = <?= json_encode($availableSlotsByDate, JSON_UNESCAPED_UNICODE) ?>;
+    const timeSlotSelect = document.querySelector('select[name="time_slot"]');
+    const bookingDateInputs = document.querySelectorAll('input[name="booking_date"]');
+
+    function updateAvailableSlots(selectedDate) {
+        if (!timeSlotSelect) return;
+        
+        let slots = [];
+        if (selectedDate && availableSlotsByDate[selectedDate]) {
+            slots = availableSlotsByDate[selectedDate];
+        }
+        
+        const options = timeSlotSelect.options;
+        for (let i = 0; i < options.length; i++) {
+            const opt = options[i];
+            if (opt.value === "") continue;
+            
+            if (selectedDate) {
+                if (slots.includes(opt.value)) {
+                    opt.style.display = '';
+                    opt.disabled = false;
+                } else {
+                    opt.style.display = 'none';
+                    opt.disabled = true;
+                }
+            } else {
+                opt.style.display = '';
+                opt.disabled = false;
+            }
+        }
+        
+        if (timeSlotSelect.value && timeSlotSelect.selectedOptions[0] && timeSlotSelect.selectedOptions[0].disabled) {
+            timeSlotSelect.value = "";
+        }
+    }
+
+    bookingDateInputs.forEach(input => {
+        input.addEventListener('change', (e) => {
+            updateAvailableSlots(e.target.value);
+        });
+    });
+
+    // Initialize on load
+    const activeDateInput = document.querySelector('input[name="booking_date"]');
+    if (activeDateInput && activeDateInput.value) {
+        updateAvailableSlots(activeDateInput.value);
+    }
+});
+</script>
+
 <?php include __DIR__ . '/../includes/footer.php'; ?>

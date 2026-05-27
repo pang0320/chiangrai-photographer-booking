@@ -297,6 +297,7 @@ function initCalendarDateInputs() {
           }
           closeCalendar();
           renderCalendar();
+          hidden.dispatchEvent(new Event('change', { bubbles: true }));
         });
 
         grid.appendChild(button);

@@ -452,13 +452,15 @@ include __DIR__ . '/includes/header.php';
         </div>
         <div class="mt-8 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
             <?php foreach ($articles as $article): ?>
-                <article class="stock-card stock-card-hover rounded-[1.75rem]">
-                    <img class="h-48 w-full object-cover" loading="lazy" decoding="async" src="<?= h(public_image($article['cover_image'], '/assets/uploads/seed/photo-1487412720507-e7ab37603c6f.jpg')) ?>" alt="">
-                    <div class="p-6">
-                        <p class="text-sm font-black text-red-600"><?= h($article['display_name']) ?></p>
+                <article class="stock-card stock-card-hover rounded-[1.75rem] flex flex-col h-full">
+                    <img class="h-48 w-full object-cover shrink-0" loading="lazy" decoding="async" src="<?= h(public_image($article['cover_image'], '/assets/uploads/seed/photo-1487412720507-e7ab37603c6f.jpg')) ?>" alt="">
+                    <div class="p-6 flex flex-col flex-1">
+                        <p class="flex items-center text-sm font-black text-red-600"><i class="fa-solid fa-camera mr-2"></i><?= h($article['display_name']) ?></p>
                         <h3 class="mt-2 text-xl font-black text-neutral-950"><?= h($article['title']) ?></h3>
                         <p class="mt-3 line-clamp-3 text-sm leading-7 text-neutral-600"><?= h(strip_tags($article['content'])) ?></p>
-                        <?= clean_context_button('/article_detail.php', ['slug' => $article['slug']], '<i class="fa-solid fa-eye mr-2"></i>อ่านต่อ', 'mt-5 inline-flex rounded-full bg-neutral-950 px-4 py-2 text-sm font-black text-white hover:bg-red-600') ?>
+                        <div class="mt-auto pt-5">
+                            <?= clean_context_button('/article_detail.php', ['slug' => $article['slug']], '<i class="fa-solid fa-eye mr-2"></i>อ่านต่อ', 'inline-flex items-center rounded-full bg-neutral-950 px-4 py-2 text-sm font-black text-white hover:bg-red-600') ?>
+                        </div>
                     </div>
                 </article>
             <?php endforeach; ?>

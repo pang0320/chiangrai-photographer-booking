@@ -243,10 +243,46 @@ include __DIR__ . '/includes/header.php';
                     </div>
                 </div>
             </div>
-            <div class="glass-panel rounded-[2rem] p-5 text-neutral-950 lg:sticky lg:top-24">
+            <div class="glass-panel relative rounded-[2rem] p-5 text-neutral-950 lg:sticky lg:top-24">
+                <?php if (current_user()): ?>
+                    <details class="group absolute right-4 top-4 z-20 open:z-50 hover:z-50 focus-within:z-50">
+                        <summary class="grid h-10 w-10 cursor-pointer list-none place-items-center rounded-full bg-white border border-neutral-200 text-neutral-600 shadow-sm transition hover:bg-neutral-950 hover:text-white group-open:bg-neutral-950 group-open:text-white" title="เมนูเพิ่มเติม">
+                            <i class="fa-solid fa-ellipsis"></i>
+                        </summary>
+                        <div class="absolute right-0 top-12 w-72 rounded-2xl border border-neutral-200 bg-white p-2 text-left shadow-2xl shadow-neutral-950/15 ring-1 ring-black/5">
+                            <details class="group/report">
+                                <summary class="flex cursor-pointer list-none items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-black text-neutral-700 hover:bg-neutral-50 hover:text-red-600 group-open/report:bg-neutral-50 group-open/report:text-red-600">
+                                    <i class="fa-solid fa-triangle-exclamation"></i>
+                                    รายงานโปรไฟล์นี้
+                                </summary>
+                                <div class="mt-2 border-t border-neutral-100 pt-3">
+                                    <p class="mb-3 text-[11px] font-bold leading-5 text-neutral-500">ส่งให้ผู้ดูแลระบบตรวจสอบปัญหาที่พบ</p>
+                                    <form method="post" class="grid gap-3">
+                                        <?= csrf_field() ?>
+                                        <input type="hidden" name="action" value="report_photographer">
+                                        <input type="hidden" name="photographer_id" value="<?= (int)$profile['id'] ?>">
+                                        <input type="hidden" name="target_id" value="<?= (int)$profile['id'] ?>">
+                                        <label class="grid gap-1 text-[11px] font-black text-neutral-600">
+                                            <span>เหตุผลในการรายงาน</span>
+                                            <input name="reason" required maxlength="180" placeholder="เช่น ข้อมูลติดต่อไม่ถูกต้อง" class="stock-input rounded-xl px-3 py-2 text-sm">
+                                        </label>
+                                        <label class="grid gap-1 text-[11px] font-black text-neutral-600">
+                                            <span>รายละเอียดเพิ่มเติม</span>
+                                            <textarea name="detail" required maxlength="2000" rows="3" placeholder="พิมพ์รายละเอียดปัญหาที่พบ เพื่อให้ผู้ดูแลตรวจสอบได้ชัดเจน" class="stock-input rounded-xl px-3 py-2 text-sm"></textarea>
+                                        </label>
+                                        <button class="btn-danger btn-sm w-full rounded-xl">
+                                            <i class="fa-solid fa-paper-plane mr-2"></i>ส่งรายงาน
+                                        </button>
+                                    </form>
+                                </div>
+                            </details>
+                        </div>
+                    </details>
+                <?php endif; ?>
+
                 <div class="flex items-center gap-4">
                     <img class="h-20 w-20 rounded-3xl object-cover" src="<?= h(public_image($profile['profile_image'], '/assets/uploads/seed/photo-1500648767791-00dcc994a43e.jpg')) ?>" alt="">
-                    <div>
+                    <div class="pr-12">
                         <p class="font-black"><?= h($profile['display_name']) ?></p>
                         <p class="mt-1 text-sm font-semibold text-neutral-500"><?= h($profile['district_name']) ?></p>
                     </div>
@@ -286,21 +322,6 @@ include __DIR__ . '/includes/header.php';
                     <a target="_blank" href="https://www.facebook.com/sharer/sharer.php?u=<?= urlencode($shareUrl) ?>" class="rounded-full bg-[#1877f2] px-3 py-2 text-center text-xs font-black text-white"><i class="fa-brands fa-facebook mr-1"></i>แชร์</a>
                     <a target="_blank" href="https://social-plugins.line.me/lineit/share?url=<?= urlencode($shareUrl) ?>" class="rounded-full bg-[#06c755] px-3 py-2 text-center text-xs font-black text-white"><i class="fa-brands fa-line mr-1"></i>LINE</a>
                 </div>
-                <form method="post" class="mt-4 grid gap-3 rounded-2xl bg-neutral-50 p-3">
-                    <?= csrf_field() ?>
-                    <input type="hidden" name="action" value="report_photographer">
-                    <input type="hidden" name="photographer_id" value="<?= (int)$profile['id'] ?>">
-                    <input type="hidden" name="target_id" value="<?= (int)$profile['id'] ?>">
-                    <label class="grid gap-1 text-xs font-black text-neutral-600">
-                        <span><i class="fa-solid fa-triangle-exclamation mr-1 text-red-600"></i>เหตุผลในการรายงาน</span>
-                        <input name="reason" required maxlength="180" placeholder="เช่น ข้อมูลติดต่อไม่ถูกต้อง" class="stock-input rounded-xl px-3 py-2 text-sm">
-                    </label>
-                    <label class="grid gap-1 text-xs font-black text-neutral-600">
-                        <span><i class="fa-solid fa-pen-to-square mr-1 text-red-600"></i>รายละเอียดเพิ่มเติม</span>
-                        <textarea name="detail" required maxlength="2000" rows="3" placeholder="พิมพ์รายละเอียดปัญหาที่พบ เพื่อให้ผู้ดูแลตรวจสอบได้ชัดเจน" class="stock-input rounded-xl px-3 py-2 text-sm"></textarea>
-                    </label>
-                    <button class="btn-danger btn-sm rounded-xl"><i class="fa-solid fa-triangle-exclamation"></i>รายงานโปรไฟล์</button>
-                </form>
             </div>
         </div>
     </div>

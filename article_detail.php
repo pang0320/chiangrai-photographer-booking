@@ -66,15 +66,50 @@ $hiddenTagCount = max(0, count($tags) - count($visibleTags));
 ?>
 
 <article class="stock-shell px-4 py-12 sm:px-6 lg:px-8">
-    <div class="stock-card overflow-hidden rounded-[2rem]">
-        <img class="h-[320px] w-full object-cover" src="<?= h(public_image($article['cover_image'], '/assets/uploads/seed/photo-1516035069371-29a1b244cc32.jpg')) ?>" alt="">
+    <div class="stock-card rounded-[2rem]" style="overflow: visible;">
+        <img class="h-[320px] w-full rounded-t-[2rem] object-cover" src="<?= h(public_image($article['cover_image'], '/assets/uploads/seed/photo-1516035069371-29a1b244cc32.jpg')) ?>" alt="">
         <div class="p-6 sm:p-10">
-            <div class="flex flex-wrap items-center gap-3 text-sm font-black text-red-600">
-                <span class="rounded-full bg-amber-50 px-3 py-1 text-amber-700"><i class="fa-solid fa-camera-retro mr-1"></i>บทความจากช่างภาพ</span>
-                <?= new_content_badge($articleDate) ?>
-                <?= clean_context_button('/photographer_detail.php', ['slug' => $article['photographer_slug']], '<i class="fa-solid fa-camera mr-1"></i>' . h($article['display_name']), 'hover:text-neutral-950') ?>
-                <span class="text-neutral-300">/</span>
-                <span class="text-neutral-500"><?= h(format_be_datetime($articleDate)) ?></span>
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <div class="flex flex-wrap items-center gap-3 text-sm font-black text-red-600">
+                    <span class="rounded-full bg-amber-50 px-3 py-1 text-amber-700"><i class="fa-solid fa-camera-retro mr-1"></i>บทความจากช่างภาพ</span>
+                    <?= new_content_badge($articleDate) ?>
+                    <?= clean_context_button('/photographer_detail.php', ['slug' => $article['photographer_slug']], '<i class="fa-solid fa-camera mr-1"></i>' . h($article['display_name']), 'hover:text-neutral-950') ?>
+                    <span class="text-neutral-300">/</span>
+                    <span class="text-neutral-500"><?= h(format_be_datetime($articleDate)) ?></span>
+                </div>
+
+                <?php if (current_user()): ?>
+                    <details class="group relative z-20 open:z-50 hover:z-50 focus-within:z-50">
+                        <summary class="grid h-10 w-10 cursor-pointer list-none place-items-center rounded-full bg-white border border-neutral-200 text-neutral-600 shadow-sm transition hover:bg-neutral-950 hover:text-white group-open:bg-neutral-950 group-open:text-white" title="เมนูเพิ่มเติม">
+                            <i class="fa-solid fa-ellipsis"></i>
+                        </summary>
+                        <div class="absolute right-0 top-12 w-72 rounded-2xl border border-neutral-200 bg-white p-2 text-left shadow-2xl shadow-neutral-950/15 ring-1 ring-black/5">
+                            <details class="group/report">
+                                <summary class="flex cursor-pointer list-none items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-black text-neutral-700 hover:bg-neutral-50 hover:text-red-600 group-open/report:bg-neutral-50 group-open/report:text-red-600">
+                                    <i class="fa-solid fa-triangle-exclamation"></i>
+                                    รายงานบทความนี้
+                                </summary>
+                                <div class="mt-2 border-t border-neutral-100 pt-3">
+                                    <p class="mb-3 text-[11px] font-bold leading-5 text-neutral-500">ส่งให้ผู้ดูแลระบบตรวจสอบปัญหาที่พบในบทความนี้</p>
+                                    <form method="post" class="grid gap-3">
+                                        <?= csrf_field() ?>
+                                        <label class="grid gap-1 text-[11px] font-black text-neutral-600">
+                                            <span>เหตุผลในการรายงาน</span>
+                                            <input name="reason" required maxlength="180" placeholder="เช่น เนื้อหาไม่เหมาะสม" class="stock-input rounded-xl px-3 py-2 text-sm">
+                                        </label>
+                                        <label class="grid gap-1 text-[11px] font-black text-neutral-600">
+                                            <span>รายละเอียดเพิ่มเติม</span>
+                                            <textarea name="detail" required maxlength="2000" rows="3" placeholder="พิมพ์รายละเอียดปัญหาที่ต้องการให้ผู้ดูแลตรวจสอบ" class="stock-input rounded-xl px-3 py-2 text-sm"></textarea>
+                                        </label>
+                                        <button class="btn-danger btn-sm w-full rounded-xl">
+                                            <i class="fa-solid fa-paper-plane mr-2"></i>ส่งรายงาน
+                                        </button>
+                                    </form>
+                                </div>
+                            </details>
+                        </div>
+                    </details>
+                <?php endif; ?>
             </div>
             <h1 class="mt-4 max-w-4xl text-3xl font-black leading-tight text-neutral-950 sm:text-5xl"><?= h($article['title']) ?></h1>
             <?php if ($tags): ?>
@@ -88,21 +123,12 @@ $hiddenTagCount = max(0, count($tags) - count($visibleTags));
                 </div>
             <?php endif; ?>
             <div class="prose prose-neutral mt-8 max-w-4xl text-base font-medium leading-8 text-neutral-700"><?= $safeArticleContent ?></div>
-            <div class="mt-8">
-                <div class="flex flex-wrap gap-3">
-                    <a href="/blog.php" class="rounded-full border border-neutral-200 px-5 py-3 font-black hover:bg-neutral-950 hover:text-white">
-                        <i class="fa-solid fa-newspaper mr-2"></i>กลับไปหน้ารวมบทความ
-                    </a>
-                    <?= clean_context_button('/photographer_detail.php', ['slug' => $article['photographer_slug']], '<i class="fa-solid fa-camera mr-2"></i>ดูโปรไฟล์ช่างภาพ', 'rounded-full border border-neutral-200 px-5 py-3 font-black hover:bg-neutral-950 hover:text-white') ?>
-                </div>
+            <div class="mt-8 flex flex-wrap gap-3">
+                <a href="/blog.php" class="rounded-full border border-neutral-200 px-5 py-3 font-black hover:bg-neutral-950 hover:text-white">
+                    <i class="fa-solid fa-newspaper mr-2"></i>กลับไปหน้ารวมบทความ
+                </a>
+                <?= clean_context_button('/photographer_detail.php', ['slug' => $article['photographer_slug']], '<i class="fa-solid fa-camera mr-2"></i>ดูโปรไฟล์ช่างภาพ', 'rounded-full border border-neutral-200 px-5 py-3 font-black hover:bg-neutral-950 hover:text-white') ?>
             </div>
-            <form method="post" class="mt-8 grid gap-3 rounded-[1.5rem] bg-neutral-50 p-5">
-                <?= csrf_field() ?>
-                <h2 class="font-black text-neutral-950"><i class="fa-solid fa-triangle-exclamation mr-2 text-red-600"></i>รายงานบทความนี้</h2>
-                <input name="reason" required maxlength="180" placeholder="เหตุผล เช่น เนื้อหาไม่เหมาะสม" class="stock-input rounded-2xl px-4 py-3 font-semibold">
-                <textarea name="detail" required maxlength="2000" rows="3" placeholder="รายละเอียดเพิ่มเติม" class="stock-input rounded-2xl px-4 py-3 font-semibold"></textarea>
-                <button class="btn-danger btn-md justify-self-start"><i class="fa-solid fa-paper-plane"></i>ส่งรายงาน</button>
-            </form>
         </div>
     </div>
 </article>

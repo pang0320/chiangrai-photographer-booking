@@ -58,6 +58,15 @@ document.addEventListener('click', function (event) {
   });
 });
 
+// Close all <details> dropdowns when clicking outside
+document.addEventListener('click', function (event) {
+  document.querySelectorAll('details[open]').forEach(function (details) {
+    if (!details.contains(event.target)) {
+      details.removeAttribute('open');
+    }
+  });
+});
+
 document.addEventListener('DOMContentLoaded', function () {
   hidePageLoader();
 

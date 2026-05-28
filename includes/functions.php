@@ -1281,6 +1281,36 @@ function sync_availability_after_booking_status(int $bookingId): void
                                      AND status = "booked"');
             $stmt->execute([$photographerId, $bookingDate, $timeSlot]);
         }
+
+        // Try to merge morning, afternoon, and evening back to full_day if no active bookings exist on that day
+        $activeAnySql = 'SELECT id FROM bookings
+                         WHERE photographer_id = ?
+                           AND booking_date = ?
+                           AND status IN ("pending","accepted","confirmed")
+                           AND deleted_at IS NULL
+                         LIMIT 1';
+        $stmtAny = db()->prepare($activeAnySql);
+        $stmtAny->execute([$photographerId, $bookingDate]);
+        
+        if (!$stmtAny->fetchColumn()) {
+            $slotsStmt = db()->prepare('SELECT time_slot, status FROM photographer_availability WHERE photographer_id = ? AND available_date = ?');
+            $slotsStmt->execute([$photographerId, $bookingDate]);
+            $slots = $slotsStmt->fetchAll(PDO::FETCH_KEY_PAIR);
+            
+            if (
+                isset($slots['morning']) && $slots['morning'] === 'available' &&
+                isset($slots['afternoon']) && $slots['afternoon'] === 'available' &&
+                isset($slots['evening']) && $slots['evening'] === 'available'
+            ) {
+                // Determine if there is any custom note on these slots that we should keep?
+                // For simplicity, we just clear the note or leave it empty, as it's merged.
+                $deleteStmt = db()->prepare('DELETE FROM photographer_availability WHERE photographer_id = ? AND available_date = ? AND time_slot IN ("morning", "afternoon", "evening")');
+                $deleteStmt->execute([$photographerId, $bookingDate]);
+                
+                $insertStmt = db()->prepare('INSERT INTO photographer_availability (photographer_id, available_date, time_slot, status, created_at, updated_at) VALUES (?, ?, "full_day", "available", NOW(), NOW()) ON DUPLICATE KEY UPDATE status="available", updated_at=NOW()');
+                $insertStmt->execute([$photographerId, $bookingDate]);
+            }
+        }
     }
 }
 

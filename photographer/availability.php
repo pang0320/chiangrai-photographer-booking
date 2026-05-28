@@ -155,7 +155,7 @@ if (is_post()) {
     redirect('/photographer/availability.php');
 }
 
-$stmt = db()->prepare('SELECT * FROM photographer_availability WHERE photographer_id = ? AND status <> "booked" ORDER BY available_date DESC, time_slot');
+$stmt = db()->prepare('SELECT * FROM photographer_availability WHERE photographer_id = ? ORDER BY available_date DESC, time_slot');
 $stmt->execute([$pid]);
 $items = $stmt->fetchAll();
 
@@ -242,10 +242,16 @@ include __DIR__ . '/../includes/header.php';
                     <tr class="border-t">
                         <td class="py-3 font-bold"><?= h(format_be_date($item['available_date'])) ?></td>
                         <td><?= h(time_slot_label($item['time_slot'])) ?></td>
-                        <td><?= status_badge((string)$item['status']) ?></td>
+                        <?php 
+                            $hasActiveBooking = photographer_availability_has_active_booking($item);
+                            $displayStatus = (string)$item['status'];
+                            if ($displayStatus === 'available' && $hasActiveBooking) {
+                                $displayStatus = 'booked';
+                            }
+                        ?>
+                        <td><?= status_badge($displayStatus) ?></td>
                         <td><?= h($item['note']) ?></td>
                         <td class="py-3 align-top">
-                            <?php $hasActiveBooking = photographer_availability_has_active_booking($item); ?>
                             <div class="flex flex-wrap items-start gap-2">
                                 <details class="w-full sm:w-auto">
                                     <summary class="btn-warning btn-sm inline-flex cursor-pointer list-none items-center gap-1 rounded-full">

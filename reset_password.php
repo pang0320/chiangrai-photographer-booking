@@ -1,6 +1,13 @@
 <?php
 require_once __DIR__ . '/includes/functions.php';
 
+/**
+ * ตรวจสอบความถูกต้องของรหัสผ่านตามนโยบายความปลอดภัย
+ * 
+ * @param string $password รหัสผ่านที่ต้องการตรวจสอบ
+ * @param string $confirmation การยืนยันรหัสผ่าน
+ * @return array รายการข้อผิดพลาดที่พบ
+ */
 function password_policy_errors(string $password, string $confirmation): array
 {
     $errors = [];

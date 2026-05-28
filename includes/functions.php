@@ -1290,7 +1290,7 @@ function can_book_slot(int $photographerId, string $date, string $slot, ?int $ex
         return false;
     }
 
-    $stmt = db()->prepare('SELECT id FROM photographer_availability WHERE photographer_id = ? AND available_date = ? AND time_slot = ? AND status = "available" LIMIT 1');
+    $stmt = db()->prepare('SELECT id FROM photographer_availability WHERE photographer_id = ? AND available_date = ? AND (time_slot = ? OR time_slot = "full_day") AND status = "available" LIMIT 1');
     $stmt->execute([$photographerId, $date, $slot]);
     if (!$stmt->fetchColumn()) {
         return false;

@@ -76,6 +76,12 @@ foreach ($calendarRows as $row) {
             $availableSlotsByDate[$dateKey] = [];
         }
         $availableSlotsByDate[$dateKey][] = (string)$row['time_slot'];
+        
+        if ((string)$row['time_slot'] === 'full_day') {
+            $availableSlotsByDate[$dateKey][] = 'morning';
+            $availableSlotsByDate[$dateKey][] = 'afternoon';
+            $availableSlotsByDate[$dateKey][] = 'evening';
+        }
     }
 
     $currentStatus = $GLOBALS['calendar_date_statuses']['booking_date'][$dateKey] ?? 'unavailable';
@@ -196,6 +202,25 @@ if (is_post()) {
         $stmt = db()->prepare('INSERT INTO bookings (booking_code, customer_id, photographer_id, category_id, district_id, booking_date, time_slot, contact_name, contact_phone, contact_channel, job_detail, note, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "pending", NOW(), NOW())');
         $stmt->execute([$code, (int)$user['id'], $photographerId, $categoryId, $districtId, $date, $slot, trim($bookingFormOld['contact_name']), trim($bookingFormOld['contact_phone']), trim($bookingFormOld['contact_channel']), trim($bookingFormOld['job_detail']), trim($bookingFormOld['note'])]);
         $bookingId = (int)db()->lastInsertId();
+        
+        if ($slot !== 'full_day') {
+            $stmtFull = db()->prepare('SELECT id FROM photographer_availability WHERE photographer_id = ? AND available_date = ? AND time_slot = "full_day" AND status = "available" LIMIT 1');
+            $stmtFull->execute([$photographerId, $date]);
+            $fullDayId = $stmtFull->fetchColumn();
+
+            if ($fullDayId) {
+                // Delete the full_day slot
+                $stmtDelete = db()->prepare('DELETE FROM photographer_availability WHERE id = ?');
+                $stmtDelete->execute([$fullDayId]);
+                
+                // Insert individual slots
+                $stmtInsert = db()->prepare('INSERT INTO photographer_availability (photographer_id, available_date, time_slot, status, created_at, updated_at) VALUES (?, ?, ?, "available", NOW(), NOW())');
+                $stmtInsert->execute([$photographerId, $date, 'morning']);
+                $stmtInsert->execute([$photographerId, $date, 'afternoon']);
+                $stmtInsert->execute([$photographerId, $date, 'evening']);
+            }
+        }
+
         add_booking_status_log($bookingId, null, 'pending', (int)$user['id'], 'สร้างคำขอจอง');
         notify_user((int)$profile['photographer_user_id'], 'มีคำขอจองใหม่', $code, 'booking', $bookingId);
         log_activity('create_booking', 'bookings', $bookingId);

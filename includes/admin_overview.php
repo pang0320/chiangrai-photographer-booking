@@ -11,6 +11,9 @@ $adminPage = basename($adminPath);
 $adminCurrentTitle = $pageTitle ?? 'ผู้ดูแลระบบ';
 
 if (!function_exists('admin_overview_count')) {
+    /**
+     * นับจำนวนข้อมูลจาก SQL query ที่ส่งเข้ามา (ใช้ภายในหน้า Overview แอดมิน)
+     */
     function admin_overview_count(string $sql): int
     {
         return (int)db_fetch_value($sql);

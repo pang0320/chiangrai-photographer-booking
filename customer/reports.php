@@ -22,6 +22,12 @@ foreach ($reports as $report) {
     }
 }
 
+/**
+ * สร้างข้อความอธิบายเป้าหมายที่ถูกรายงานเพื่อให้ลูกค้าอ่านเข้าใจง่าย
+ *
+ * @param array $report ข้อมูลรายงานปัญหา
+ * @return string ข้อความอธิบายเป้าหมาย (เช่น "โปรไฟล์ช่างภาพ: ชื่อช่างภาพ")
+ */
 function customer_report_target_label(array $report): string
 {
     $targetType = (string)$report['target_type'];
@@ -66,6 +72,12 @@ function customer_report_target_label(array $report): string
     return $targetType . ' #' . $targetId;
 }
 
+/**
+ * แปลงประเภทรายงานเป็นข้อความภาษาไทยสั้นๆ สำหรับแสดงในป้ายสถานะ (Badge)
+ *
+ * @param string $type ประเภทรายงาน
+ * @return string ข้อความภาษาไทยที่อธิบายประเภท
+ */
 function customer_report_type_label(string $type): string
 {
     $labels = [

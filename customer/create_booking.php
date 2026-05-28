@@ -91,6 +91,13 @@ foreach ($calendarRows as $row) {
 }
 $GLOBALS['calendar_date_labels']['booking_date'] = 'วันที่ต้องการจ้าง';
 
+/**
+ * คืนค่าคลาส CSS สำหรับฟิลด์ที่มีข้อผิดพลาด เพื่อเน้นสีแดงรอบช่องอินพุต
+ *
+ * @param string $field ชื่อฟิลด์ที่ต้องการตรวจสอบ
+ * @param array $errors รายการข้อผิดพลาดที่พบ
+ * @return string คลาส CSS สำหรับแสดงสถานะข้อผิดพลาด
+ */
 function booking_field_error_class(string $field, array $errors): string
 {
     if (!isset($errors[$field])) {
@@ -100,6 +107,13 @@ function booking_field_error_class(string $field, array $errors): string
     return ' border-red-300 bg-red-50 ring-2 ring-red-100';
 }
 
+/**
+ * คืนค่าคลาส CSS สำหรับกรอบหุ้ม (Wrapper) ฟิลด์ที่มีข้อผิดพลาด เพื่อเน้นพื้นที่ส่วนนั้น
+ *
+ * @param string $field ชื่อฟิลด์ที่ต้องการตรวจสอบ
+ * @param array $errors รายการข้อผิดพลาดที่พบ
+ * @return string คลาส CSS สำหรับกรอบหุ้ม
+ */
 function booking_field_wrap_class(string $field, array $errors): string
 {
     if (!isset($errors[$field])) {
@@ -109,6 +123,13 @@ function booking_field_wrap_class(string $field, array $errors): string
     return ' booking-field-error rounded-[1.5rem] border border-red-200 bg-red-50/35 p-3';
 }
 
+/**
+ * สร้าง HTML สำหรับแสดงข้อความแจ้งเตือนข้อผิดพลาดใต้ฟิลด์
+ *
+ * @param string $field ชื่อฟิลด์
+ * @param array $errors รายการข้อผิดพลาด
+ * @return string โค้ด HTML ของข้อความแสดงข้อผิดพลาด
+ */
 function booking_field_error_html(string $field, array $errors): string
 {
     if (!isset($errors[$field])) {

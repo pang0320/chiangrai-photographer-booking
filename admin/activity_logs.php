@@ -2,6 +2,12 @@
 require_once __DIR__ . '/../includes/functions.php';
 requireRole('admin');
 
+/**
+ * แปลงชื่อการกระทำ (action) ให้เป็นข้อความภาษาไทยที่อ่านง่าย
+ *
+ * @param string $action ชื่อการกระทำในระบบ
+ * @return string ข้อความภาษาไทยที่อธิบายการกระทำ
+ */
 function activity_action_label(string $action): string
 {
     $map = [
@@ -63,6 +69,12 @@ function activity_action_label(string $action): string
     return str_replace('_', ' ', $action);
 }
 
+/**
+ * แปลงชื่อตารางให้เป็นข้อความภาษาไทยที่อธิบายโมดูลของระบบ
+ *
+ * @param string|null $table ชื่อตารางในฐานข้อมูล
+ * @return string ข้อความภาษาไทยที่อธิบายโมดูล
+ */
 function activity_table_label(?string $table): string
 {
     $table = (string)$table;
@@ -97,6 +109,12 @@ function activity_table_label(?string $table): string
     return $table;
 }
 
+/**
+ * เลือกไอคอน FontAwesome ตามประเภทของการกระทำ
+ *
+ * @param string $action ชื่อการกระทำ
+ * @return string ชื่อคลาสไอคอน FontAwesome
+ */
 function activity_icon(string $action): string
 {
     if (strpos($action, 'security') !== false || strpos($action, 'blocked') !== false || strpos($action, 'suspend') !== false) {
@@ -126,6 +144,12 @@ function activity_icon(string $action): string
     return 'fa-clipboard-list';
 }
 
+/**
+ * เลือกคลาสสี CSS ตามประเภทของการกระทำสำหรับใช้แสดงในการ์ดหรือแถบสี
+ *
+ * @param string $action ชื่อการกระทำ
+ * @return string คลาสสี CSS (Tailwind)
+ */
 function activity_color_class(string $action): string
 {
     if (strpos($action, 'security') !== false || strpos($action, 'blocked') !== false || strpos($action, 'suspend') !== false || strpos($action, 'reject') !== false) {

@@ -3,6 +3,9 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../config/database.php';
 
+/**
+ * ตรวจสอบความผิดปกติของข้อมูลนำเข้า (เช่น XSS, SQL Injection)
+ */
 function detectSuspiciousInput($input): array
 {
     $value = '';
@@ -76,6 +79,9 @@ function detectSuspiciousInput($input): array
     ];
 }
 
+/**
+ * สแกนคำขอ (GET, POST, COOKIE) ทั้งหมดเพื่อหาภัยคุกคามด้านความปลอดภัย
+ */
 function scanRequestForThreats(): array
 {
     $sources = [
@@ -104,6 +110,9 @@ function scanRequestForThreats(): array
     ];
 }
 
+/**
+ * บันทึกเหตุการณ์ด้านความปลอดภัยลงใน Activity Log
+ */
 function logSecurityEvent(string $eventType, array $context = []): void
 {
     $userId = null;
@@ -139,6 +148,9 @@ function logSecurityEvent(string $eventType, array $context = []): void
     ]);
 }
 
+/**
+ * ฟังก์ชันช่วยในการสแกนข้อมูลจากแหล่งต่างๆ แบบ recursive
+ */
 function scanSecuritySource(string $sourceName, $value, string $path, array &$threats): void
 {
     if (is_array($value)) {
@@ -173,6 +185,9 @@ function scanSecuritySource(string $sourceName, $value, string $path, array &$th
     }
 }
 
+/**
+ * ตรวจสอบว่าเป็นฟิลด์ข้อมูลที่ละเอียดอ่อนหรือไม่ (เช่น รหัสผ่าน) เพื่อเลี่ยงการสแกนหรือบันทึก log
+ */
 function isSensitiveSecurityField(string $fieldName): bool
 {
     $fieldName = strtolower($fieldName);

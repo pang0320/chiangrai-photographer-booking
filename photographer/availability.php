@@ -7,6 +7,13 @@ $pid = (int)$profile['id'];
 $timeSlots = ['morning' => 'เช้า', 'afternoon' => 'บ่าย', 'evening' => 'เย็น', 'full_day' => 'เต็มวัน'];
 $statuses = ['available', 'unavailable'];
 
+/**
+ * ดึงข้อมูลแถววันว่างของช่างภาพตามรหัสที่ระบุ
+ *
+ * @param int $id รหัสแถววันว่าง
+ * @param int $photographerId รหัสช่างภาพ (เพื่อตรวจสอบความเป็นเจ้าของ)
+ * @return array|null ข้อมูลวันว่าง หรือ null หากไม่พบ
+ */
 function photographer_availability_row(int $id, int $photographerId): ?array
 {
     $stmt = db()->prepare('SELECT * FROM photographer_availability WHERE id = ? AND photographer_id = ? LIMIT 1');
@@ -20,6 +27,12 @@ function photographer_availability_row(int $id, int $photographerId): ?array
     return $row;
 }
 
+/**
+ * ตรวจสอบว่าในวันและช่วงเวลาที่ระบุ มีคำขอจองที่กำลังดำเนินการอยู่หรือไม่ (เพื่อป้องกันการลบหรือแก้ไข)
+ *
+ * @param array $row ข้อมูลแถววันว่างที่ต้องการตรวจสอบ
+ * @return bool คืนค่า true หากมีคำขอจองที่ยังไม่เสร็จสิ้น/ไม่ถูกยกเลิก
+ */
 function photographer_availability_has_active_booking(array $row): bool
 {
     $stmt = db()->prepare('SELECT COUNT(*)
@@ -39,6 +52,13 @@ function photographer_availability_has_active_booking(array $row): bool
     return (int)$stmt->fetchColumn() > 0;
 }
 
+/**
+ * ตรวจสอบความถูกต้องของข้อมูลวันว่างที่ส่งมาจากฟอร์ม
+ *
+ * @param array $timeSlots รายการช่วงเวลาที่อนุญาต
+ * @param array $statuses รายการสถานะที่อนุญาต
+ * @return array ข้อมูลที่ผ่านการตรวจสอบแล้ว [availableDate, timeSlot, status, note]
+ */
 function validate_availability_payload(array $timeSlots, array $statuses): array
 {
     $availableDate = parse_be_date_to_iso((string)($_POST['available_date'] ?? ''));

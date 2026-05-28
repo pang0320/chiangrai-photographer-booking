@@ -3,6 +3,12 @@ require_once __DIR__ . '/../includes/functions.php';
 requireRole('admin');
 $cleanContext = clean_context_init(['status']);
 
+/**
+ * แปลงประเภทเป้าหมายที่ถูกรายงานให้เป็นข้อความภาษาไทย
+ *
+ * @param string $type ประเภทเป้าหมาย (photographer, review, booking, article)
+ * @return string ข้อความภาษาไทยที่อธิบายประเภทเป้าหมาย
+ */
 function admin_report_type_label(string $type): string
 {
     $labels = [
@@ -19,6 +25,12 @@ function admin_report_type_label(string $type): string
     return $type;
 }
 
+/**
+ * อธิบายแหล่งที่มาของรายงานปัญหาเพื่อให้ผู้ดูแลรู้ว่าปุ่มรายงานถูกกดมาจากหน้าไหน
+ *
+ * @param array $report ข้อมูลรายงานปัญหา
+ * @return string ข้อความอธิบายแหล่งที่มา
+ */
 function admin_report_source_label(array $report): string
 {
     $targetType = (string)$report['target_type'];
@@ -49,6 +61,12 @@ function admin_report_source_label(array $report): string
     return 'ไม่ทราบจุดที่รายงาน';
 }
 
+/**
+ * แปลงสถานะของเนื้อหา (เช่น บทความ) ให้เป็นข้อความภาษาไทย
+ *
+ * @param string $status ชื่อสถานะ
+ * @return string ข้อความภาษาไทยที่อธิบายสถานะ
+ */
 function admin_report_content_status_label(string $status): string
 {
     $labels = [
@@ -65,6 +83,13 @@ function admin_report_content_status_label(string $status): string
     return $status;
 }
 
+/**
+ * แปลงชื่อบทบาทผู้ใช้ให้เป็นข้อความภาษาไทยที่เข้าใจง่าย
+ *
+ * @param string|null $roleLabel ชื่อแสดงของบทบาท (ถ้ามี)
+ * @param string|null $roleName ชื่อทางเทคนิคของบทบาท (customer, photographer, admin)
+ * @return string ข้อความภาษาไทยที่อธิบายบทบาท
+ */
 function admin_report_role_text(?string $roleLabel, ?string $roleName): string
 {
     $label = trim((string)$roleLabel);
@@ -86,6 +111,14 @@ function admin_report_role_text(?string $roleLabel, ?string $roleName): string
     return $role !== '' ? $role : 'ไม่ทราบบทบาท';
 }
 
+/**
+ * เพิ่มข้อมูลผู้รับการแจ้งเตือนเข้าไปในรายการ โดยตรวจสอบไม่ให้ซ้ำกัน
+ *
+ * @param array $recipients รายการผู้รับที่ถูกส่งมาแบบอ้างอิง (Reference) เพื่อเพิ่มข้อมูลเข้าไป
+ * @param array $row ข้อมูลแถวจากฐานข้อมูลที่มีข้อมูลผู้ใช้
+ * @param string $source ข้อความอธิบายที่มาของการเลือกผู้ใช้รายนี้
+ * @return void
+ */
 function admin_report_add_recipient(array &$recipients, array $row, string $source): void
 {
     $userId = (int)($row['user_id'] ?? 0);
@@ -109,6 +142,12 @@ function admin_report_add_recipient(array &$recipients, array $row, string $sour
     ];
 }
 
+/**
+ * ค้นหารายชื่อผู้ใช้ที่เป็น "คู่กรณี" หรือ "เจ้าของเนื้อหา" ที่ถูกรายงาน เพื่อใช้ส่งแจ้งเตือน
+ *
+ * @param array $report ข้อมูลรายงานปัญหา
+ * @return array รายการข้อมูลผู้รับแจ้งเตือน
+ */
 function admin_report_target_recipients(array $report): array
 {
     $targetType = (string)$report['target_type'];
@@ -222,6 +261,12 @@ function admin_report_target_recipients(array $report): array
     return $recipients;
 }
 
+/**
+ * รวบรวมข้อมูลสรุปของเป้าหมายที่ถูกรายงาน (เช่น ชื่อช่างภาพ, ข้อความรีวิว, รหัสคำขอจอง) เพื่อแสดงผลในตารางผู้ดูแล
+ *
+ * @param array $report ข้อมูลรายงานปัญหา
+ * @return array ข้อมูลสรุปเป้าหมาย (title, meta, icon, tone)
+ */
 function admin_report_target_info(array $report): array
 {
     $targetType = (string)$report['target_type'];

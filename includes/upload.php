@@ -3,6 +3,9 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../config/database.php';
 
+/**
+ * จัดการการอัปโหลดรูปภาพ ตรวจสอบความปลอดภัย และบันทึกไฟล์
+ */
 function upload_image(array $file, string $folder): ?string
 {
     if (empty($file['name']) || (int)($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
@@ -147,6 +150,9 @@ function upload_image(array $file, string $folder): ?string
     return $safeFolder . '/' . $name;
 }
 
+/**
+ * บันทึกเหตุการณ์เมื่อการอัปโหลดไฟล์ถูกปฏิเสธด้วยเหตุผลด้านความปลอดภัย
+ */
 function upload_security_reject(string $reason, array $context = []): void
 {
     $context['reason'] = $reason;

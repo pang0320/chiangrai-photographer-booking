@@ -40,6 +40,13 @@ define('DB_USER', $dbUser);
 define('DB_PASS', $dbPass);
 define('DB_CHARSET', $dbCharset);
 
+/**
+ * แยกส่วนประกอบของ Endpoint ฐานข้อมูล (Host และ Port)
+ *
+ * @param string $endpoint ข้อความ Endpoint เช่น "127.0.0.1:3306" หรือ "localhost"
+ * @param int $defaultPort พอร์ตมาตรฐานที่ต้องการใช้หากระบุมาไม่ถูกต้อง
+ * @return array อาเรย์ประกอบด้วย [host, port]
+ */
 function parse_db_endpoint(string $endpoint, int $defaultPort): array
 {
     $endpoint = trim($endpoint);
@@ -59,6 +66,11 @@ function parse_db_endpoint(string $endpoint, int $defaultPort): array
     return [$endpoint, $defaultPort];
 }
 
+/**
+ * รายการ Endpoint ฐานข้อมูลที่มีโอกาสเชื่อมต่อได้สำเร็จ โดยรวมเอาค่าสำรอง (Fallback) ไว้ด้วย
+ *
+ * @return array รายการ Endpoint ของฐานข้อมูล
+ */
 function db_connection_candidates(): array
 {
     $candidates = [];
@@ -80,6 +92,13 @@ function db_connection_candidates(): array
     return array_values(array_unique($candidates));
 }
 
+/**
+ * สร้างและคืนค่าการเชื่อมต่อฐานข้อมูลแบบ PDO (Singleton)
+ * ฟังก์ชันจะพยายามเชื่อมต่อตามรายการ Endpoint ที่มี จนกว่าจะสำเร็จ
+ *
+ * @return PDO ออบเจกต์การเชื่อมต่อ PDO
+ * @throws PDOException เมื่อไม่สามารถเชื่อมต่อฐานข้อมูลได้เลยจากทุก Endpoint
+ */
 function db(): PDO
 {
     static $pdo = null;

@@ -5,6 +5,13 @@ $user = current_user();
 $profile = photographer_profile_by_user((int)$user['id']);
 if (!$profile) exit('Profile not found');
 
+/**
+ * ตรวจสอบความแข็งแรงของรหัสผ่านใหม่และยืนยันว่าตรงกัน
+ *
+ * @param string $password รหัสผ่านใหม่
+ * @param string $confirmation การยืนยันรหัสผ่านใหม่
+ * @return array รายการข้อผิดพลาดที่พบ (ถ้ามี)
+ */
 function photographer_profile_password_errors(string $password, string $confirmation): array
 {
     $errors = [];

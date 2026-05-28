@@ -7,17 +7,26 @@ require_once __DIR__ . '/flash.php';
 require_once __DIR__ . '/upload.php';
 require_once __DIR__ . '/security.php';
 
+/**
+ * แปลงข้อมูลเป็น HTML-safe เพื่อป้องกัน XSS
+ */
 function h($value): string
 {
     return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
 }
 
+/**
+ * เปลี่ยนเส้นทางไปยังหน้าที่กำหนดและสิ้นสุดการทำงาน
+ */
 function redirect(string $path): void
 {
     header('Location: ' . $path);
     exit;
 }
 
+/**
+ * จดจำผลลัพธ์ของฟังก์ชันในหน่วยความจำชั่วคราวระหว่างการทำงานของ request
+ */
 function request_cache_remember(string $key, callable $resolver)
 {
     static $cache = [];
@@ -30,11 +39,17 @@ function request_cache_remember(string $key, callable $resolver)
     return $cache[$key];
 }
 
+/**
+ * คืนค่าเส้นทางของไฟล์ cache ตาม key ที่กำหนด
+ */
 function app_cache_file(string $key): string
 {
     return rtrim(CACHE_PATH, '/\\') . '/' . sha1($key) . '.cache';
 }
 
+/**
+ * ดึงข้อมูลจาก cache หรือรันฟังก์ชันเพื่อเก็บผลลัพธ์ลง cache ตามเวลาที่กำหนด
+ */
 function cache_remember(string $key, int $ttlSeconds, callable $resolver)
 {
     if (!CACHE_ENABLED || $ttlSeconds <= 0) {
@@ -68,6 +83,9 @@ function cache_remember(string $key, int $ttlSeconds, callable $resolver)
     return $value;
 }
 
+/**
+ * ลบข้อมูล cache ตาม key ที่กำหนด
+ */
 function cache_forget(string $key): void
 {
     $file = app_cache_file($key);
@@ -76,6 +94,9 @@ function cache_forget(string $key): void
     }
 }
 
+/**
+ * ล้างข้อมูล cache ทั้งหมดในระบบ
+ */
 function cache_clear_all(): void
 {
     $dir = rtrim(CACHE_PATH, '/\\');
@@ -88,6 +109,9 @@ function cache_clear_all(): void
     }
 }
 
+/**
+ * เปลี่ยนเส้นทางไปยังหน้าที่กำหนด พร้อมจดจำ URL ปัจจุบันเพื่อกลับมาภายหลัง
+ */
 function redirect_with_intended(string $path): void
 {
     $requestUri = (string)($_SERVER['REQUEST_URI'] ?? '');
@@ -98,6 +122,9 @@ function redirect_with_intended(string $path): void
     redirect($path);
 }
 
+/**
+ * ปรับรูปแบบ path ให้สะอาดและไม่มี query string
+ */
 function clean_context_path(?string $path = null): string
 {
     if ($path === null) {
@@ -116,6 +143,9 @@ function clean_context_path(?string $path = null): string
     return $parsedPath;
 }
 
+/**
+ * เก็บพารามิเตอร์ของหน้าลงใน session context
+ */
 function clean_context_set(string $path, array $params): void
 {
     $path = clean_context_path($path);
@@ -141,6 +171,9 @@ function clean_context_set(string $path, array $params): void
     $_SESSION['clean_page_context'][$path] = $cleanParams;
 }
 
+/**
+ * ดึงข้อมูล context ของหน้าจาก session
+ */
 function clean_context_get(?string $path = null): array
 {
     $path = clean_context_path($path);
@@ -151,6 +184,9 @@ function clean_context_get(?string $path = null): array
     return [];
 }
 
+/**
+ * เริ่มต้นจัดการ context ของหน้า โดยรับค่า GET/POST และเปลี่ยนเส้นทางเป็น URL ที่สะอาด
+ */
 function clean_context_init(array $allowedKeys, ?string $path = null): array
 {
     $path = clean_context_path($path);
@@ -185,6 +221,9 @@ function clean_context_init(array $allowedKeys, ?string $path = null): array
     return clean_context_get($path);
 }
 
+/**
+ * ดึงค่าจาก context พร้อมกำหนดค่าเริ่มต้นหากไม่พบ
+ */
 function clean_context_value(array $context, string $key, $default = '')
 {
     if (array_key_exists($key, $context)) {
@@ -194,12 +233,18 @@ function clean_context_value(array $context, string $key, $default = '')
     return $default;
 }
 
+/**
+ * ตั้งค่า context และเปลี่ยนเส้นทางไปยังหน้าที่กำหนด
+ */
 function clean_redirect(string $path, array $params = []): void
 {
     clean_context_set($path, $params);
     redirect(clean_context_path($path));
 }
 
+/**
+ * สร้าง hidden input fields สำหรับข้อมูลใน context และ CSRF token
+ */
 function clean_context_inputs(array $params): string
 {
     $html = '<input type="hidden" name="__context_nav" value="1">';
@@ -219,6 +264,9 @@ function clean_context_inputs(array $params): string
     return $html;
 }
 
+/**
+ * สร้างฟอร์มและปุ่มกดที่ส่งข้อมูลผ่าน context แบบ POST
+ */
 function clean_context_button(string $path, array $params, string $content, string $buttonClass = '', string $formClass = 'inline', string $formAttrs = ''): string
 {
     return '<form method="post" action="' . h(clean_context_path($path)) . '" class="' . h($formClass) . '" ' . $formAttrs . '>'
@@ -227,6 +275,9 @@ function clean_context_button(string $path, array $params, string $content, stri
         . '</form>';
 }
 
+/**
+ * แปลง URL ที่มี query string ให้เป็นปุ่มกดแบบ clean context
+ */
 function clean_context_button_from_url(string $url, string $content, string $buttonClass = '', string $formClass = 'inline', string $formAttrs = ''): string
 {
     $path = clean_context_path($url);
@@ -240,16 +291,25 @@ function clean_context_button_from_url(string $url, string $content, string $but
     return clean_context_button($path, $params, $content, $buttonClass, $formClass, $formAttrs);
 }
 
+/**
+ * คืนค่า IP address ของผู้ใช้งาน
+ */
 function client_ip(): string
 {
     return substr((string)($_SERVER['REMOTE_ADDR'] ?? '0.0.0.0'), 0, 64);
 }
 
+/**
+ * ตรวจสอบว่าคำขอเป็นแบบ POST หรือไม่
+ */
 function is_post(): bool
 {
     return ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST';
 }
 
+/**
+ * ตรวจสอบว่า session หมดอายุเนื่องจากไม่มีความเคลื่อนไหวหรือไม่
+ */
 function auth_session_expired(): bool
 {
     if (empty($_SESSION['user_id']) || empty($_SESSION['last_activity_at'])) {
@@ -259,6 +319,9 @@ function auth_session_expired(): bool
     return (time() - (int)$_SESSION['last_activity_at']) >= SESSION_TIMEOUT_SECONDS;
 }
 
+/**
+ * ล้างข้อมูลการเข้าสู่ระบบและ session
+ */
 function clear_auth_session(bool $restart = false): void
 {
     $_SESSION = [];
@@ -278,6 +341,9 @@ function clear_auth_session(bool $restart = false): void
     }
 }
 
+/**
+ * ดึงข้อมูลผู้ใช้งานปัจจุบันที่ล็อกอินอยู่
+ */
 function current_user(): ?array
 {
     if (empty($_SESSION['user_id'])) {
@@ -299,6 +365,9 @@ function current_user(): ?array
     return $user ?: null;
 }
 
+/**
+ * คืนค่า ID ของบทบาทผู้ใช้ตามชื่อที่ระบุ
+ */
 function role_id(string $role): int
 {
     return (int)request_cache_remember('role_id:' . $role, function () use ($role) {
@@ -308,6 +377,9 @@ function role_id(string $role): int
     });
 }
 
+/**
+ * บังคับให้ผู้ใช้ต้องเข้าสู่ระบบ หากไม่ได้ล็อกอินจะถูกเปลี่ยนเส้นทางไปหน้า login
+ */
 function requireLogin(): void
 {
     if (auth_session_expired()) {
@@ -340,6 +412,9 @@ function requireLogin(): void
     $_SESSION['last_activity_at'] = time();
 }
 
+/**
+ * บังคับบทบาทผู้ใช้ที่สามารถเข้าถึงหน้านั้นๆ ได้
+ */
 function requireRole($roles): void
 {
     requireLogin();
@@ -351,6 +426,9 @@ function requireRole($roles): void
     }
 }
 
+/**
+ * คืนค่าเส้นทางหน้า Dashboard ตามบทบาทของผู้ใช้
+ */
 function dashboard_path(string $role): string
 {
     if ($role === 'admin') {
@@ -362,6 +440,9 @@ function dashboard_path(string $role): string
     return '/customer/dashboard.php';
 }
 
+/**
+ * คืนค่าเส้นทางหน้าพื้นที่ทำงานของผู้ใช้ (Dashboard หรือ Onboarding)
+ */
 function user_workspace_path(array $user): string
 {
     $role = (string)($user['role_name'] ?? '');
@@ -379,6 +460,9 @@ function user_workspace_path(array $user): string
     return dashboard_path($role);
 }
 
+/**
+ * คืนค่าข้อความสำหรับปุ่มเมนูของฉันตามสถานะผู้ใช้
+ */
 function user_workspace_label(array $user): string
 {
     $role = (string)($user['role_name'] ?? '');
@@ -396,6 +480,9 @@ function user_workspace_label(array $user): string
     return 'เมนูของฉัน';
 }
 
+/**
+ * คืนค่าไอคอนสำหรับปุ่มเมนูของฉันตามสถานะผู้ใช้
+ */
 function user_workspace_icon(array $user): string
 {
     $role = (string)($user['role_name'] ?? '');
@@ -413,6 +500,9 @@ function user_workspace_icon(array $user): string
     return 'fa-gauge';
 }
 
+/**
+ * ดึงค่าการตั้งค่าจากระบบ
+ */
 function setting(string $key, string $default = ''): string
 {
     return (string)request_cache_remember('setting:' . $key . ':' . $default, function () use ($key, $default) {
@@ -423,12 +513,18 @@ function setting(string $key, string $default = ''): string
     });
 }
 
+/**
+ * บันทึกหรืออัปเดตค่าการตั้งค่าระบบ
+ */
 function set_setting(string $key, string $value): void
 {
     $stmt = db()->prepare('INSERT INTO settings (setting_key, setting_value, created_at, updated_at) VALUES (?, ?, NOW(), NOW()) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), updated_at = NOW()');
     $stmt->execute([$key, $value]);
 }
 
+/**
+ * ค้นหาข้อมูลจากฐานข้อมูลและคืนค่าทั้งหมดเป็น array
+ */
 function db_fetch_all(string $sql, array $params = []): array
 {
     $stmt = db()->prepare($sql);
@@ -436,6 +532,9 @@ function db_fetch_all(string $sql, array $params = []): array
     return $stmt->fetchAll();
 }
 
+/**
+ * ค้นหาข้อมูลจากฐานข้อมูลและคืนค่าเพียงค่าเดียวจากคอลัมน์แรก
+ */
 function db_fetch_value(string $sql, array $params = [])
 {
     $stmt = db()->prepare($sql);
@@ -443,6 +542,9 @@ function db_fetch_value(string $sql, array $params = [])
     return $stmt->fetchColumn();
 }
 
+/**
+ * ค้นหาข้อมูลจากฐานข้อมูลพร้อมระบบ cache สำหรับผลลัพธ์ทั้งหมด
+ */
 function db_fetch_all_cached(string $cacheKey, int $ttlSeconds, string $sql, array $params = []): array
 {
     return cache_remember($cacheKey . ':' . sha1($sql . serialize($params)), $ttlSeconds, function () use ($sql, $params) {
@@ -450,6 +552,9 @@ function db_fetch_all_cached(string $cacheKey, int $ttlSeconds, string $sql, arr
     });
 }
 
+/**
+ * ค้นหาข้อมูลจากฐานข้อมูลพร้อมระบบ cache สำหรับค่าเดียว
+ */
 function db_fetch_value_cached(string $cacheKey, int $ttlSeconds, string $sql, array $params = [])
 {
     return cache_remember($cacheKey . ':' . sha1($sql . serialize($params)), $ttlSeconds, function () use ($sql, $params) {
@@ -457,6 +562,9 @@ function db_fetch_value_cached(string $cacheKey, int $ttlSeconds, string $sql, a
     });
 }
 
+/**
+ * แปลงข้อความให้เป็นรูปแบบ slug สำหรับ URL (ภาษาอังกฤษและตัวเลข)
+ */
 function slugify(string $text): string
 {
     $text = trim(mb_strtolower($text, 'UTF-8'));
@@ -465,6 +573,9 @@ function slugify(string $text): string
     return $text !== '' ? $text : bin2hex(random_bytes(4));
 }
 
+/**
+ * สร้าง slug ที่ไม่ซ้ำกับข้อมูลอื่นในตารางที่กำหนด
+ */
 function unique_slug(string $table, string $base, ?int $ignoreId = null): string
 {
     $slug = slugify($base);
@@ -486,6 +597,9 @@ function unique_slug(string $table, string $base, ?int $ignoreId = null): string
     }
 }
 
+/**
+ * บันทึกประวัติกิจกรรมการใช้งานลงในฐานข้อมูล
+ */
 function log_activity(string $action, string $table = '', ?int $recordId = null, string $description = ''): void
 {
     $user = current_user();
@@ -501,6 +615,9 @@ function log_activity(string $action, string $table = '', ?int $recordId = null,
     ]);
 }
 
+/**
+ * ส่งการแจ้งเตือนไปยังผู้ใช้ที่กำหนด
+ */
 function notify_user(int $userId, string $title, string $message, string $type = 'info', ?int $relatedId = null): void
 {
     if ($userId <= 0) {
@@ -511,6 +628,9 @@ function notify_user(int $userId, string $title, string $message, string $type =
     $stmt->execute([$userId, $title, $message, $type, $relatedId]);
 }
 
+/**
+ * ส่งการแจ้งเตือนไปยังผู้ดูแลระบบทุกคน
+ */
 function notify_admins(string $title, string $message, string $type = 'info', ?int $relatedId = null): void
 {
     $admins = db_fetch_all('SELECT u.id
@@ -524,11 +644,17 @@ function notify_admins(string $title, string $message, string $type = 'info', ?i
     }
 }
 
+/**
+ * คืนค่าเครื่องหมายดอกจันสีแดงสำหรับฟิลด์ที่จำเป็นต้องกรอก
+ */
 function required_mark(): string
 {
     return '<span class="text-red-600" aria-label="จำเป็น">*</span>';
 }
 
+/**
+ * นับจำนวนตัวอักษรของข้อความ (รองรับ UTF-8)
+ */
 function text_length(string $value): int
 {
     if (function_exists('mb_strlen')) {
@@ -538,6 +664,9 @@ function text_length(string $value): int
     return strlen($value);
 }
 
+/**
+ * ตรวจสอบว่าเป็นเนื้อหาใหม่ตามจำนวนวันที่กำหนดหรือไม่
+ */
 function is_new_content(?string $date, int $days = 7): bool
 {
     $date = trim((string)$date);
@@ -554,6 +683,9 @@ function is_new_content(?string $date, int $days = 7): bool
     }
 }
 
+/**
+ * สร้าง Badge "ใหม่" หากเป็นเนื้อหาใหม่
+ */
 function new_content_badge(?string $date, int $days = 7): string
 {
     if (!is_new_content($date, $days)) {
@@ -563,6 +695,9 @@ function new_content_badge(?string $date, int $days = 7): string
     return '<span class="inline-flex items-center gap-1 rounded-full bg-red-50 px-3 py-1 text-xs font-black text-red-700"><i class="fa-solid fa-bolt"></i>ใหม่</span>';
 }
 
+/**
+ * สร้างคำสั่ง SQL สำหรับการจัดลำดับความนิยมของช่างภาพ
+ */
 function ranking_order_sql(string $alias = 'p', ?string $completedExpression = null): string
 {
     $alias = preg_replace('/[^A-Za-z0-9_]/', '', $alias);
@@ -583,6 +718,9 @@ function ranking_order_sql(string $alias = 'p', ?string $completedExpression = n
         . $alias . '.id ASC';
 }
 
+/**
+ * คืนค่า URL เป้าหมายตามประเภทของการแจ้งเตือนและบทบาทผู้ใช้
+ */
 function notification_target_url(array $notification, array $user): string
 {
     $type = (string)($notification['type'] ?? 'info');
@@ -672,6 +810,9 @@ function notification_target_url(array $notification, array $user): string
     return $role === 'customer' ? '/customer/notifications.php' : '/notifications.php';
 }
 
+/**
+ * นับจำนวนการแจ้งเตือนที่ยังไม่ได้อ่าน
+ */
 function unread_notifications_count(int $userId): int
 {
     return (int)request_cache_remember('unread_notifications_count:' . $userId, function () use ($userId) {
@@ -681,6 +822,9 @@ function unread_notifications_count(int $userId): int
     });
 }
 
+/**
+ * ดึงข้อมูลการแจ้งเตือนล่าสุดของผู้ใช้
+ */
 function recent_notifications(int $userId, int $limit = 20): array
 {
     $limit = max(1, min(50, $limit));
@@ -689,6 +833,9 @@ function recent_notifications(int $userId, int $limit = 20): array
     return $stmt->fetchAll();
 }
 
+/**
+ * ตรวจสอบว่ามีคอลัมน์ที่กำหนดอยู่ในตารางหรือไม่
+ */
 function db_column_exists(string $table, string $column): bool
 {
     return (int)db_fetch_value('SELECT COUNT(*)
@@ -698,6 +845,9 @@ function db_column_exists(string $table, string $column): bool
                                  AND COLUMN_NAME = ?', [$table, $column]) > 0;
 }
 
+/**
+ * ตรวจสอบและเพิ่มคอลัมน์สำหรับการตรวจสอบในตาราง password_resets
+ */
 function ensure_password_resets_audit_columns(): void
 {
     static $checked = false;
@@ -739,6 +889,9 @@ function ensure_password_resets_audit_columns(): void
     $checked = true;
 }
 
+/**
+ * ตรวจสอบและเพิ่มคอลัมน์สำหรับการตรวจสอบในตาราง login_attempts
+ */
 function ensure_login_attempts_audit_columns(): void
 {
     static $checked = false;
@@ -763,6 +916,9 @@ function ensure_login_attempts_audit_columns(): void
     $checked = true;
 }
 
+/**
+ * ตรวจสอบว่าอีเมลนี้ถูกระงับการล็อกอินชั่วคราวเนื่องจากรหัสผ่านผิดเกินกำหนดหรือไม่
+ */
 function is_login_blocked(string $email): bool
 {
     ensure_login_attempts_audit_columns();
@@ -771,6 +927,9 @@ function is_login_blocked(string $email): bool
     return (int)$stmt->fetchColumn() >= 5;
 }
 
+/**
+ * บันทึกประวัติการพยายามเข้าสู่ระบบ
+ */
 function record_login_attempt(string $email, bool $success, ?int $userId = null, string $failureReason = ''): void
 {
     ensure_login_attempts_audit_columns();
@@ -785,6 +944,9 @@ function record_login_attempt(string $email, bool $success, ?int $userId = null,
     ]);
 }
 
+/**
+ * ล้างประวัติการล็อกอินผิดพลาดหลังจากล็อกอินสำเร็จ
+ */
 function clear_failed_login_attempts(string $email): void
 {
     ensure_login_attempts_audit_columns();
@@ -792,6 +954,9 @@ function clear_failed_login_attempts(string $email): void
     $stmt->execute([$email, client_ip()]);
 }
 
+/**
+ * ดึงข้อมูลโปรไฟล์ช่างภาพจาก User ID
+ */
 function photographer_profile_by_user(int $userId): ?array
 {
     return request_cache_remember('photographer_profile_by_user:' . $userId, function () use ($userId) {
@@ -802,12 +967,18 @@ function photographer_profile_by_user(int $userId): ?array
     });
 }
 
+/**
+ * คืนค่า ID ของโปรไฟล์ช่างภาพจาก User ID
+ */
 function photographer_id_for_user(int $userId): int
 {
     $profile = photographer_profile_by_user($userId);
     return $profile ? (int)$profile['id'] : 0;
 }
 
+/**
+ * คืนค่า URL ของรูปโปรไฟล์ผู้ใช้ พร้อมจัดการรูปเริ่มต้นหากไม่มี
+ */
 function user_avatar_url(array $user): string
 {
     $role = (string)($user['role_name'] ?? '');
@@ -829,6 +1000,9 @@ function user_avatar_url(array $user): string
     return public_image($imagePath, $fallback);
 }
 
+/**
+ * จัดการเส้นทางรูปภาพที่แสดงผลสู่สาธารณะ พร้อมระบบ fallback
+ */
 function public_image(?string $path, string $fallback): string
 {
     if (!$path) {
@@ -849,6 +1023,9 @@ function public_image(?string $path, string $fallback): string
     return '/assets/uploads/' . ltrim($path, '/');
 }
 
+/**
+ * ปรับรูปแบบเส้นทางรูปภาพสำรองให้ถูกต้อง
+ */
 function normalize_local_image_fallback(string $fallback): string
 {
     if (preg_match('#^https?://#i', $fallback)) {
@@ -872,6 +1049,9 @@ function normalize_local_image_fallback(string $fallback): string
     return $fallback;
 }
 
+/**
+ * ตรวจสอบการมีอยู่ของไฟล์พร้อมระบบ cache ชั่วคราว
+ */
 function is_file_cached(string $path): bool
 {
     return (bool)request_cache_remember('is_file:' . $path, function () use ($path) {
@@ -879,12 +1059,18 @@ function is_file_cached(string $path): bool
     });
 }
 
+/**
+ * แปลงช่วงเวลาการทำงานเป็นภาษาไทย
+ */
 function time_slot_label(string $slot): string
 {
     $map = ['morning' => 'เช้า', 'afternoon' => 'บ่าย', 'evening' => 'เย็น', 'full_day' => 'เต็มวัน'];
     return $map[$slot] ?? $slot;
 }
 
+/**
+ * แปลงวันที่รูปแบบ พ.ศ. ให้เป็นรูปแบบ ISO (YYYY-MM-DD)
+ */
 function parse_be_date_to_iso(?string $value): string
 {
     $value = trim((string)$value);
@@ -938,6 +1124,9 @@ function parse_be_date_to_iso(?string $value): string
     return '';
 }
 
+/**
+ * จัดรูปแบบวันที่จากฐานข้อมูลให้เป็นรูปแบบ พ.ศ.
+ */
 function format_be_date(?string $value): string
 {
     $value = trim((string)$value);
@@ -956,6 +1145,9 @@ function format_be_date(?string $value): string
     return $date->format('d/m/') . $year;
 }
 
+/**
+ * จัดรูปแบบวันและเวลาจากฐานข้อมูลให้เป็นรูปแบบ พ.ศ.
+ */
 function format_be_datetime(?string $value): string
 {
     $value = trim((string)$value);
@@ -974,11 +1166,17 @@ function format_be_datetime(?string $value): string
     return $date->format('d/m/') . $year . $date->format(' H:i');
 }
 
+/**
+ * คืนค่าปี พ.ศ. ปัจจุบัน
+ */
 function current_be_year(): int
 {
     return (int)date('Y') + 543;
 }
 
+/**
+ * เตรียมค่าวันที่สำหรับแสดงใน input field แบบ พ.ศ.
+ */
 function be_date_input_value(?string $value): string
 {
     $isoDate = parse_be_date_to_iso($value);
@@ -990,6 +1188,9 @@ function be_date_input_value(?string $value): string
     return format_be_date($isoDate);
 }
 
+/**
+ * สร้าง HTML input field สำหรับเลือกวันที่แบบ พ.ศ.
+ */
 function be_date_input(string $name, ?string $value = '', string $classes = '', bool $required = false, string $placeholder = 'วว/ดด/พ.ศ.'): string
 {
     $isoDate = parse_be_date_to_iso($value);
@@ -1020,6 +1221,9 @@ function be_date_input(string $name, ?string $value = '', string $classes = '', 
         . '<input type="hidden" id="' . h($id) . '" name="' . h($name) . '" value="' . h($isoDate) . '">';
 }
 
+/**
+ * สร้าง HTML สำหรับปฏิทินเลือกวันที่แบบกำหนดเอง
+ */
 function calendar_date_input(string $name, ?string $value = '', array $dateStatuses = [], bool $required = false, string $label = 'วันที่ต้องการจ้าง'): string
 {
     $isoDate = parse_be_date_to_iso($value);
@@ -1062,6 +1266,9 @@ function calendar_date_input(string $name, ?string $value = '', array $dateStatu
         . '</div></div>';
 }
 
+/**
+ * แปลงสถานะต่างๆ ในระบบเป็นข้อความภาษาไทย
+ */
 function booking_status_label(string $status): string
 {
     $map = [
@@ -1087,6 +1294,9 @@ function booking_status_label(string $status): string
     return $map[$status] ?? $status;
 }
 
+/**
+ * แปลงชื่อบทบาทผู้ใช้เป็นภาษาไทย
+ */
 function role_display_name(string $role): string
 {
     $map = [
@@ -1098,6 +1308,9 @@ function role_display_name(string $role): string
     return $map[$role] ?? $role;
 }
 
+/**
+ * สร้าง Badge แสดงสถานะพร้อมสีและไอคอนที่เหมาะสม
+ */
 function status_badge(string $status): string
 {
     $colors = [
@@ -1147,17 +1360,26 @@ function status_badge(string $status): string
     return '<span class="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ' . ($colors[$status] ?? 'bg-slate-100 text-slate-700') . '"><i class="fa-solid ' . h($icon) . '"></i>' . h(booking_status_label($status)) . '</span>';
 }
 
+/**
+ * สุ่มรหัสการจองใหม่ (CRB...)
+ */
 function generate_booking_code(): string
 {
     return 'CRB' . date('ymd') . strtoupper(bin2hex(random_bytes(3)));
 }
 
+/**
+ * บันทึกประวัติการเปลี่ยนสถานะของคำขอจอง
+ */
 function add_booking_status_log(int $bookingId, ?string $oldStatus, string $newStatus, ?int $changedBy, string $note = ''): void
 {
     $stmt = db()->prepare('INSERT INTO booking_status_logs (booking_id, old_status, new_status, changed_by, note, created_at) VALUES (?, ?, ?, ?, ?, NOW())');
     $stmt->execute([$bookingId, $oldStatus, $newStatus, $changedBy, $note]);
 }
 
+/**
+ * คืนค่าไอคอนสำหรับเส้นเวลาของสถานะการจอง
+ */
 function booking_status_timeline_icon(string $status): string
 {
     $icons = [
@@ -1172,6 +1394,9 @@ function booking_status_timeline_icon(string $status): string
     return $icons[$status] ?? 'fa-clock-rotate-left';
 }
 
+/**
+ * คืนค่าสีสำหรับเส้นเวลาของสถานะการจอง
+ */
 function booking_status_timeline_tone(string $status): string
 {
     $tones = [
@@ -1186,6 +1411,9 @@ function booking_status_timeline_tone(string $status): string
     return $tones[$status] ?? 'timeline-tone-default';
 }
 
+/**
+ * สร้าง HTML สำหรับแสดงเส้นเวลาประวัติสถานะการจอง
+ */
 function booking_status_timeline_html(array $logs): string
 {
     if (!$logs) {
@@ -1239,6 +1467,9 @@ function booking_status_timeline_html(array $logs): string
     return $html . '</div></div>';
 }
 
+/**
+ * ปรับปรุงข้อมูลวันว่างของช่างภาพตามสถานะการจองที่เปลี่ยนไป
+ */
 function sync_availability_after_booking_status(int $bookingId): void
 {
     $booking = db_fetch_all('SELECT id, photographer_id, booking_date, time_slot, status FROM bookings WHERE id = ? AND deleted_at IS NULL LIMIT 1', [$bookingId]);
@@ -1314,6 +1545,9 @@ function sync_availability_after_booking_status(int $bookingId): void
     }
 }
 
+/**
+ * ตรวจสอบว่าช่วงเวลาที่เลือกสามารถจองได้หรือไม่
+ */
 function can_book_slot(int $photographerId, string $date, string $slot, ?int $excludeBookingId = null): bool
 {
     if ($date < date('Y-m-d')) {
@@ -1343,6 +1577,9 @@ function can_book_slot(int $photographerId, string $date, string $slot, ?int $ex
     return !$stmt->fetchColumn();
 }
 
+/**
+ * คำนวณและอัปเดตคะแนนเฉลี่ยและจำนวนรีวิวของช่างภาพ
+ */
 function update_photographer_rating(int $photographerId): void
 {
     $stmt = db()->prepare('SELECT AVG(rating_overall) avg_rating, COUNT(*) total FROM reviews WHERE photographer_id = ? AND status = "visible" AND deleted_at IS NULL');
@@ -1352,6 +1589,9 @@ function update_photographer_rating(int $photographerId): void
     $up->execute([round((float)$row['avg_rating'], 2), (int)$row['total'], $photographerId]);
 }
 
+/**
+ * คำนวณและอัปเดตสถิติการตอบกลับของช่างภาพ
+ */
 function update_photographer_response_stats(int $photographerId): void
 {
     $totalRequests = (int)db_fetch_value('SELECT COUNT(*) FROM bookings WHERE photographer_id = ? AND deleted_at IS NULL', [$photographerId]);
@@ -1375,6 +1615,9 @@ function update_photographer_response_stats(int $photographerId): void
     $stmt->execute([$responseRate, round((float)$averageHours, 2), $photographerId]);
 }
 
+/**
+ * สร้าง HTML สำหรับระบบแบ่งหน้าแบบปกติ
+ */
 function paginate(int $total, int $page, int $perPage, string $baseUrl): string
 {
     $pages = (int)ceil($total / $perPage);
@@ -1390,6 +1633,9 @@ function paginate(int $total, int $page, int $perPage, string $baseUrl): string
     return $html . '</div>';
 }
 
+/**
+ * สร้าง HTML สำหรับระบบแบ่งหน้าแบบ clean context
+ */
 function paginate_clean(int $total, int $page, int $perPage, string $path, array $baseParams = []): string
 {
     $pages = (int)ceil($total / $perPage);
@@ -1408,6 +1654,9 @@ function paginate_clean(int $total, int $page, int $perPage, string $path, array
     return $html . '</div>';
 }
 
+/**
+ * นับจำนวนข้อมูลในตารางที่กำหนดตามเงื่อนไข
+ */
 function table_count(string $table, string $where = '1=1'): int
 {
     $stmt = db()->prepare("SELECT COUNT(*) FROM {$table} WHERE {$where}");
@@ -1415,6 +1664,9 @@ function table_count(string $table, string $where = '1=1'): int
     return (int)$stmt->fetchColumn();
 }
 
+/**
+ * นับจำนวนครั้งที่ช่างภาพถูกบันทึกเป็นรายการโปรด
+ */
 function favorite_count(int $photographerId): int
 {
     $stmt = db()->prepare('SELECT COUNT(*) FROM favorite_photographers WHERE photographer_id = ?');
@@ -1422,6 +1674,9 @@ function favorite_count(int $photographerId): int
     return (int)$stmt->fetchColumn();
 }
 
+/**
+ * ตรวจสอบว่าช่างภาพคนนี้เป็นรายการโปรดของลูกค้าหรือไม่
+ */
 function is_favorite_photographer(int $customerId, int $photographerId): bool
 {
     $stmt = db()->prepare('SELECT id FROM favorite_photographers WHERE customer_id = ? AND photographer_id = ? LIMIT 1');
@@ -1429,6 +1684,9 @@ function is_favorite_photographer(int $customerId, int $photographerId): bool
     return (bool)$stmt->fetchColumn();
 }
 
+/**
+ * เพิ่มหรือลบช่างภาพออกจากรายการโปรด
+ */
 function toggle_favorite_photographer(int $customerId, int $photographerId): bool
 {
     if (is_favorite_photographer($customerId, $photographerId)) {
@@ -1442,6 +1700,9 @@ function toggle_favorite_photographer(int $customerId, int $photographerId): boo
     return true;
 }
 
+/**
+ * บันทึกประวัติการค้นหาของผู้ใช้งาน
+ */
 function record_search_log(string $keyword, int $districtId, int $categoryId): void
 {
     $logKey = sha1($keyword . '|' . $districtId . '|' . $categoryId . '|' . date('Y-m-d'));
@@ -1470,12 +1731,18 @@ function record_search_log(string $keyword, int $districtId, int $categoryId): v
     $stmt->execute([$userId, $keyword, $districtValue, $categoryValue, client_ip()]);
 }
 
+/**
+ * บันทึกประวัติการเข้าดูโปรไฟล์ช่างภาพล่าสุด
+ */
 function record_recently_viewed(int $userId, int $photographerId): void
 {
     $stmt = db()->prepare('INSERT INTO recently_viewed_photographers (user_id, photographer_id, viewed_at) VALUES (?, ?, NOW()) ON DUPLICATE KEY UPDATE viewed_at = NOW()');
     $stmt->execute([$userId, $photographerId]);
 }
 
+/**
+ * คำนวณเปอร์เซ็นต์ความสมบูรณ์ของโปรไฟล์ช่างภาพ
+ */
 function photographer_completion_percent(int $photographerId): int
 {
     return (int)request_cache_remember('photographer_completion_percent:' . $photographerId, function () use ($photographerId) {
@@ -1515,6 +1782,9 @@ function photographer_completion_percent(int $photographerId): int
     });
 }
 
+/**
+ * ดึงข้อมูลหมวดหมู่และอำเภอยอดนิยมสำหรับแสดงที่ Footer
+ */
 function footer_public_data(): array
 {
     return cache_remember('footer_public_data_v2', 300, function () {
@@ -1527,6 +1797,9 @@ function footer_public_data(): array
     });
 }
 
+/**
+ * คืนค่ากลุ่มของ Tag บทความที่กำหนดไว้ล่วงหน้า
+ */
 function predefined_article_tag_groups(): array
 {
     return [
@@ -1589,6 +1862,9 @@ function predefined_article_tag_groups(): array
     ];
 }
 
+/**
+ * ตรวจสอบและเพิ่มคอลัมน์สถานะในตาราง tags
+ */
 function ensure_tags_status_column(): void
 {
     static $checked = false;
@@ -1609,6 +1885,9 @@ function ensure_tags_status_column(): void
     $checked = true;
 }
 
+/**
+ * ตรวจสอบและเพิ่มคอลัมน์ deleted_at ในตารางหมวดหมู่บริการ
+ */
 function ensure_service_categories_deleted_at_column(): void
 {
     static $checked = false;
@@ -1629,6 +1908,9 @@ function ensure_service_categories_deleted_at_column(): void
     $checked = true;
 }
 
+/**
+ * ตรวจสอบและเพิ่มคอลัมน์ excerpt ในตารางบทความ
+ */
 function ensure_photographer_articles_excerpt_column(): void
 {
     static $checked = false;
@@ -1643,6 +1925,9 @@ function ensure_photographer_articles_excerpt_column(): void
     $checked = true;
 }
 
+/**
+ * คืนค่ารายชื่อ Tag ทั้งหมดที่กำหนดไว้ล่วงหน้า
+ */
 function predefined_article_tag_names(): array
 {
     $names = [];
@@ -1655,6 +1940,9 @@ function predefined_article_tag_names(): array
     return array_values(array_unique($names));
 }
 
+/**
+ * ตรวจสอบและสร้าง Tag เริ่มต้นหากยังไม่มีในฐานข้อมูล
+ */
 function ensure_predefined_article_tags(): array
 {
     ensure_tags_status_column();
@@ -1676,6 +1964,9 @@ function ensure_predefined_article_tags(): array
     return $tagRows;
 }
 
+/**
+ * จัดรูปแบบกลุ่มของ Tag สำหรับใช้ในการเลือก
+ */
 function article_tag_options(): array
 {
     ensure_tags_status_column();
@@ -1707,6 +1998,9 @@ function article_tag_options(): array
     return $groups;
 }
 
+/**
+ * คืนค่า ID ของ Tag ทั้งหมดที่อนุญาตให้ใช้งาน
+ */
 function allowed_article_tag_ids(): array
 {
     $ids = [];
@@ -1719,6 +2013,9 @@ function allowed_article_tag_ids(): array
     return array_values(array_unique($ids));
 }
 
+/**
+ * ดึงข้อมูล ID ของ Tag ที่ถูกเลือกมาจากฟอร์ม POST
+ */
 function selected_article_tag_ids_from_post(): array
 {
     $rawIds = $_POST['tag_ids'] ?? [];
@@ -1739,6 +2036,9 @@ function selected_article_tag_ids_from_post(): array
     return array_values(array_unique($selected));
 }
 
+/**
+ * ดึง ID ของ Tag ที่ผูกกับข้อมูลที่กำหนด
+ */
 function selected_article_tag_ids(string $relationTable, string $recordColumn, int $recordId): array
 {
     if ($recordId <= 0) {
@@ -1763,6 +2063,9 @@ function selected_article_tag_ids(string $relationTable, string $recordColumn, i
     return $ids;
 }
 
+/**
+ * ปรับปรุงความสัมพันธ์ระหว่างข้อมูลกับ Tag (ลบและเพิ่มใหม่)
+ */
 function sync_article_tag_relations(string $relationTable, string $recordColumn, int $recordId, array $tagIds): void
 {
     $allowedTables = [
@@ -1800,6 +2103,9 @@ function sync_article_tag_relations(string $relationTable, string $recordColumn,
     cache_clear_all();
 }
 
+/**
+ * สร้าง HTML สำหรับเลือก Tag บทความแยกตามกลุ่ม
+ */
 function article_tag_selector_html(array $selectedIds = [], string $inputName = 'tag_ids'): string
 {
     $selectedLookup = array_flip(array_map('intval', $selectedIds));
@@ -1825,6 +2131,9 @@ function article_tag_selector_html(array $selectedIds = [], string $inputName = 
     return $html . '</div>';
 }
 
+/**
+ * แปลงสถานะการรายงานปัญหาเป็นภาษาไทย
+ */
 function report_status_label(string $status): string
 {
     $map = [

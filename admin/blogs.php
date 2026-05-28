@@ -9,6 +9,13 @@ if (isset($cleanContext['edit'])) {
     $editId = (int)$cleanContext['edit'];
 }
 
+/**
+ * บันทึกแท็กของบทความเว็บ โดยการซิงค์ข้อมูลความสัมพันธ์ในฐานข้อมูล
+ *
+ * @param int $blogId รหัสบทความเว็บ
+ * @param array $tagIds รายการรหัสแท็กที่ต้องการบันทึก
+ * @return void
+ */
 function save_blog_tags(int $blogId, array $tagIds): void
 {
     sync_article_tag_relations('blog_tags', 'blog_id', $blogId, $tagIds);

@@ -1,3 +1,6 @@
+/**
+ * ซ่อนตัวโหลดหน้าเว็บ (Page Loader)
+ */
 function hidePageLoader() {
   const loader = document.getElementById('page-loader');
   if (loader) loader.classList.add('hidden');
@@ -74,6 +77,9 @@ document.addEventListener('DOMContentLoaded', function () {
   const developerOpenButtons = document.querySelectorAll('[data-developer-modal-open]');
   const developerCloseButtons = document.querySelectorAll('[data-developer-modal-close], [data-developer-modal-backdrop]');
 
+  /**
+   * เปิด Modal สำหรับนักพัฒนา
+   */
   function openDeveloperModal() {
     if (!developerModal) return;
     developerModal.classList.remove('hidden');
@@ -82,6 +88,9 @@ document.addEventListener('DOMContentLoaded', function () {
     document.body.classList.add('overflow-hidden');
   }
 
+  /**
+   * ปิด Modal สำหรับนักพัฒนา
+   */
   function closeDeveloperModal() {
     if (!developerModal) return;
     developerModal.classList.add('hidden');
@@ -138,6 +147,10 @@ document.addEventListener('DOMContentLoaded', function () {
     const hidden = document.getElementById(input.dataset.target || '');
     if (!hidden) return;
 
+    /**
+     * ซิงค์วันที่จากอินพุตแสดงผลไปยังอินพุตที่ซ่อนอยู่ (Hidden Input) ในรูปแบบ ISO
+     * @param {boolean} shouldFormat กำหนดว่าต้องจัดรูปแบบวันที่ใหม่หรือไม่
+     */
     const syncDate = function (shouldFormat) {
       const isoDate = parseBeDateToIso(input.value);
       hidden.value = isoDate;
@@ -161,10 +174,17 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 });
 
+/**
+ * เริ่มการทำงานของการ์ดที่คลิกได้ (Clickable Card)
+ */
 function initClickableCards() {
   const interactiveSelector = 'a, button, input, select, textarea, label, form, [data-card-ignore]';
 
   document.querySelectorAll('[data-clickable-card]').forEach(function (card) {
+    /**
+     * จัดการเหตุการณ์เมื่อคลิกที่การ์ด
+     * @param {Event} event เหตุการณ์การคลิก
+     */
     function openCard(event) {
       if (event && event.defaultPrevented) return;
 
@@ -196,6 +216,9 @@ function initClickableCards() {
   });
 }
 
+/**
+ * เริ่มการทำงานของอินพุตวันที่แบบปฏิทิน
+ */
 function initCalendarDateInputs() {
   const thaiMonths = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
 
@@ -239,6 +262,9 @@ function initCalendarDateInputs() {
       current = new Date(today.getFullYear(), today.getMonth(), 1);
     }
 
+    /**
+     * วาดตารางปฏิทินตามเดือนและปีที่เลือก
+     */
     function renderCalendar() {
       const year = current.getFullYear();
       const month = current.getMonth();
@@ -322,6 +348,9 @@ function initCalendarDateInputs() {
       });
     }
 
+    /**
+     * เปิด Popover ปฏิทิน
+     */
     function openCalendar() {
       document.querySelectorAll('[data-calendar-date].calendar-date-open').forEach(function (item) {
         if (item !== calendar) {
@@ -331,6 +360,9 @@ function initCalendarDateInputs() {
       calendar.classList.add('calendar-date-open');
     }
 
+    /**
+     * ปิด Popover ปฏิทิน
+     */
     function closeCalendar() {
       calendar.classList.remove('calendar-date-open');
     }
@@ -367,6 +399,9 @@ document.addEventListener('keydown', function (event) {
   });
 });
 
+/**
+ * เริ่มการทำงานของการแบ่งหน้าแบบบล็อก (Block Pagination)
+ */
 function initBlockPagination() {
   document.querySelectorAll('[data-block-paginate]').forEach(function (block) {
     const perPage = Math.max(1, parseInt(block.dataset.blockPaginate || '5', 10));
@@ -394,6 +429,11 @@ function initBlockPagination() {
     const insertAfter = block.tagName === 'TBODY' && block.closest('table') ? block.closest('table') : block;
     insertAfter.insertAdjacentElement('afterend', control);
 
+    /**
+     * คืนค่าประเภทการแสดงผล (CSS display) ตามชนิดของแท็ก HTML
+     * @param {HTMLElement} item องค์ประกอบ HTML
+     * @returns {string} ค่า CSS display
+     */
     function itemDisplayValue(item) {
       if (item.tagName === 'TR') {
         return 'table-row';
@@ -406,6 +446,15 @@ function initBlockPagination() {
       return '';
     }
 
+    /**
+     * สร้างปุ่มแบ่งหน้า
+     * @param {number} page หมายเลขหน้า
+     * @param {string} label ข้อความบนปุ่ม
+     * @param {string} iconClass คลาสของไอคอน FontAwesome
+     * @param {boolean} isActive สถานะว่าปุ่มนี้คือหน้าปัจจุบันหรือไม่
+     * @param {boolean} isDisabled สถานะว่าปุ่มนี้ปิดการใช้งานหรือไม่
+     * @returns {HTMLButtonElement} ปุ่มแบ่งหน้า
+     */
     function buildPageButton(page, label, iconClass, isActive, isDisabled) {
       const button = document.createElement('button');
       button.type = 'button';
@@ -434,6 +483,9 @@ function initBlockPagination() {
       return button;
     }
 
+    /**
+     * แสดงผลรายการในหน้าปัจจุบันและอัปเดตปุ่มควบคุม
+     */
     function render() {
       const startIndex = (currentPage - 1) * perPage;
       const endIndex = startIndex + perPage;
@@ -468,6 +520,9 @@ document.addEventListener('submit', function () {
   if (loader) loader.classList.remove('hidden');
 });
 
+/**
+ * ซิงค์ค่าของอินพุตวันที่พุทธศักราชทุกตัวไปยังอินพุตที่ซ่อนอยู่
+ */
 function syncAllBeDateInputs() {
   document.querySelectorAll('[data-be-date-visible]').forEach(function (input) {
     const hidden = document.getElementById(input.dataset.target || '');
@@ -476,6 +531,11 @@ function syncAllBeDateInputs() {
   });
 }
 
+/**
+ * แปลงวันที่ในรูปแบบพุทธศักราชให้เป็น ISO (คริสต์ศักราช YYYY-MM-DD)
+ * @param {string} value วันที่ในรูปแบบต่างๆ เช่น 05/05/2569 หรือ 2026-05-05
+ * @returns {string} วันที่ในรูปแบบ ISO
+ */
 function parseBeDateToIso(value) {
   const raw = String(value || '').trim();
   let match;
@@ -535,6 +595,11 @@ function parseBeDateToIso(value) {
   return '';
 }
 
+/**
+ * แปลงวันที่ ISO ให้เป็นรูปแบบพุทธศักราชสำหรับการแสดงผล (DD/MM/BE)
+ * @param {string} value วันที่ ISO
+ * @returns {string} วันที่รูปแบบพุทธศักราช
+ */
 function formatIsoToBeDate(value) {
   const isoDate = parseBeDateToIso(value);
   const match = isoDate.match(/^(\d{4})-(\d{2})-(\d{2})$/);
@@ -546,12 +611,26 @@ function formatIsoToBeDate(value) {
   return match[3] + '/' + match[2] + '/' + (parseInt(match[1], 10) + 543);
 }
 
+/**
+ * ตรวจสอบความถูกต้องของวันที่
+ * @param {number} year ปี (ค.ศ.)
+ * @param {number} month เดือน (1-12)
+ * @param {number} day วันที่
+ * @returns {boolean} ผลการตรวจสอบ
+ */
 function isValidDate(year, month, day) {
   const date = new Date(year, month - 1, day);
 
   return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day;
 }
 
+/**
+ * สร้างข้อความวันที่ในรูปแบบ ISO (YYYY-MM-DD)
+ * @param {number} year ปี
+ * @param {number} month เดือน
+ * @param {number} day วัน
+ * @returns {string} วันที่ในรูปแบบ ISO
+ */
 function buildIsoDate(year, month, day) {
   return String(year).padStart(4, '0') + '-' + String(month).padStart(2, '0') + '-' + String(day).padStart(2, '0');
 }

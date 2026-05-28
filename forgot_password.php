@@ -1,11 +1,24 @@
 <?php
 require_once __DIR__ . '/includes/functions.php';
 
+/**
+ * สร้าง URL สำหรับการตั้งรหัสผ่านใหม่ (Password Reset)
+ *
+ * @param string $token โทเค็นความปลอดภัยที่ใช้ยืนยันตัวตน
+ * @return string URL สมบูรณ์สำหรับหน้าตั้งรหัสผ่านใหม่
+ */
 function password_reset_url(string $token): string
 {
     return rtrim(APP_URL, '/') . '/reset_password.php?token=' . rawurlencode($token);
 }
 
+/**
+ * ส่งอีเมลแจ้งลิงก์ตั้งรหัสผ่านใหม่ไปยังอีเมลของผู้ใช้
+ *
+ * @param string $email อีเมลผู้รับ
+ * @param string $resetUrl URL สำหรับตั้งรหัสผ่านใหม่
+ * @return bool คืนค่า true หากส่งอีเมลสำเร็จ (ผ่านฟังก์ชัน mail ของ PHP)
+ */
 function send_password_reset_email(string $email, string $resetUrl): bool
 {
     $siteName = setting('site_name', APP_NAME);
@@ -30,6 +43,13 @@ function send_password_reset_email(string $email, string $resetUrl): bool
     return @mail($email, '=?UTF-8?B?' . base64_encode($subject) . '?=', $message, implode("\r\n", $headers));
 }
 
+/**
+ * บันทึกข้อมูลอีเมลจำลองลงในไฟล์ (ใช้สำหรับการพัฒนาเมื่อไม่มีระบบ SMTP)
+ *
+ * @param string $email อีเมลผู้รับ
+ * @param string $resetUrl URL สำหรับตั้งรหัสผ่านใหม่
+ * @return string เส้นทางไฟล์ที่บันทึกข้อมูลอีเมล
+ */
 function write_password_reset_dev_mail(string $email, string $resetUrl): string
 {
     $dir = __DIR__ . '/storage/mail_logs';

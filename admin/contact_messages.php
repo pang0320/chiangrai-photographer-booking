@@ -3,6 +3,12 @@ require_once __DIR__ . '/../includes/functions.php';
 requireRole('admin');
 $cleanContext = clean_context_init(['q', 'status', 'date_from', 'date_to']);
 
+/**
+ * แปลงสถานะข้อความติดต่อให้เป็นข้อความภาษาไทย
+ *
+ * @param string $status ชื่อสถานะ (unread, read, replied)
+ * @return string ข้อความภาษาไทยที่อธิบายสถานะ
+ */
 function contact_message_status_label(string $status): string
 {
     $map = [
@@ -14,6 +20,12 @@ function contact_message_status_label(string $status): string
     return $map[$status] ?? $status;
 }
 
+/**
+ * สร้าง HTML สำหรับแสดงป้ายสถานะ (Badge) ของข้อความติดต่อ
+ *
+ * @param string $status ชื่อสถานะ
+ * @return string โค้ด HTML ของป้ายสถานะ
+ */
 function contact_message_status_badge(string $status): string
 {
     $class = 'bg-slate-100 text-slate-700';
@@ -32,6 +44,12 @@ function contact_message_status_badge(string $status): string
     return '<span class="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ' . h($class) . '"><i class="fa-solid ' . h($icon) . '"></i>' . h(contact_message_status_label($status)) . '</span>';
 }
 
+/**
+ * สร้าง URL สำหรับเปิดหน้าเขียนอีเมลใน Gmail เพื่อตอบกลับข้อความติดต่อ
+ *
+ * @param array $message ข้อมูลข้อความติดต่อที่ต้องการตอบกลับ
+ * @return string URL ของ Gmail พร้อมพารามิเตอร์ข้อมูลผู้รับและเนื้อหาเบื้องต้น
+ */
 function contact_message_gmail_reply_url(array $message): string
 {
     $to = trim((string)($message['email'] ?? ''));

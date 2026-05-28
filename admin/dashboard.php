@@ -2,6 +2,12 @@
 require_once __DIR__ . '/../includes/functions.php';
 requireRole('admin');
 
+/**
+ * แปลงชื่อการกระทำ (action) ให้เป็นข้อความภาษาไทยสำหรับแสดงในหน้าแดชบอร์ด
+ *
+ * @param string $action ชื่อการกระทำในระบบ
+ * @return string ข้อความภาษาไทยที่อธิบายการกระทำ
+ */
 function dashboard_activity_action_label(string $action): string
 {
     $map = [

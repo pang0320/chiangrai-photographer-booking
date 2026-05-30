@@ -185,6 +185,9 @@ if ($footerLogo !== '') {
         <?php endif; ?>
     </div>
 </div>
+<button id="back-to-top" class="invisible fixed bottom-6 right-6 z-50 grid h-12 w-12 translate-y-4 place-items-center rounded-full bg-red-600 text-white opacity-0 shadow-lg shadow-red-600/30 transition-all duration-300 hover:-translate-y-1 hover:bg-neutral-950 hover:shadow-xl hover:shadow-neutral-950/30" aria-label="กลับสู่ด้านบน">
+    <i class="fa-solid fa-chevron-up"></i>
+</button>
 <?php if ($footerIsWorkspacePage): ?>
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>

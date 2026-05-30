@@ -172,6 +172,23 @@ document.addEventListener('DOMContentLoaded', function () {
       input.value = formatIsoToBeDate(hidden.value);
     }
   });
+
+  const backToTopButton = document.getElementById('back-to-top');
+  if (backToTopButton) {
+    window.addEventListener('scroll', function () {
+      if (window.scrollY > window.innerHeight) {
+        backToTopButton.classList.remove('invisible', 'opacity-0', 'translate-y-4');
+        backToTopButton.classList.add('opacity-100', 'translate-y-0');
+      } else {
+        backToTopButton.classList.add('invisible', 'opacity-0', 'translate-y-4');
+        backToTopButton.classList.remove('opacity-100', 'translate-y-0');
+      }
+    });
+
+    backToTopButton.addEventListener('click', function () {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
 });
 
 /**

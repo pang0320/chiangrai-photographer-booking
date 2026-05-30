@@ -9,6 +9,9 @@ require_once __DIR__ . '/security.php';
 
 /**
  * แปลงข้อมูลเป็น HTML-safe เพื่อป้องกัน XSS
+ * ฟังก์ชันนี้ใช้เข้ารหัสอักขระ (เช่น <, >, ") ให้เป็นเอนทิตีทาง HTML เพื่อป้องกันไม่ให้สคริปต์อันตรายถูกรันบนเบราว์เซอร์ของผู้ใช้
+ * @param mixed $value ข้อมูลที่ต้องการประมวลผล
+ * @return string ข้อความ
  */
 function h($value): string
 {
@@ -17,6 +20,9 @@ function h($value): string
 
 /**
  * เปลี่ยนเส้นทางไปยังหน้าที่กำหนดและสิ้นสุดการทำงาน
+ * ส่ง HTTP Header Location เพื่อสั่งให้เบราว์เซอร์เปลี่ยนหน้าไปยัง URL ที่กำหนด พร้อมทั้งหยุดการทำงานของสคริปต์ในทันที
+ * @param string $path เส้นทาง URL หรือ Path
+ * @return void ไม่มีการคืนค่า
  */
 function redirect(string $path): void
 {
@@ -26,6 +32,9 @@ function redirect(string $path): void
 
 /**
  * จดจำผลลัพธ์ของฟังก์ชันในหน่วยความจำชั่วคราวระหว่างการทำงานของ request
+ * เก็บค่าที่ประมวลผลแล้วไว้ในตัวแปร Static (Memory) เพื่อหลีกเลี่ยงการคิวรีหรือการคำนวณซ้ำซ้อนระหว่างการทำงานของ 1 Request
+ * @param string $key ชื่อคีย์อ้างอิงข้อมูล
+ * @param callable $resolver ฟังก์ชันการดึงข้อมูล (Callback Function)
  */
 function request_cache_remember(string $key, callable $resolver)
 {
@@ -41,6 +50,9 @@ function request_cache_remember(string $key, callable $resolver)
 
 /**
  * คืนค่าเส้นทางของไฟล์ cache ตาม key ที่กำหนด
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ คืนค่าเส้นทางของไฟล์ cache ตาม key ที่กำหนด
+ * @param string $key ชื่อคีย์อ้างอิงข้อมูล
+ * @return string ข้อความ
  */
 function app_cache_file(string $key): string
 {
@@ -49,6 +61,10 @@ function app_cache_file(string $key): string
 
 /**
  * ดึงข้อมูลจาก cache หรือรันฟังก์ชันเพื่อเก็บผลลัพธ์ลง cache ตามเวลาที่กำหนด
+ * ระบบแคชไฟล์ (File-based Cache) ตรวจสอบว่ามีไฟล์แคชที่ยังไม่หมดอายุหรือไม่ หากมีจะดึงมาใช้ทันที หากไม่มีจะรันฟังก์ชัน (Callback) เพื่อหาค่าใหม่แล้วบันทึกลงไฟล์
+ * @param string $key ชื่อคีย์อ้างอิงข้อมูล
+ * @param int $ttlSeconds ระยะเวลาที่ต้องการเก็บข้อมูลชั่วคราว (วินาที)
+ * @param callable $resolver ฟังก์ชันการดึงข้อมูล (Callback Function)
  */
 function cache_remember(string $key, int $ttlSeconds, callable $resolver)
 {
@@ -85,6 +101,9 @@ function cache_remember(string $key, int $ttlSeconds, callable $resolver)
 
 /**
  * ลบข้อมูล cache ตาม key ที่กำหนด
+ * ทำการลบไฟล์แคชที่ตรงกับคีย์ที่ระบุออกจากระบบโดยสมบูรณ์
+ * @param string $key ชื่อคีย์อ้างอิงข้อมูล
+ * @return void ไม่มีการคืนค่า
  */
 function cache_forget(string $key): void
 {
@@ -96,6 +115,8 @@ function cache_forget(string $key): void
 
 /**
  * ล้างข้อมูล cache ทั้งหมดในระบบ
+ * สแกนและลบไฟล์แคชที่มีนามสกุล .cache ทั้งหมดในโฟลเดอร์เก็บแคช เพื่อรีเซ็ตข้อมูลชั่วคราวทั้งหมดของระบบ
+ * @return void ไม่มีการคืนค่า
  */
 function cache_clear_all(): void
 {
@@ -111,6 +132,9 @@ function cache_clear_all(): void
 
 /**
  * เปลี่ยนเส้นทางไปยังหน้าที่กำหนด พร้อมจดจำ URL ปัจจุบันเพื่อกลับมาภายหลัง
+ * จดจำ URL หน้าปัจจุบันไว้ใน Session ก่อนที่จะ Redirect ไปยังหน้าปลายทาง (เช่น ล็อกอิน) เพื่อให้สามารถ Redirect กลับมายังหน้าเดิมได้ในภายหลัง
+ * @param string $path เส้นทาง URL หรือ Path
+ * @return void ไม่มีการคืนค่า
  */
 function redirect_with_intended(string $path): void
 {
@@ -124,6 +148,9 @@ function redirect_with_intended(string $path): void
 
 /**
  * ปรับรูปแบบ path ให้สะอาดและไม่มี query string
+ * ตัดส่วนที่เป็น Query String ออกจาก URL เพื่อให้ได้เส้นทางที่สะอาดสำหรับใช้เป็นคีย์ในการเก็บข้อมูล Context ระหว่างหน้า
+ * @param ?string $path เส้นทาง URL หรือ Path
+ * @return string ข้อความ
  */
 function clean_context_path(?string $path = null): string
 {
@@ -145,6 +172,10 @@ function clean_context_path(?string $path = null): string
 
 /**
  * เก็บพารามิเตอร์ของหน้าลงใน session context
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ เก็บพารามิเตอร์ของหน้าลงใน session context
+ * @param string $path เส้นทาง URL หรือ Path
+ * @param array $params อาร์เรย์ของพารามิเตอร์
+ * @return void ไม่มีการคืนค่า
  */
 function clean_context_set(string $path, array $params): void
 {
@@ -173,6 +204,9 @@ function clean_context_set(string $path, array $params): void
 
 /**
  * ดึงข้อมูล context ของหน้าจาก session
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ  context ของหน้าจาก session
+ * @param ?string $path เส้นทาง URL หรือ Path
+ * @return array ชุดข้อมูล (Array)
  */
 function clean_context_get(?string $path = null): array
 {
@@ -186,6 +220,10 @@ function clean_context_get(?string $path = null): array
 
 /**
  * เริ่มต้นจัดการ context ของหน้า โดยรับค่า GET/POST และเปลี่ยนเส้นทางเป็น URL ที่สะอาด
+ * ดักจับข้อมูลจาก POST หรือ GET แล้วนำไปเก็บไว้ใน Session ก่อนจะทำการ Redirect (รูปแบบ PRG) เพื่อให้ URL สะอาดและป้องกันการกด Submit ฟอร์มซ้ำซ้อน
+ * @param array $allowedKeys รายชื่อคีย์ที่อนุญาต (Array)
+ * @param ?string $path เส้นทาง URL หรือ Path
+ * @return array ชุดข้อมูล (Array)
  */
 function clean_context_init(array $allowedKeys, ?string $path = null): array
 {
@@ -223,6 +261,10 @@ function clean_context_init(array $allowedKeys, ?string $path = null): array
 
 /**
  * ดึงค่าจาก context พร้อมกำหนดค่าเริ่มต้นหากไม่พบ
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ ดึงค่าจาก context พร้อมกำหนดค่าเริ่มต้นหากไม่พบ
+ * @param array $context ข้อมูลแวดล้อมเพิ่มเติม (Context)
+ * @param string $key ชื่อคีย์อ้างอิงข้อมูล
+ * @param mixed $default ค่าเริ่มต้นที่จะส่งกลับหากไม่พบข้อมูล
  */
 function clean_context_value(array $context, string $key, $default = '')
 {
@@ -235,6 +277,10 @@ function clean_context_value(array $context, string $key, $default = '')
 
 /**
  * ตั้งค่า context และเปลี่ยนเส้นทางไปยังหน้าที่กำหนด
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ ตั้งค่า context และเปลี่ยนเส้นทางไปยังหน้าที่กำหนด
+ * @param string $path เส้นทาง URL หรือ Path
+ * @param array $params อาร์เรย์ของพารามิเตอร์
+ * @return void ไม่มีการคืนค่า
  */
 function clean_redirect(string $path, array $params = []): void
 {
@@ -244,6 +290,9 @@ function clean_redirect(string $path, array $params = []): void
 
 /**
  * สร้าง hidden input fields สำหรับข้อมูลใน context และ CSRF token
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ  hidden input fields สำหรับข้อมูลใน context และ CSRF token
+ * @param array $params อาร์เรย์ของพารามิเตอร์
+ * @return string ข้อความ
  */
 function clean_context_inputs(array $params): string
 {
@@ -266,6 +315,14 @@ function clean_context_inputs(array $params): string
 
 /**
  * สร้างฟอร์มและปุ่มกดที่ส่งข้อมูลผ่าน context แบบ POST
+ * สร้างฟอร์ม HTML ซ่อนพร้อมปุ่มกด เพื่อใช้สำหรับส่งข้อมูลข้ามหน้าด้วยวิธี POST อย่างปลอดภัยและเป็นระเบียบ
+ * @param string $path เส้นทาง URL หรือ Path
+ * @param array $params อาร์เรย์ของพารามิเตอร์
+ * @param string $content เนื้อหา HTML หรือข้อความสำหรับแสดงผล
+ * @param string $buttonClass คลาส CSS สำหรับตกแต่งปุ่ม
+ * @param string $formClass คลาส CSS สำหรับตัวฟอร์ม
+ * @param string $formAttrs แอททริบิวต์ HTML อื่นๆ ของฟอร์ม
+ * @return string ข้อความ
  */
 function clean_context_button(string $path, array $params, string $content, string $buttonClass = '', string $formClass = 'inline', string $formAttrs = ''): string
 {
@@ -277,6 +334,13 @@ function clean_context_button(string $path, array $params, string $content, stri
 
 /**
  * แปลง URL ที่มี query string ให้เป็นปุ่มกดแบบ clean context
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ แปลง URL ที่มี query string ให้เป็นปุ่มกดแบบ clean context
+ * @param string $url ที่อยู่ลิงก์ URL
+ * @param string $content เนื้อหา HTML หรือข้อความสำหรับแสดงผล
+ * @param string $buttonClass คลาส CSS สำหรับตกแต่งปุ่ม
+ * @param string $formClass คลาส CSS สำหรับตัวฟอร์ม
+ * @param string $formAttrs แอททริบิวต์ HTML อื่นๆ ของฟอร์ม
+ * @return string ข้อความ
  */
 function clean_context_button_from_url(string $url, string $content, string $buttonClass = '', string $formClass = 'inline', string $formAttrs = ''): string
 {
@@ -293,6 +357,8 @@ function clean_context_button_from_url(string $url, string $content, string $but
 
 /**
  * คืนค่า IP address ของผู้ใช้งาน
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ คืนค่า IP address ของผู้ใช้งาน
+ * @return string ข้อความ
  */
 function client_ip(): string
 {
@@ -301,6 +367,8 @@ function client_ip(): string
 
 /**
  * ตรวจสอบว่าคำขอเป็นแบบ POST หรือไม่
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ ตรวจสอบว่าคำขอเป็นแบบ POST หรือไม่
+ * @return bool ค่าความจริง (Boolean)
  */
 function is_post(): bool
 {
@@ -309,6 +377,8 @@ function is_post(): bool
 
 /**
  * ตรวจสอบว่า session หมดอายุเนื่องจากไม่มีความเคลื่อนไหวหรือไม่
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ ตรวจสอบว่า session หมดอายุเนื่องจากไม่มีความเคลื่อนไหวหรือไม่
+ * @return bool ค่าความจริง (Boolean)
  */
 function auth_session_expired(): bool
 {
@@ -321,6 +391,9 @@ function auth_session_expired(): bool
 
 /**
  * ล้างข้อมูลการเข้าสู่ระบบและ session
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ ล้างข้อมูลการเข้าสู่ระบบและ session
+ * @param bool $restart กำหนดเป็น true เพื่อเริ่มต้น Session ใหม่ทันที
+ * @return void ไม่มีการคืนค่า
  */
 function clear_auth_session(bool $restart = false): void
 {
@@ -343,6 +416,7 @@ function clear_auth_session(bool $restart = false): void
 
 /**
  * ดึงข้อมูลผู้ใช้งานปัจจุบันที่ล็อกอินอยู่
+ * @return ?array ชุดข้อมูล (Array) หรือ null
  */
 function current_user(): ?array
 {
@@ -367,6 +441,9 @@ function current_user(): ?array
 
 /**
  * คืนค่า ID ของบทบาทผู้ใช้ตามชื่อที่ระบุ
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ คืนค่า ID ของบทบาทผู้ใช้ตามชื่อที่ระบุ
+ * @param string $role ชื่อสิทธิ์/บทบาทของผู้ใช้ (เช่น admin, customer)
+ * @return int ตัวเลข (Integer)
  */
 function role_id(string $role): int
 {
@@ -379,6 +456,8 @@ function role_id(string $role): int
 
 /**
  * บังคับให้ผู้ใช้ต้องเข้าสู่ระบบ หากไม่ได้ล็อกอินจะถูกเปลี่ยนเส้นทางไปหน้า login
+ * เป็น Middleware สำหรับปกป้องหน้าเว็บ บังคับให้ผู้ใช้งานต้องล็อกอินก่อน หากไม่ได้ล็อกอินจะถูกเปลี่ยนเส้นทางไปหน้า Login
+ * @return void ไม่มีการคืนค่า
  */
 function requireLogin(): void
 {
@@ -414,6 +493,9 @@ function requireLogin(): void
 
 /**
  * บังคับบทบาทผู้ใช้ที่สามารถเข้าถึงหน้านั้นๆ ได้
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ บังคับบทบาทผู้ใช้ที่สามารถเข้าถึงหน้านั้นๆ ได้
+ * @param mixed $roles รายชื่อบทบาทที่อนุญาตให้เข้าถึงได้
+ * @return void ไม่มีการคืนค่า
  */
 function requireRole($roles): void
 {
@@ -428,6 +510,9 @@ function requireRole($roles): void
 
 /**
  * คืนค่าเส้นทางหน้า Dashboard ตามบทบาทของผู้ใช้
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ คืนค่าเส้นทางหน้า Dashboard ตามบทบาทของผู้ใช้
+ * @param string $role ชื่อสิทธิ์/บทบาทของผู้ใช้ (เช่น admin, customer)
+ * @return string ข้อความ
  */
 function dashboard_path(string $role): string
 {
@@ -442,6 +527,9 @@ function dashboard_path(string $role): string
 
 /**
  * คืนค่าเส้นทางหน้าพื้นที่ทำงานของผู้ใช้ (Dashboard หรือ Onboarding)
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ คืนค่าเส้นทางหน้าพื้นที่ทำงานของผู้ใช้ (Dashboard หรือ Onboarding)
+ * @param array $user อาร์เรย์ข้อมูลผู้ใช้งานจากฐานข้อมูล
+ * @return string ข้อความ
  */
 function user_workspace_path(array $user): string
 {
@@ -462,6 +550,9 @@ function user_workspace_path(array $user): string
 
 /**
  * คืนค่าข้อความสำหรับปุ่มเมนูของฉันตามสถานะผู้ใช้
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ คืนค่าข้อความสำหรับปุ่มเมนูของฉันตามสถานะผู้ใช้
+ * @param array $user อาร์เรย์ข้อมูลผู้ใช้งานจากฐานข้อมูล
+ * @return string ข้อความ
  */
 function user_workspace_label(array $user): string
 {
@@ -482,6 +573,9 @@ function user_workspace_label(array $user): string
 
 /**
  * คืนค่าไอคอนสำหรับปุ่มเมนูของฉันตามสถานะผู้ใช้
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ คืนค่าไอคอนสำหรับปุ่มเมนูของฉันตามสถานะผู้ใช้
+ * @param array $user อาร์เรย์ข้อมูลผู้ใช้งานจากฐานข้อมูล
+ * @return string ข้อความ
  */
 function user_workspace_icon(array $user): string
 {
@@ -502,6 +596,10 @@ function user_workspace_icon(array $user): string
 
 /**
  * ดึงค่าการตั้งค่าจากระบบ
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ ดึงค่าการตั้งค่าจากระบบ
+ * @param string $key ชื่อคีย์อ้างอิงข้อมูล
+ * @param string $default ค่าเริ่มต้นที่จะส่งกลับหากไม่พบข้อมูล
+ * @return string ข้อความ
  */
 function setting(string $key, string $default = ''): string
 {
@@ -515,6 +613,10 @@ function setting(string $key, string $default = ''): string
 
 /**
  * บันทึกหรืออัปเดตค่าการตั้งค่าระบบ
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ บันทึกหรืออัปเดตค่าการตั้งค่าระบบ
+ * @param string $key ชื่อคีย์อ้างอิงข้อมูล
+ * @param string $value ข้อมูลที่ต้องการประมวลผล
+ * @return void ไม่มีการคืนค่า
  */
 function set_setting(string $key, string $value): void
 {
@@ -524,6 +626,10 @@ function set_setting(string $key, string $value): void
 
 /**
  * ค้นหาข้อมูลจากฐานข้อมูลและคืนค่าทั้งหมดเป็น array
+ * รับคำสั่ง SQL และพารามิเตอร์ ทำการ Execute และคืนค่าผลลัพธ์การค้นหาทั้งหมดในรูปแบบ Array Associative
+ * @param string $sql คำสั่ง SQL สำหรับส่งไปคิวรี
+ * @param array $params อาร์เรย์ของพารามิเตอร์
+ * @return array ชุดข้อมูล (Array)
  */
 function db_fetch_all(string $sql, array $params = []): array
 {
@@ -534,6 +640,9 @@ function db_fetch_all(string $sql, array $params = []): array
 
 /**
  * ค้นหาข้อมูลจากฐานข้อมูลและคืนค่าเพียงค่าเดียวจากคอลัมน์แรก
+ * ใช้สำหรับดึงค่าแบบรวดเร็ว (เช่น การ COUNT() หรือดึง ID เดียว) โดยจะคืนค่าเฉพาะคอลัมน์แรกของแถวแรกเท่านั้น
+ * @param string $sql คำสั่ง SQL สำหรับส่งไปคิวรี
+ * @param array $params อาร์เรย์ของพารามิเตอร์
  */
 function db_fetch_value(string $sql, array $params = [])
 {
@@ -544,6 +653,12 @@ function db_fetch_value(string $sql, array $params = [])
 
 /**
  * ค้นหาข้อมูลจากฐานข้อมูลพร้อมระบบ cache สำหรับผลลัพธ์ทั้งหมด
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ ค้นหาข้อมูลจากฐานข้อมูลพร้อมระบบ cache สำหรับผลลัพธ์ทั้งหมด
+ * @param string $cacheKey รหัสคีย์สำหรับอ้างอิงไฟล์แคช
+ * @param int $ttlSeconds ระยะเวลาที่ต้องการเก็บข้อมูลชั่วคราว (วินาที)
+ * @param string $sql คำสั่ง SQL สำหรับส่งไปคิวรี
+ * @param array $params อาร์เรย์ของพารามิเตอร์
+ * @return array ชุดข้อมูล (Array)
  */
 function db_fetch_all_cached(string $cacheKey, int $ttlSeconds, string $sql, array $params = []): array
 {
@@ -554,6 +669,11 @@ function db_fetch_all_cached(string $cacheKey, int $ttlSeconds, string $sql, arr
 
 /**
  * ค้นหาข้อมูลจากฐานข้อมูลพร้อมระบบ cache สำหรับค่าเดียว
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ ค้นหาข้อมูลจากฐานข้อมูลพร้อมระบบ cache สำหรับค่าเดียว
+ * @param string $cacheKey รหัสคีย์สำหรับอ้างอิงไฟล์แคช
+ * @param int $ttlSeconds ระยะเวลาที่ต้องการเก็บข้อมูลชั่วคราว (วินาที)
+ * @param string $sql คำสั่ง SQL สำหรับส่งไปคิวรี
+ * @param array $params อาร์เรย์ของพารามิเตอร์
  */
 function db_fetch_value_cached(string $cacheKey, int $ttlSeconds, string $sql, array $params = [])
 {
@@ -564,6 +684,9 @@ function db_fetch_value_cached(string $cacheKey, int $ttlSeconds, string $sql, a
 
 /**
  * แปลงข้อความให้เป็นรูปแบบ slug สำหรับ URL (ภาษาอังกฤษและตัวเลข)
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ แปลงข้อความให้เป็นรูปแบบ slug สำหรับ URL (ภาษาอังกฤษและตัวเลข)
+ * @param string $text ข้อความต้นฉบับที่ต้องการแปลง
+ * @return string ข้อความ
  */
 function slugify(string $text): string
 {
@@ -575,6 +698,11 @@ function slugify(string $text): string
 
 /**
  * สร้าง slug ที่ไม่ซ้ำกับข้อมูลอื่นในตารางที่กำหนด
+ * สร้างข้อความภาษาอังกฤษ/ตัวเลขที่อ่านง่าย (Slug) และทำการวนลูปตรวจสอบในตารางที่กำหนดจนกว่าจะได้ค่าที่ไม่ซ้ำกับข้อมูลที่มีอยู่
+ * @param string $table ชื่อตารางในฐานข้อมูล
+ * @param string $base ข้อความตั้งต้นที่ใช้สร้าง Slug
+ * @param ?int $ignoreId รหัส ID ที่ต้องการยกเว้นการตรวจสอบความซ้ำซ้อน
+ * @return string ข้อความ
  */
 function unique_slug(string $table, string $base, ?int $ignoreId = null): string
 {
@@ -599,6 +727,12 @@ function unique_slug(string $table, string $base, ?int $ignoreId = null): string
 
 /**
  * บันทึกประวัติกิจกรรมการใช้งานลงในฐานข้อมูล
+ * เก็บประวัติการกระทำต่างๆ ของผู้ใช้ เช่น การล็อกอิน, เปลี่ยนแปลงข้อมูล พร้อมบันทึกข้อมูลเครื่อง (IP, User Agent) เพื่อใช้ในการตรวจสอบเชิงลึก (Audit)
+ * @param string $action ชื่อหรือประเภทของการกระทำ
+ * @param string $table ชื่อตารางในฐานข้อมูล
+ * @param ?int $recordId รหัสตารางข้อมูลที่ได้รับผลกระทบ
+ * @param string $description ข้อความบรรยายหรือหมายเหตุเพิ่มเติม
+ * @return void ไม่มีการคืนค่า
  */
 function log_activity(string $action, string $table = '', ?int $recordId = null, string $description = ''): void
 {
@@ -617,6 +751,13 @@ function log_activity(string $action, string $table = '', ?int $recordId = null,
 
 /**
  * ส่งการแจ้งเตือนไปยังผู้ใช้ที่กำหนด
+ * สร้างรายการแจ้งเตือนใหม่ในฐานข้อมูลให้ผู้ใช้ที่ระบุ โดยสามารถส่งรหัสข้อมูลอ้างอิง (เช่น รหัสการจอง) เพื่อให้กดคลิกไปดูรายละเอียดได้
+ * @param int $userId รหัสอ้างอิงบัญชีผู้ใช้งาน
+ * @param string $title หัวข้อการแจ้งเตือน
+ * @param string $message รายละเอียดการแจ้งเตือน
+ * @param string $type ประเภท/หมวดหมู่
+ * @param ?int $relatedId รหัสอ้างอิงเชื่อมโยงกับข้อมูลอื่น
+ * @return void ไม่มีการคืนค่า
  */
 function notify_user(int $userId, string $title, string $message, string $type = 'info', ?int $relatedId = null): void
 {
@@ -630,6 +771,12 @@ function notify_user(int $userId, string $title, string $message, string $type =
 
 /**
  * ส่งการแจ้งเตือนไปยังผู้ดูแลระบบทุกคน
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ ส่งการแจ้งเตือนไปยังผู้ดูแลระบบทุกคน
+ * @param string $title หัวข้อการแจ้งเตือน
+ * @param string $message รายละเอียดการแจ้งเตือน
+ * @param string $type ประเภท/หมวดหมู่
+ * @param ?int $relatedId รหัสอ้างอิงเชื่อมโยงกับข้อมูลอื่น
+ * @return void ไม่มีการคืนค่า
  */
 function notify_admins(string $title, string $message, string $type = 'info', ?int $relatedId = null): void
 {
@@ -646,6 +793,8 @@ function notify_admins(string $title, string $message, string $type = 'info', ?i
 
 /**
  * คืนค่าเครื่องหมายดอกจันสีแดงสำหรับฟิลด์ที่จำเป็นต้องกรอก
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ คืนค่าเครื่องหมายดอกจันสีแดงสำหรับฟิลด์ที่จำเป็นต้องกรอก
+ * @return string ข้อความ
  */
 function required_mark(): string
 {
@@ -654,6 +803,9 @@ function required_mark(): string
 
 /**
  * นับจำนวนตัวอักษรของข้อความ (รองรับ UTF-8)
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ นับจำนวนตัวอักษรของข้อความ (รองรับ UTF-8)
+ * @param string $value ข้อมูลที่ต้องการประมวลผล
+ * @return int ตัวเลข (Integer)
  */
 function text_length(string $value): int
 {
@@ -666,6 +818,9 @@ function text_length(string $value): int
 
 /**
  * ตรวจสอบว่าเป็นเนื้อหาใหม่ตามจำนวนวันที่กำหนดหรือไม่
+ * @param ?string $date วันที่ (รูปแบบ YYYY-MM-DD)
+ * @param int $days จำนวนวันที่นับย้อนหลัง
+ * @return bool ค่าความจริง (Boolean)
  */
 function is_new_content(?string $date, int $days = 7): bool
 {
@@ -685,6 +840,10 @@ function is_new_content(?string $date, int $days = 7): bool
 
 /**
  * สร้าง Badge "ใหม่" หากเป็นเนื้อหาใหม่
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ  Badge "ใหม่" หากเป็นเนื้อหาใหม่
+ * @param ?string $date วันที่ (รูปแบบ YYYY-MM-DD)
+ * @param int $days จำนวนวันที่นับย้อนหลัง
+ * @return string ข้อความ
  */
 function new_content_badge(?string $date, int $days = 7): string
 {
@@ -697,6 +856,10 @@ function new_content_badge(?string $date, int $days = 7): string
 
 /**
  * สร้างคำสั่ง SQL สำหรับการจัดลำดับความนิยมของช่างภาพ
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ คำสั่ง SQL สำหรับการจัดลำดับความนิยมของช่างภาพ
+ * @param string $alias ชื่อย่อ (Alias) ของตารางในคำสั่ง SQL
+ * @param ?string $completedExpression นิพจน์ (Expression) เพิ่มเติมในการตรวจสอบงานที่สำเร็จ
+ * @return string ข้อความ
  */
 function ranking_order_sql(string $alias = 'p', ?string $completedExpression = null): string
 {
@@ -720,6 +883,10 @@ function ranking_order_sql(string $alias = 'p', ?string $completedExpression = n
 
 /**
  * คืนค่า URL เป้าหมายตามประเภทของการแจ้งเตือนและบทบาทผู้ใช้
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ คืนค่า URL เป้าหมายตามประเภทของการแจ้งเตือนและบทบาทผู้ใช้
+ * @param array $notification ข้อมูลอาร์เรย์รายการการแจ้งเตือน
+ * @param array $user อาร์เรย์ข้อมูลผู้ใช้งานจากฐานข้อมูล
+ * @return string ข้อความ
  */
 function notification_target_url(array $notification, array $user): string
 {
@@ -812,6 +979,9 @@ function notification_target_url(array $notification, array $user): string
 
 /**
  * นับจำนวนการแจ้งเตือนที่ยังไม่ได้อ่าน
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ นับจำนวนการแจ้งเตือนที่ยังไม่ได้อ่าน
+ * @param int $userId รหัสอ้างอิงบัญชีผู้ใช้งาน
+ * @return int ตัวเลข (Integer)
  */
 function unread_notifications_count(int $userId): int
 {
@@ -824,6 +994,10 @@ function unread_notifications_count(int $userId): int
 
 /**
  * ดึงข้อมูลการแจ้งเตือนล่าสุดของผู้ใช้
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ การแจ้งเตือนล่าสุดของผู้ใช้
+ * @param int $userId รหัสอ้างอิงบัญชีผู้ใช้งาน
+ * @param int $limit จำกัดจำนวนผลลัพธ์สูงสุด
+ * @return array ชุดข้อมูล (Array)
  */
 function recent_notifications(int $userId, int $limit = 20): array
 {
@@ -835,6 +1009,10 @@ function recent_notifications(int $userId, int $limit = 20): array
 
 /**
  * ตรวจสอบว่ามีคอลัมน์ที่กำหนดอยู่ในตารางหรือไม่
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ ตรวจสอบว่ามีคอลัมน์ที่กำหนดอยู่ในตารางหรือไม่
+ * @param string $table ชื่อตารางในฐานข้อมูล
+ * @param string $column ชื่อคอลัมน์ในตาราง
+ * @return bool ค่าความจริง (Boolean)
  */
 function db_column_exists(string $table, string $column): bool
 {
@@ -847,6 +1025,8 @@ function db_column_exists(string $table, string $column): bool
 
 /**
  * ตรวจสอบและเพิ่มคอลัมน์สำหรับการตรวจสอบในตาราง password_resets
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ ตรวจสอบและเพิ่มคอลัมน์สำหรับการตรวจสอบในตาราง password_resets
+ * @return void ไม่มีการคืนค่า
  */
 function ensure_password_resets_audit_columns(): void
 {
@@ -891,6 +1071,8 @@ function ensure_password_resets_audit_columns(): void
 
 /**
  * ตรวจสอบและเพิ่มคอลัมน์สำหรับการตรวจสอบในตาราง login_attempts
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ ตรวจสอบและเพิ่มคอลัมน์สำหรับการตรวจสอบในตาราง login_attempts
+ * @return void ไม่มีการคืนค่า
  */
 function ensure_login_attempts_audit_columns(): void
 {
@@ -918,6 +1100,8 @@ function ensure_login_attempts_audit_columns(): void
 
 /**
  * ตรวจสอบว่าอีเมลนี้ถูกระงับการล็อกอินชั่วคราวเนื่องจากรหัสผ่านผิดเกินกำหนดหรือไม่
+ * @param string $email ที่อยู่อีเมล
+ * @return bool ค่าความจริง (Boolean)
  */
 function is_login_blocked(string $email): bool
 {
@@ -929,6 +1113,12 @@ function is_login_blocked(string $email): bool
 
 /**
  * บันทึกประวัติการพยายามเข้าสู่ระบบ
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ บันทึกประวัติการพยายามเข้าสู่ระบบ
+ * @param string $email ที่อยู่อีเมล
+ * @param bool $success สถานะบอกว่าทำรายการสำเร็จหรือไม่
+ * @param ?int $userId รหัสอ้างอิงบัญชีผู้ใช้งาน
+ * @param string $failureReason สาเหตุของความล้มเหลว (ถ้ามี)
+ * @return void ไม่มีการคืนค่า
  */
 function record_login_attempt(string $email, bool $success, ?int $userId = null, string $failureReason = ''): void
 {
@@ -946,6 +1136,9 @@ function record_login_attempt(string $email, bool $success, ?int $userId = null,
 
 /**
  * ล้างประวัติการล็อกอินผิดพลาดหลังจากล็อกอินสำเร็จ
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ ล้างประวัติการล็อกอินผิดพลาดหลังจากล็อกอินสำเร็จ
+ * @param string $email ที่อยู่อีเมล
+ * @return void ไม่มีการคืนค่า
  */
 function clear_failed_login_attempts(string $email): void
 {
@@ -956,6 +1149,9 @@ function clear_failed_login_attempts(string $email): void
 
 /**
  * ดึงข้อมูลโปรไฟล์ช่างภาพจาก User ID
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ โปรไฟล์ช่างภาพจาก User ID
+ * @param int $userId รหัสอ้างอิงบัญชีผู้ใช้งาน
+ * @return ?array ชุดข้อมูล (Array) หรือ null
  */
 function photographer_profile_by_user(int $userId): ?array
 {
@@ -969,6 +1165,9 @@ function photographer_profile_by_user(int $userId): ?array
 
 /**
  * คืนค่า ID ของโปรไฟล์ช่างภาพจาก User ID
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ คืนค่า ID ของโปรไฟล์ช่างภาพจาก User ID
+ * @param int $userId รหัสอ้างอิงบัญชีผู้ใช้งาน
+ * @return int ตัวเลข (Integer)
  */
 function photographer_id_for_user(int $userId): int
 {
@@ -978,6 +1177,9 @@ function photographer_id_for_user(int $userId): int
 
 /**
  * คืนค่า URL ของรูปโปรไฟล์ผู้ใช้ พร้อมจัดการรูปเริ่มต้นหากไม่มี
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ คืนค่า URL ของรูปโปรไฟล์ผู้ใช้ พร้อมรูปเริ่มต้นหากไม่มี
+ * @param array $user อาร์เรย์ข้อมูลผู้ใช้งานจากฐานข้อมูล
+ * @return string ข้อความ
  */
 function user_avatar_url(array $user): string
 {
@@ -1002,6 +1204,10 @@ function user_avatar_url(array $user): string
 
 /**
  * จัดการเส้นทางรูปภาพที่แสดงผลสู่สาธารณะ พร้อมระบบ fallback
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ เส้นทางรูปภาพที่แสดงผลสู่สาธารณะ พร้อมระบบ fallback
+ * @param ?string $path เส้นทาง URL หรือ Path
+ * @param string $fallback ที่อยู่รูปภาพสำรองที่จะแสดงหากไม่พบไฟล์รูปภาพ
+ * @return string ข้อความ
  */
 function public_image(?string $path, string $fallback): string
 {
@@ -1025,6 +1231,9 @@ function public_image(?string $path, string $fallback): string
 
 /**
  * ปรับรูปแบบเส้นทางรูปภาพสำรองให้ถูกต้อง
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ ปรับรูปแบบเส้นทางรูปภาพสำรองให้ถูกต้อง
+ * @param string $fallback ที่อยู่รูปภาพสำรองที่จะแสดงหากไม่พบไฟล์รูปภาพ
+ * @return string ข้อความ
  */
 function normalize_local_image_fallback(string $fallback): string
 {
@@ -1051,6 +1260,9 @@ function normalize_local_image_fallback(string $fallback): string
 
 /**
  * ตรวจสอบการมีอยู่ของไฟล์พร้อมระบบ cache ชั่วคราว
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ ตรวจสอบการมีอยู่ของไฟล์พร้อมระบบ cache ชั่วคราว
+ * @param string $path เส้นทาง URL หรือ Path
+ * @return bool ค่าความจริง (Boolean)
  */
 function is_file_cached(string $path): bool
 {
@@ -1061,6 +1273,9 @@ function is_file_cached(string $path): bool
 
 /**
  * แปลงช่วงเวลาการทำงานเป็นภาษาไทย
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ แปลงช่วงเวลาการทำงานเป็นภาษาไทย
+ * @param string $slot ช่วงเวลาของวัน (เช้า, บ่าย, เย็น, full_day)
+ * @return string ข้อความ
  */
 function time_slot_label(string $slot): string
 {
@@ -1070,6 +1285,9 @@ function time_slot_label(string $slot): string
 
 /**
  * แปลงวันที่รูปแบบ พ.ศ. ให้เป็นรูปแบบ ISO (YYYY-MM-DD)
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ แปลงวันที่รูปแบบ พ.ศ. ให้เป็นรูปแบบ ISO (YYYY-MM-DD)
+ * @param ?string $value ข้อมูลที่ต้องการประมวลผล
+ * @return string ข้อความ
  */
 function parse_be_date_to_iso(?string $value): string
 {
@@ -1126,6 +1344,9 @@ function parse_be_date_to_iso(?string $value): string
 
 /**
  * จัดรูปแบบวันที่จากฐานข้อมูลให้เป็นรูปแบบ พ.ศ.
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ จัดรูปแบบวันที่จากฐานข้อมูลให้เป็นรูปแบบ พ.ศ.
+ * @param ?string $value ข้อมูลที่ต้องการประมวลผล
+ * @return string ข้อความ
  */
 function format_be_date(?string $value): string
 {
@@ -1147,6 +1368,9 @@ function format_be_date(?string $value): string
 
 /**
  * จัดรูปแบบวันและเวลาจากฐานข้อมูลให้เป็นรูปแบบ พ.ศ.
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ จัดรูปแบบวันและเวลาจากฐานข้อมูลให้เป็นรูปแบบ พ.ศ.
+ * @param ?string $value ข้อมูลที่ต้องการประมวลผล
+ * @return string ข้อความ
  */
 function format_be_datetime(?string $value): string
 {
@@ -1168,6 +1392,8 @@ function format_be_datetime(?string $value): string
 
 /**
  * คืนค่าปี พ.ศ. ปัจจุบัน
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ คืนค่าปี พ.ศ. ปัจจุบัน
+ * @return int ตัวเลข (Integer)
  */
 function current_be_year(): int
 {
@@ -1176,6 +1402,9 @@ function current_be_year(): int
 
 /**
  * เตรียมค่าวันที่สำหรับแสดงใน input field แบบ พ.ศ.
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ เตรียมค่าวันที่สำหรับแสดงใน input field แบบ พ.ศ.
+ * @param ?string $value ข้อมูลที่ต้องการประมวลผล
+ * @return string ข้อความ
  */
 function be_date_input_value(?string $value): string
 {
@@ -1190,6 +1419,13 @@ function be_date_input_value(?string $value): string
 
 /**
  * สร้าง HTML input field สำหรับเลือกวันที่แบบ พ.ศ.
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ  HTML input field สำหรับเลือกวันที่แบบ พ.ศ.
+ * @param string $name ชื่อแอททริบิวต์ (Name)
+ * @param ?string $value ข้อมูลที่ต้องการประมวลผล
+ * @param string $classes ชื่อคลาส CSS เพิ่มเติม
+ * @param bool $required กำหนดว่าช่องข้อมูลนี้จำเป็นต้องกรอกหรือไม่ (Required)
+ * @param string $placeholder ข้อความคำใบ้ลายน้ำในช่องรับข้อมูล (Placeholder)
+ * @return string ข้อความ
  */
 function be_date_input(string $name, ?string $value = '', string $classes = '', bool $required = false, string $placeholder = 'วว/ดด/พ.ศ.'): string
 {
@@ -1223,6 +1459,13 @@ function be_date_input(string $name, ?string $value = '', string $classes = '', 
 
 /**
  * สร้าง HTML สำหรับปฏิทินเลือกวันที่แบบกำหนดเอง
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ  HTML สำหรับปฏิทินเลือกวันที่แบบกำหนดเอง
+ * @param string $name ชื่อแอททริบิวต์ (Name)
+ * @param ?string $value ข้อมูลที่ต้องการประมวลผล
+ * @param array $dateStatuses อาร์เรย์รวมสถานะของวันที่สำหรับระบายสีปฏิทิน
+ * @param bool $required กำหนดว่าช่องข้อมูลนี้จำเป็นต้องกรอกหรือไม่ (Required)
+ * @param string $label ข้อความป้ายกำกับช่องป้อนข้อมูล (Label)
+ * @return string ข้อความ
  */
 function calendar_date_input(string $name, ?string $value = '', array $dateStatuses = [], bool $required = false, string $label = 'วันที่ต้องการจ้าง'): string
 {
@@ -1268,6 +1511,9 @@ function calendar_date_input(string $name, ?string $value = '', array $dateStatu
 
 /**
  * แปลงสถานะต่างๆ ในระบบเป็นข้อความภาษาไทย
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ แปลงสถานะต่างๆ ในระบบเป็นข้อความภาษาไทย
+ * @param string $status ชื่อสถานะระบบ
+ * @return string ข้อความ
  */
 function booking_status_label(string $status): string
 {
@@ -1296,6 +1542,9 @@ function booking_status_label(string $status): string
 
 /**
  * แปลงชื่อบทบาทผู้ใช้เป็นภาษาไทย
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ แปลงชื่อบทบาทผู้ใช้เป็นภาษาไทย
+ * @param string $role ชื่อสิทธิ์/บทบาทของผู้ใช้ (เช่น admin, customer)
+ * @return string ข้อความ
  */
 function role_display_name(string $role): string
 {
@@ -1310,6 +1559,9 @@ function role_display_name(string $role): string
 
 /**
  * สร้าง Badge แสดงสถานะพร้อมสีและไอคอนที่เหมาะสม
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ  Badge แสดงสถานะพร้อมสีและไอคอนที่เหมาะสม
+ * @param string $status ชื่อสถานะระบบ
+ * @return string ข้อความ
  */
 function status_badge(string $status): string
 {
@@ -1362,6 +1614,8 @@ function status_badge(string $status): string
 
 /**
  * สุ่มรหัสการจองใหม่ (CRB...)
+ * สุ่มสร้างหมายเลขอ้างอิงการจองที่ไม่ซ้ำกัน (เช่น CRB260530A1B2) โดยอิงจากวันที่และชุดอักขระสุ่ม
+ * @return string ข้อความ
  */
 function generate_booking_code(): string
 {
@@ -1370,6 +1624,13 @@ function generate_booking_code(): string
 
 /**
  * บันทึกประวัติการเปลี่ยนสถานะของคำขอจอง
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ บันทึกประวัติการเปลี่ยนสถานะของคำขอจอง
+ * @param int $bookingId รหัสคำขอจองคิว
+ * @param ?string $oldStatus สถานะระบบก่อนการเปลี่ยนแปลง
+ * @param string $newStatus สถานะใหม่ที่ถูกอัปเดต
+ * @param ?int $changedBy รหัสผู้ใช้งานที่ทำการเปลี่ยนสถานะ
+ * @param string $note โน้ตหรือหมายเหตุแฝงที่บันทึกร่วมไว้
+ * @return void ไม่มีการคืนค่า
  */
 function add_booking_status_log(int $bookingId, ?string $oldStatus, string $newStatus, ?int $changedBy, string $note = ''): void
 {
@@ -1379,6 +1640,9 @@ function add_booking_status_log(int $bookingId, ?string $oldStatus, string $newS
 
 /**
  * คืนค่าไอคอนสำหรับเส้นเวลาของสถานะการจอง
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ คืนค่าไอคอนสำหรับเส้นเวลาของสถานะการจอง
+ * @param string $status ชื่อสถานะระบบ
+ * @return string ข้อความ
  */
 function booking_status_timeline_icon(string $status): string
 {
@@ -1396,6 +1660,9 @@ function booking_status_timeline_icon(string $status): string
 
 /**
  * คืนค่าสีสำหรับเส้นเวลาของสถานะการจอง
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ คืนค่าสีสำหรับเส้นเวลาของสถานะการจอง
+ * @param string $status ชื่อสถานะระบบ
+ * @return string ข้อความ
  */
 function booking_status_timeline_tone(string $status): string
 {
@@ -1413,6 +1680,9 @@ function booking_status_timeline_tone(string $status): string
 
 /**
  * สร้าง HTML สำหรับแสดงเส้นเวลาประวัติสถานะการจอง
+ * สร้างโครงสร้าง HTML เส้นเวลา (Timeline) เพื่อแสดงประวัติการเปลี่ยนสถานะของการจองช่างภาพ พร้อมไอคอนและสีที่สอดคล้องกับสถานะ
+ * @param array $logs รายการอาร์เรย์ประวัติการทำงาน
+ * @return string ข้อความ
  */
 function booking_status_timeline_html(array $logs): string
 {
@@ -1469,6 +1739,9 @@ function booking_status_timeline_html(array $logs): string
 
 /**
  * ปรับปรุงข้อมูลวันว่างของช่างภาพตามสถานะการจองที่เปลี่ยนไป
+ * ปรับแต่งสถานะวันว่างในปฏิทินของช่างภาพให้ตรงกับสถานะการจองปัจจุบันโดยอัตโนมัติ (เช่น จองแล้วเปลี่ยนเป็นไม่ว่าง หรือยกเลิกแล้วกลับมาว่าง)
+ * @param int $bookingId รหัสคำขอจองคิว
+ * @return void ไม่มีการคืนค่า
  */
 function sync_availability_after_booking_status(int $bookingId): void
 {
@@ -1547,6 +1820,12 @@ function sync_availability_after_booking_status(int $bookingId): void
 
 /**
  * ตรวจสอบว่าช่วงเวลาที่เลือกสามารถจองได้หรือไม่
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ ตรวจสอบว่าช่วงเวลาที่เลือกสามารถจองได้หรือไม่
+ * @param int $photographerId รหัสประจำตัวช่างภาพ
+ * @param string $date วันที่ (รูปแบบ YYYY-MM-DD)
+ * @param string $slot ช่วงเวลาของวัน (เช้า, บ่าย, เย็น, full_day)
+ * @param ?int $excludeBookingId รหัสการจองที่ต้องการข้าม (ใช้ตอนแก้ไขการจอง)
+ * @return bool ค่าความจริง (Boolean)
  */
 function can_book_slot(int $photographerId, string $date, string $slot, ?int $excludeBookingId = null): bool
 {
@@ -1579,6 +1858,9 @@ function can_book_slot(int $photographerId, string $date, string $slot, ?int $ex
 
 /**
  * คำนวณและอัปเดตคะแนนเฉลี่ยและจำนวนรีวิวของช่างภาพ
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ คำนวณและอัปเดตคะแนนเฉลี่ยและจำนวนรีวิวของช่างภาพ
+ * @param int $photographerId รหัสประจำตัวช่างภาพ
+ * @return void ไม่มีการคืนค่า
  */
 function update_photographer_rating(int $photographerId): void
 {
@@ -1591,6 +1873,9 @@ function update_photographer_rating(int $photographerId): void
 
 /**
  * คำนวณและอัปเดตสถิติการตอบกลับของช่างภาพ
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ คำนวณและอัปเดตสถิติการตอบกลับของช่างภาพ
+ * @param int $photographerId รหัสประจำตัวช่างภาพ
+ * @return void ไม่มีการคืนค่า
  */
 function update_photographer_response_stats(int $photographerId): void
 {
@@ -1617,6 +1902,12 @@ function update_photographer_response_stats(int $photographerId): void
 
 /**
  * สร้าง HTML สำหรับระบบแบ่งหน้าแบบปกติ
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ  HTML สำหรับระบบแบ่งหน้าแบบปกติ
+ * @param int $total จำนวนรายการทั้งหมดในฐานข้อมูล
+ * @param int $page ลำดับหน้าแสดงผลปัจจุบัน
+ * @param int $perPage จำนวนรายการที่แบ่งแสดงต่อหน้า
+ * @param string $baseUrl URL หลักสำหรับต่อท้ายพารามิเตอร์แบ่งหน้า
+ * @return string ข้อความ
  */
 function paginate(int $total, int $page, int $perPage, string $baseUrl): string
 {
@@ -1635,6 +1926,13 @@ function paginate(int $total, int $page, int $perPage, string $baseUrl): string
 
 /**
  * สร้าง HTML สำหรับระบบแบ่งหน้าแบบ clean context
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ  HTML สำหรับระบบแบ่งหน้าแบบ clean context
+ * @param int $total จำนวนรายการทั้งหมดในฐานข้อมูล
+ * @param int $page ลำดับหน้าแสดงผลปัจจุบัน
+ * @param int $perPage จำนวนรายการที่แบ่งแสดงต่อหน้า
+ * @param string $path เส้นทาง URL หรือ Path
+ * @param array $baseParams
+ * @return string ข้อความ
  */
 function paginate_clean(int $total, int $page, int $perPage, string $path, array $baseParams = []): string
 {
@@ -1656,6 +1954,10 @@ function paginate_clean(int $total, int $page, int $perPage, string $path, array
 
 /**
  * นับจำนวนข้อมูลในตารางที่กำหนดตามเงื่อนไข
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ นับจำนวนข้อมูลในตารางที่กำหนดตามเงื่อนไข
+ * @param string $table ชื่อตารางในฐานข้อมูล
+ * @param string $where ชุดคำสั่งเงื่อนไข (SQL WHERE Clause)
+ * @return int ตัวเลข (Integer)
  */
 function table_count(string $table, string $where = '1=1'): int
 {
@@ -1666,6 +1968,9 @@ function table_count(string $table, string $where = '1=1'): int
 
 /**
  * นับจำนวนครั้งที่ช่างภาพถูกบันทึกเป็นรายการโปรด
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ นับจำนวนครั้งที่ช่างภาพถูกบันทึกเป็นรายการโปรด
+ * @param int $photographerId รหัสประจำตัวช่างภาพ
+ * @return int ตัวเลข (Integer)
  */
 function favorite_count(int $photographerId): int
 {
@@ -1676,6 +1981,10 @@ function favorite_count(int $photographerId): int
 
 /**
  * ตรวจสอบว่าช่างภาพคนนี้เป็นรายการโปรดของลูกค้าหรือไม่
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ ตรวจสอบว่าช่างภาพคนนี้เป็นรายการโปรดของลูกค้าหรือไม่
+ * @param int $customerId รหัสประจำตัวลูกค้า
+ * @param int $photographerId รหัสประจำตัวช่างภาพ
+ * @return bool ค่าความจริง (Boolean)
  */
 function is_favorite_photographer(int $customerId, int $photographerId): bool
 {
@@ -1686,6 +1995,10 @@ function is_favorite_photographer(int $customerId, int $photographerId): bool
 
 /**
  * เพิ่มหรือลบช่างภาพออกจากรายการโปรด
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ เพิ่มหรือลบช่างภาพออกจากรายการโปรด
+ * @param int $customerId รหัสประจำตัวลูกค้า
+ * @param int $photographerId รหัสประจำตัวช่างภาพ
+ * @return bool ค่าความจริง (Boolean)
  */
 function toggle_favorite_photographer(int $customerId, int $photographerId): bool
 {
@@ -1702,6 +2015,11 @@ function toggle_favorite_photographer(int $customerId, int $photographerId): boo
 
 /**
  * บันทึกประวัติการค้นหาของผู้ใช้งาน
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ บันทึกประวัติการค้นหาของผู้ใช้งาน
+ * @param string $keyword คำหรือประโยคที่ใช้ค้นหา
+ * @param int $districtId รหัสอำเภอพื้นที่ (0 คือไม่ระบุ)
+ * @param int $categoryId รหัสประเภทงานถ่ายภาพ (0 คือไม่ระบุ)
+ * @return void ไม่มีการคืนค่า
  */
 function record_search_log(string $keyword, int $districtId, int $categoryId): void
 {
@@ -1733,6 +2051,10 @@ function record_search_log(string $keyword, int $districtId, int $categoryId): v
 
 /**
  * บันทึกประวัติการเข้าดูโปรไฟล์ช่างภาพล่าสุด
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ บันทึกประวัติการเข้าดูโปรไฟล์ช่างภาพล่าสุด
+ * @param int $userId รหัสอ้างอิงบัญชีผู้ใช้งาน
+ * @param int $photographerId รหัสประจำตัวช่างภาพ
+ * @return void ไม่มีการคืนค่า
  */
 function record_recently_viewed(int $userId, int $photographerId): void
 {
@@ -1742,6 +2064,9 @@ function record_recently_viewed(int $userId, int $photographerId): void
 
 /**
  * คำนวณเปอร์เซ็นต์ความสมบูรณ์ของโปรไฟล์ช่างภาพ
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ คำนวณเปอร์เซ็นต์ความสมบูรณ์ของโปรไฟล์ช่างภาพ
+ * @param int $photographerId รหัสประจำตัวช่างภาพ
+ * @return int ตัวเลข (Integer)
  */
 function photographer_completion_percent(int $photographerId): int
 {
@@ -1784,6 +2109,8 @@ function photographer_completion_percent(int $photographerId): int
 
 /**
  * ดึงข้อมูลหมวดหมู่และอำเภอยอดนิยมสำหรับแสดงที่ Footer
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ หมวดหมู่และอำเภอยอดนิยมสำหรับแสดงที่ Footer
+ * @return array ชุดข้อมูล (Array)
  */
 function footer_public_data(): array
 {
@@ -1799,6 +2126,8 @@ function footer_public_data(): array
 
 /**
  * คืนค่ากลุ่มของ Tag บทความที่กำหนดไว้ล่วงหน้า
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ คืนค่ากลุ่มของ Tag บทความที่กำหนดไว้ล่วงหน้า
+ * @return array ชุดข้อมูล (Array)
  */
 function predefined_article_tag_groups(): array
 {
@@ -1864,6 +2193,8 @@ function predefined_article_tag_groups(): array
 
 /**
  * ตรวจสอบและเพิ่มคอลัมน์สถานะในตาราง tags
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ ตรวจสอบและเพิ่มคอลัมน์สถานะในตาราง tags
+ * @return void ไม่มีการคืนค่า
  */
 function ensure_tags_status_column(): void
 {
@@ -1887,6 +2218,8 @@ function ensure_tags_status_column(): void
 
 /**
  * ตรวจสอบและเพิ่มคอลัมน์ deleted_at ในตารางหมวดหมู่บริการ
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ ตรวจสอบและเพิ่มคอลัมน์ deleted_at ในตารางหมวดหมู่บริการ
+ * @return void ไม่มีการคืนค่า
  */
 function ensure_service_categories_deleted_at_column(): void
 {
@@ -1910,6 +2243,8 @@ function ensure_service_categories_deleted_at_column(): void
 
 /**
  * ตรวจสอบและเพิ่มคอลัมน์ excerpt ในตารางบทความ
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ ตรวจสอบและเพิ่มคอลัมน์ excerpt ในตารางบทความ
+ * @return void ไม่มีการคืนค่า
  */
 function ensure_photographer_articles_excerpt_column(): void
 {
@@ -1927,6 +2262,8 @@ function ensure_photographer_articles_excerpt_column(): void
 
 /**
  * คืนค่ารายชื่อ Tag ทั้งหมดที่กำหนดไว้ล่วงหน้า
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ คืนค่ารายชื่อ Tag ทั้งหมดที่กำหนดไว้ล่วงหน้า
+ * @return array ชุดข้อมูล (Array)
  */
 function predefined_article_tag_names(): array
 {
@@ -1942,6 +2279,8 @@ function predefined_article_tag_names(): array
 
 /**
  * ตรวจสอบและสร้าง Tag เริ่มต้นหากยังไม่มีในฐานข้อมูล
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ ตรวจสอบและสร้าง Tag เริ่มต้นหากยังไม่มีในฐานข้อมูล
+ * @return array ชุดข้อมูล (Array)
  */
 function ensure_predefined_article_tags(): array
 {
@@ -1966,6 +2305,8 @@ function ensure_predefined_article_tags(): array
 
 /**
  * จัดรูปแบบกลุ่มของ Tag สำหรับใช้ในการเลือก
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ จัดรูปแบบกลุ่มของ Tag สำหรับใช้ในการเลือก
+ * @return array ชุดข้อมูล (Array)
  */
 function article_tag_options(): array
 {
@@ -2000,6 +2341,8 @@ function article_tag_options(): array
 
 /**
  * คืนค่า ID ของ Tag ทั้งหมดที่อนุญาตให้ใช้งาน
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ คืนค่า ID ของ Tag ทั้งหมดที่อนุญาตให้ใช้งาน
+ * @return array ชุดข้อมูล (Array)
  */
 function allowed_article_tag_ids(): array
 {
@@ -2015,6 +2358,8 @@ function allowed_article_tag_ids(): array
 
 /**
  * ดึงข้อมูล ID ของ Tag ที่ถูกเลือกมาจากฟอร์ม POST
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ  ID ของ Tag ที่ถูกเลือกมาจากฟอร์ม POST
+ * @return array ชุดข้อมูล (Array)
  */
 function selected_article_tag_ids_from_post(): array
 {
@@ -2038,6 +2383,11 @@ function selected_article_tag_ids_from_post(): array
 
 /**
  * ดึง ID ของ Tag ที่ผูกกับข้อมูลที่กำหนด
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ ดึง ID ของ Tag ที่ผูกกับข้อมูลที่กำหนด
+ * @param string $relationTable ชื่อตารางจับคู่ความสัมพันธ์
+ * @param string $recordColumn ชื่อคอลัมน์รหัสหลัก
+ * @param int $recordId รหัสตารางข้อมูลที่ได้รับผลกระทบ
+ * @return array ชุดข้อมูล (Array)
  */
 function selected_article_tag_ids(string $relationTable, string $recordColumn, int $recordId): array
 {
@@ -2065,6 +2415,12 @@ function selected_article_tag_ids(string $relationTable, string $recordColumn, i
 
 /**
  * ปรับปรุงความสัมพันธ์ระหว่างข้อมูลกับ Tag (ลบและเพิ่มใหม่)
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ ปรับปรุงความสัมพันธ์ระหว่างข้อมูลกับ Tag (ลบและเพิ่มใหม่)
+ * @param string $relationTable ชื่อตารางจับคู่ความสัมพันธ์
+ * @param string $recordColumn ชื่อคอลัมน์รหัสหลัก
+ * @param int $recordId รหัสตารางข้อมูลที่ได้รับผลกระทบ
+ * @param array $tagIds รายการรหัส Tag ที่ส่งมาอัปเดต
+ * @return void ไม่มีการคืนค่า
  */
 function sync_article_tag_relations(string $relationTable, string $recordColumn, int $recordId, array $tagIds): void
 {
@@ -2105,6 +2461,10 @@ function sync_article_tag_relations(string $relationTable, string $recordColumn,
 
 /**
  * สร้าง HTML สำหรับเลือก Tag บทความแยกตามกลุ่ม
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ  HTML สำหรับเลือก Tag บทความแยกตามกลุ่ม
+ * @param array $selectedIds รายการรหัสที่เลือกไว้ล่วงหน้า
+ * @param string $inputName ชื่อช่องข้อมูล Input Name
+ * @return string ข้อความ
  */
 function article_tag_selector_html(array $selectedIds = [], string $inputName = 'tag_ids'): string
 {
@@ -2133,6 +2493,9 @@ function article_tag_selector_html(array $selectedIds = [], string $inputName = 
 
 /**
  * แปลงสถานะการรายงานปัญหาเป็นภาษาไทย
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ แปลงสถานะการรายงานปัญหาเป็นภาษาไทย
+ * @param string $status ชื่อสถานะระบบ
+ * @return string ข้อความ
  */
 function report_status_label(string $status): string
 {

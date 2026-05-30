@@ -13,6 +13,9 @@ $adminCurrentTitle = $pageTitle ?? 'ผู้ดูแลระบบ';
 if (!function_exists('admin_overview_count')) {
     /**
      * นับจำนวนข้อมูลจาก SQL query ที่ส่งเข้ามา (ใช้ภายในหน้า Overview แอดมิน)
+     * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ นับจำนวนข้อมูลจาก SQL query ที่ส่งเข้ามา (ใช้ภายในหน้า Overview แอดมิน)
+     * @param string $sql คำสั่ง SQL สำหรับส่งไปคิวรี
+     * @return int ตัวเลข (Integer)
      */
     function admin_overview_count(string $sql): int
     {

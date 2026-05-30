@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 /**
  * สร้างหรือดึง CSRF Token จาก session
+ * ดึงค่ารหัสความปลอดภัย (Token) จาก Session หรือสร้างขึ้นใหม่หากยังไม่มี ใช้สำหรับยืนยันตัวตนว่าฟอร์มถูกส่งมาจากเว็บไซต์จริง
+ * @return string ข้อความ
  */
 function csrf_token(): string
 {
@@ -14,6 +16,8 @@ function csrf_token(): string
 
 /**
  * สร้าง hidden input field สำหรับ CSRF Token
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ  hidden input field สำหรับ CSRF Token
+ * @return string ข้อความ
  */
 function csrf_field(): string
 {
@@ -22,6 +26,7 @@ function csrf_field(): string
 
 /**
  * ตรวจสอบความถูกต้องของ CSRF Token ในคำขอ POST
+ * @return void ไม่มีการคืนค่า
  */
 function verify_csrf(): void
 {

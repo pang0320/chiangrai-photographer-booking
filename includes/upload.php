@@ -5,6 +5,9 @@ require_once __DIR__ . '/../config/database.php';
 
 /**
  * จัดการการอัปโหลดรูปภาพ ตรวจสอบความปลอดภัย และบันทึกไฟล์
+ * @param array $file อาร์เรย์ข้อมูลไฟล์จากตัวแปร $_FILES
+ * @param string $folder ชื่อโฟลเดอร์สำหรับเก็บไฟล์บนเซิร์ฟเวอร์
+ * @return ?string ข้อความ หรือ null
  */
 function upload_image(array $file, string $folder): ?string
 {
@@ -152,6 +155,10 @@ function upload_image(array $file, string $folder): ?string
 
 /**
  * บันทึกเหตุการณ์เมื่อการอัปโหลดไฟล์ถูกปฏิเสธด้วยเหตุผลด้านความปลอดภัย
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ บันทึกเหตุการณ์เมื่อการอัปโหลดไฟล์ถูกปฏิเสธด้วยเหตุผลด้านความปลอดภัย
+ * @param string $reason เหตุผลด้านความปลอดภัยที่ไฟล์ถูกปฏิเสธ
+ * @param array $context ข้อมูลแวดล้อมเพิ่มเติม (Context)
+ * @return void ไม่มีการคืนค่า
  */
 function upload_security_reject(string $reason, array $context = []): void
 {

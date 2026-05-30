@@ -3,6 +3,10 @@ declare(strict_types=1);
 
 /**
  * เก็บข้อความแจ้งเตือนลง session (Flash Message)
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ เก็บข้อความแจ้งเตือนลง session (Flash Message)
+ * @param string $type ประเภท/หมวดหมู่
+ * @param string $message รายละเอียดการแจ้งเตือน
+ * @return void ไม่มีการคืนค่า
  */
 function flash(string $type, string $message): void
 {
@@ -11,6 +15,8 @@ function flash(string $type, string $message): void
 
 /**
  * ดึงข้อความแจ้งเตือนทั้งหมดออกมาและล้างค่าใน session
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ ดึงข้อความแจ้งเตือนทั้งหมดออกมาและล้างค่าใน session
+ * @return array ชุดข้อมูล (Array)
  */
 function flashes(): array
 {

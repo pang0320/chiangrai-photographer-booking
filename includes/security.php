@@ -5,6 +5,8 @@ require_once __DIR__ . '/../config/database.php';
 
 /**
  * ตรวจสอบความผิดปกติของข้อมูลนำเข้า (เช่น XSS, SQL Injection)
+ * @param mixed $input ข้อมูล Input แบบดิบที่ยังไม่ถูกประมวลผล
+ * @return array ชุดข้อมูล (Array)
  */
 function detectSuspiciousInput($input): array
 {
@@ -81,6 +83,8 @@ function detectSuspiciousInput($input): array
 
 /**
  * สแกนคำขอ (GET, POST, COOKIE) ทั้งหมดเพื่อหาภัยคุกคามด้านความปลอดภัย
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ สแกนคำขอ (GET, POST, COOKIE) ทั้งหมดเพื่อหาภัยคุกคามด้านความปลอดภัย
+ * @return array ชุดข้อมูล (Array)
  */
 function scanRequestForThreats(): array
 {
@@ -112,6 +116,10 @@ function scanRequestForThreats(): array
 
 /**
  * บันทึกเหตุการณ์ด้านความปลอดภัยลงใน Activity Log
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ บันทึกเหตุการณ์ด้านความปลอดภัยลงใน Activity Log
+ * @param string $eventType ประเภทหรือชื่อเรียกเหตุการณ์เตือนภัย
+ * @param array $context ข้อมูลแวดล้อมเพิ่มเติม (Context)
+ * @return void ไม่มีการคืนค่า
  */
 function logSecurityEvent(string $eventType, array $context = []): void
 {
@@ -150,6 +158,12 @@ function logSecurityEvent(string $eventType, array $context = []): void
 
 /**
  * ฟังก์ชันช่วยในการสแกนข้อมูลจากแหล่งต่างๆ แบบ recursive
+ * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ ฟังก์ชันช่วยในการสแกนข้อมูลจากแหล่งต่างๆ แบบ recursive
+ * @param string $sourceName แหล่งที่มาของชุดข้อมูล (เช่น GET, POST)
+ * @param mixed $value ข้อมูลที่ต้องการประมวลผล
+ * @param string $path เส้นทาง URL หรือ Path
+ * @param array &$threats ตัวแปรแบบ Reference สำหรับเก็บรายการภัยคุกคามสะสม
+ * @return void ไม่มีการคืนค่า
  */
 function scanSecuritySource(string $sourceName, $value, string $path, array &$threats): void
 {
@@ -187,6 +201,8 @@ function scanSecuritySource(string $sourceName, $value, string $path, array &$th
 
 /**
  * ตรวจสอบว่าเป็นฟิลด์ข้อมูลที่ละเอียดอ่อนหรือไม่ (เช่น รหัสผ่าน) เพื่อเลี่ยงการสแกนหรือบันทึก log
+ * @param string $fieldName ชื่อฟิลด์หรือตัวแปรที่รับมา
+ * @return bool ค่าความจริง (Boolean)
  */
 function isSensitiveSecurityField(string $fieldName): bool
 {

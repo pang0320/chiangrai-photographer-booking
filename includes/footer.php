@@ -194,6 +194,21 @@ if ($footerLogo !== '') {
 <?php endif; ?>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="/assets/js/app.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var inputs = document.querySelectorAll('input, select, textarea');
+    inputs.forEach(function(input) {
+        input.addEventListener('invalid', function(e) {
+            if (e.target.validity.valueMissing) {
+                e.target.setCustomValidity('กรุณากรอกข้อมูลในช่องนี้');
+            }
+        });
+        input.addEventListener('input', function(e) {
+            e.target.setCustomValidity('');
+        });
+    });
+});
+</script>
 <?php foreach ($flashItems as $item): ?>
 <script>
 Swal.fire({icon: '<?= h($item['type']) ?>', title: '<?= h($item['message']) ?>', timer: 2200, showConfirmButton: false});

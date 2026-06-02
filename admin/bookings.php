@@ -153,7 +153,7 @@ include __DIR__ . '/../includes/header.php';
 	                        <th>ช่างภาพ</th>
 	                        <th>ประเภท</th>
 	                        <th>วันที่</th>
-	                        <th>สถานะ (ดูอย่างเดียว)</th>
+	                        <th>สถานะ</th>
 	                        <th>รายละเอียด</th>
 	                    </tr>
 	                </thead>

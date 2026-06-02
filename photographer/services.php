@@ -149,7 +149,7 @@ include __DIR__ . '/../includes/header.php';
             </div>
 
             <label class="block text-sm font-black text-neutral-700" for="category_id">
-                <i class="fa-solid fa-layer-group mr-2 text-red-600"></i>หมวดหมู่งาน
+                <i class="fa-solid fa-layer-group mr-2 text-red-600"></i>หมวดหมู่งาน <?= required_mark() ?>
             </label>
             <select id="category_id" name="category_id" required class="stock-input mt-2 w-full rounded-2xl px-4 py-3 font-semibold">
                 <option value="">เลือกประเภทงานที่รับ</option>

@@ -198,24 +198,24 @@ include __DIR__ . '/includes/header.php';
                     </div>
                     <div class="mt-4 grid gap-4 sm:grid-cols-2">
                         <label class="grid gap-2 text-sm font-black text-neutral-700">
-                            ชื่อ-นามสกุล
+                            <span>ชื่อ-นามสกุล <?= required_mark() ?></span>
                             <span class="icon-input block"><i class="fa-solid fa-user"></i><input name="name" required placeholder="เช่น กานต์ เชียงราย" class="stock-input w-full rounded-2xl px-4 py-3 font-semibold"></span>
                         </label>
                         <label class="grid gap-2 text-sm font-black text-neutral-700">
-                            อีเมล
+                            <span>อีเมล <?= required_mark() ?></span>
                             <span class="icon-input block"><i class="fa-solid fa-envelope"></i><input type="email" name="email" required placeholder="you@example.com" class="stock-input w-full rounded-2xl px-4 py-3 font-semibold"></span>
                         </label>
                         <label class="grid gap-2 text-sm font-black text-neutral-700">
-                            เบอร์โทร
+                            <span>เบอร์โทร <?= required_mark() ?></span>
                             <span class="icon-input block"><i class="fa-solid fa-phone"></i><input name="phone" required placeholder="08xxxxxxxx" class="stock-input w-full rounded-2xl px-4 py-3 font-semibold"></span>
                         </label>
                         <div class="hidden sm:block"></div>
                         <label class="grid gap-2 text-sm font-black text-neutral-700">
-                            รหัสผ่าน
+                            <span>รหัสผ่าน <?= required_mark() ?></span>
                             <span class="icon-input block"><i class="fa-solid fa-lock"></i><input type="password" name="password" required minlength="8" placeholder="อย่างน้อย 8 ตัวอักษร" class="stock-input w-full rounded-2xl px-4 py-3 font-semibold"></span>
                         </label>
                         <label class="grid gap-2 text-sm font-black text-neutral-700">
-                            ยืนยันรหัสผ่าน
+                            <span>ยืนยันรหัสผ่าน <?= required_mark() ?></span>
                             <span class="icon-input block"><i class="fa-solid fa-lock"></i><input type="password" name="password_confirmation" required minlength="8" placeholder="กรอกรหัสผ่านอีกครั้ง" class="stock-input w-full rounded-2xl px-4 py-3 font-semibold"></span>
                         </label>
                     </div>
@@ -232,15 +232,15 @@ include __DIR__ . '/includes/header.php';
 
                     <div class="mt-4 grid gap-4 sm:grid-cols-2">
                         <label class="grid gap-2 text-sm font-black text-neutral-700">
-                            ชื่อช่างภาพ / ชื่อทีม
+                            <span>ชื่อช่างภาพ / ชื่อทีม <?= required_mark() ?></span>
                             <span class="icon-input block"><i class="fa-solid fa-camera"></i><input name="display_name" data-required-when-photographer placeholder="เช่น North Studio" class="stock-input w-full rounded-2xl px-4 py-3 font-semibold"></span>
                         </label>
                         <label class="grid gap-2 text-sm font-black text-neutral-700">
-                            LINE ID
+                            <span>LINE ID</span>
                             <span class="icon-input block"><i class="fa-brands fa-line"></i><input name="line_id" placeholder="ช่องทางติดต่อหลัก" class="stock-input w-full rounded-2xl px-4 py-3 font-semibold"></span>
                         </label>
                         <label class="grid gap-2 text-sm font-black text-neutral-700 sm:col-span-2">
-                            อำเภอหลัก
+                            <span>อำเภอหลัก <?= required_mark() ?></span>
                             <span class="icon-input block">
                                 <i class="fa-solid fa-location-dot"></i>
                                 <select name="main_district_id" data-required-when-photographer class="stock-input w-full rounded-2xl px-4 py-3 font-semibold">

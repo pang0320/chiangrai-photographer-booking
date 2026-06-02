@@ -83,11 +83,17 @@ include __DIR__ . '/includes/header.php';
                 <i class="fa-solid fa-newspaper mr-2"></i>กลับไปหน้ารวมบทความ
             </a>
         </div>
-        <form method="post" class="stock-card mt-6 grid gap-3 rounded-[1.5rem] p-5">
+        <form method="post" class="stock-card mt-6 grid gap-4 rounded-[1.5rem] p-5">
             <?= csrf_field() ?>
             <h2 class="font-black text-neutral-950"><i class="fa-solid fa-triangle-exclamation mr-2 text-red-600"></i>รายงานบทความนี้</h2>
-            <input name="reason" required maxlength="180" placeholder="เหตุผล เช่น เนื้อหาไม่เหมาะสม" class="stock-input rounded-2xl px-4 py-3 font-semibold">
-            <textarea name="detail" required maxlength="2000" rows="3" placeholder="รายละเอียดเพิ่มเติม" class="stock-input rounded-2xl px-4 py-3 font-semibold"></textarea>
+            <label class="grid gap-2 text-sm font-black text-neutral-700">
+                <span>เหตุผลในการรายงาน <?= required_mark() ?></span>
+                <input name="reason" required maxlength="180" placeholder="เหตุผล เช่น เนื้อหาไม่เหมาะสม" class="stock-input rounded-2xl px-4 py-3 font-semibold">
+            </label>
+            <label class="grid gap-2 text-sm font-black text-neutral-700">
+                <span>รายละเอียดเพิ่มเติม <?= required_mark() ?></span>
+                <textarea name="detail" required maxlength="2000" rows="3" placeholder="รายละเอียดเพิ่มเติม" class="stock-input rounded-2xl px-4 py-3 font-semibold"></textarea>
+            </label>
             <button class="btn-danger btn-md justify-self-start"><i class="fa-solid fa-paper-plane"></i>ส่งรายงาน</button>
         </form>
     </div>

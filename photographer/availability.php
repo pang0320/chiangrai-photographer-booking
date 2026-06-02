@@ -225,25 +225,38 @@ include __DIR__ . '/../includes/header.php';
         <div class="rounded-[1.35rem] bg-indigo-50 p-4 text-sm font-bold leading-7 text-indigo-700"><i class="fa-solid fa-calendar-check mr-2"></i>ถูกจองแล้ว = ระบบอัปเดตจากสถานะการจอง</div>
     </div>
 
-    <form method="post" class="stock-card mt-6 grid gap-4 rounded-[1.5rem] p-5 md:grid-cols-[1.4fr_1fr_1fr_1fr_auto]">
+    <form method="post" class="stock-card mt-6 grid gap-4 rounded-[1.5rem] p-5 md:grid-cols-[1.4fr_1fr_1fr_1fr_auto] items-end">
         <?= csrf_field() ?>
 
-        <?= be_date_input('available_date', '', 'stock-input rounded-2xl px-4 py-3 font-semibold', true, 'วันที่ พ.ศ. เช่น 05/05/2569') ?>
+        <label class="grid gap-2 text-sm font-black text-neutral-700">
+            <span><i class="fa-solid fa-calendar-day mr-2 text-red-600"></i>วันที่ พ.ศ. <?= required_mark() ?></span>
+            <?= be_date_input('available_date', '', 'stock-input rounded-2xl px-4 py-3 font-semibold', true, 'วันที่ พ.ศ. เช่น 05/05/2569') ?>
+        </label>
 
-        <select name="time_slot" class="stock-input rounded-2xl px-4 py-3 font-semibold">
-            <?php foreach ($timeSlots as $value => $label): ?>
-                <option value="<?= h($value) ?>"><?= h($label) ?></option>
-            <?php endforeach; ?>
-        </select>
+        <label class="grid gap-2 text-sm font-black text-neutral-700">
+            <span><i class="fa-solid fa-clock mr-2 text-red-600"></i>ช่วงเวลา</span>
+            <select name="time_slot" class="stock-input rounded-2xl px-4 py-3 font-semibold">
+                <?php foreach ($timeSlots as $value => $label): ?>
+                    <option value="<?= h($value) ?>"><?= h($label) ?></option>
+                <?php endforeach; ?>
+            </select>
+        </label>
 
-        <select name="status" class="stock-input rounded-2xl px-4 py-3 font-semibold">
-            <?php foreach ($statuses as $status): ?>
-                <option value="<?= h($status) ?>"><?= h(booking_status_label($status)) ?></option>
-            <?php endforeach; ?>
-        </select>
+        <label class="grid gap-2 text-sm font-black text-neutral-700">
+            <span><i class="fa-solid fa-toggle-on mr-2 text-red-600"></i>สถานะ</span>
+            <select name="status" class="stock-input rounded-2xl px-4 py-3 font-semibold">
+                <?php foreach ($statuses as $status): ?>
+                    <option value="<?= h($status) ?>"><?= h(booking_status_label($status)) ?></option>
+                <?php endforeach; ?>
+            </select>
+        </label>
 
-        <input name="note" placeholder="หมายเหตุ" class="stock-input rounded-2xl px-4 py-3 font-semibold">
-        <button class="stock-button rounded-2xl px-5 py-3 font-black"><i class="fa-solid fa-floppy-disk mr-2"></i>บันทึก</button>
+        <label class="grid gap-2 text-sm font-black text-neutral-700">
+            <span><i class="fa-solid fa-note-sticky mr-2 text-red-600"></i>หมายเหตุ</span>
+            <input name="note" placeholder="หมายเหตุ" class="stock-input rounded-2xl px-4 py-3 font-semibold">
+        </label>
+        
+        <button class="stock-button h-[50px] rounded-2xl px-5 font-black"><i class="fa-solid fa-floppy-disk mr-2"></i>บันทึก</button>
     </form>
 
     <div class="stock-card mt-6 overflow-x-auto rounded-[1.5rem] p-5">
@@ -283,7 +296,7 @@ include __DIR__ . '/../includes/header.php';
                                         <input type="hidden" name="id" value="<?= (int)$item['id'] ?>">
 
                                         <label class="grid gap-1 text-xs font-black text-neutral-700">
-                                            <span><i class="fa-solid fa-calendar-day mr-1 text-red-600"></i>วันที่ พ.ศ.</span>
+                                            <span><i class="fa-solid fa-calendar-day mr-1 text-red-600"></i>วันที่ พ.ศ. <?= required_mark() ?></span>
                                             <input name="available_date" required value="<?= h(format_be_date($item['available_date'])) ?>" placeholder="เช่น 05/05/2569" class="stock-input rounded-xl px-3 py-2 text-sm font-semibold">
                                         </label>
 

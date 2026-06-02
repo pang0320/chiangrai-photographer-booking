@@ -94,11 +94,11 @@ $hiddenTagCount = max(0, count($tags) - count($visibleTags));
                                     <form method="post" class="grid gap-3">
                                         <?= csrf_field() ?>
                                         <label class="grid gap-1 text-[11px] font-black text-neutral-600">
-                                            <span>เหตุผลในการรายงาน</span>
+                                            <span>เหตุผลในการรายงาน <?= required_mark() ?></span>
                                             <input name="reason" required maxlength="180" placeholder="เช่น เนื้อหาไม่เหมาะสม" class="stock-input rounded-xl px-3 py-2 text-sm">
                                         </label>
                                         <label class="grid gap-1 text-[11px] font-black text-neutral-600">
-                                            <span>รายละเอียดเพิ่มเติม</span>
+                                            <span>รายละเอียดเพิ่มเติม <?= required_mark() ?></span>
                                             <textarea name="detail" required maxlength="2000" rows="3" placeholder="พิมพ์รายละเอียดปัญหาที่ต้องการให้ผู้ดูแลตรวจสอบ" class="stock-input rounded-xl px-3 py-2 text-sm"></textarea>
                                         </label>
                                         <button class="btn-danger btn-sm w-full rounded-xl">

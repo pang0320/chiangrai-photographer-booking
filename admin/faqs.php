@@ -86,11 +86,11 @@ include __DIR__ . '/../includes/header.php';
         <?= csrf_field() ?>
         <input type="hidden" name="id" value="<?php if ($editFaq): ?><?= (int)$editFaq['id'] ?><?php endif; ?>">
         <label class="grid gap-2 text-sm font-black text-neutral-700 lg:col-span-2">
-            <span><i class="fa-solid fa-layer-group mr-1 text-red-600"></i>หมวดหมู่</span>
+            <span><i class="fa-solid fa-layer-group mr-1 text-red-600"></i>หมวดหมู่ <?= required_mark() ?></span>
             <input name="category" required value="<?php if ($editFaq): ?><?= h($editFaq['category']) ?><?php endif; ?>" class="stock-input rounded-2xl px-4 py-3 font-semibold" placeholder="การจอง">
         </label>
         <label class="grid gap-2 text-sm font-black text-neutral-700 lg:col-span-3">
-            <span><i class="fa-solid fa-circle-question mr-1 text-red-600"></i>คำถาม</span>
+            <span><i class="fa-solid fa-circle-question mr-1 text-red-600"></i>คำถาม <?= required_mark() ?></span>
             <input name="question" required value="<?php if ($editFaq): ?><?= h($editFaq['question']) ?><?php endif; ?>" class="stock-input rounded-2xl px-4 py-3 font-semibold">
         </label>
         <label class="grid gap-2 text-sm font-black text-neutral-700">
@@ -98,7 +98,7 @@ include __DIR__ . '/../includes/header.php';
             <input name="sort_order" type="number" value="<?php if ($editFaq): ?><?= (int)$editFaq['sort_order'] ?><?php else: ?>0<?php endif; ?>" class="stock-input rounded-2xl px-4 py-3 font-semibold">
         </label>
         <label class="grid gap-2 text-sm font-black text-neutral-700 lg:col-span-6">
-            <span><i class="fa-solid fa-message mr-1 text-red-600"></i>คำตอบ</span>
+            <span><i class="fa-solid fa-message mr-1 text-red-600"></i>คำตอบ <?= required_mark() ?></span>
             <textarea name="answer" rows="4" required class="stock-input rounded-2xl px-4 py-3 font-semibold"><?php if ($editFaq): ?><?= h($editFaq['answer']) ?><?php endif; ?></textarea>
         </label>
         <label class="inline-flex items-center gap-2 rounded-2xl bg-neutral-50 px-4 py-3 text-sm font-black">

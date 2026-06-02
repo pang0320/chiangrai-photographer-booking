@@ -67,16 +67,25 @@ include __DIR__ . '/../includes/header.php';
         <p class="mt-1 max-w-3xl text-sm font-bold leading-7 text-amber-700"><i class="fa-solid fa-circle-info mr-1"></i>เมื่อเปิด/ปิดสถานะ อำเภอในหน้าค้นหาจะเปลี่ยนทันที ไม่ต้องรอ cache</p>
     </div>
 
-    <form method="post" class="stock-card mt-6 grid gap-3 rounded-[1.5rem] p-5 md:grid-cols-5">
+    <form method="post" class="stock-card mt-6 grid gap-4 rounded-[1.5rem] p-5 md:grid-cols-5 items-end">
         <?= csrf_field() ?>
-        <input name="district_name" required placeholder="ชื่ออำเภอ" class="stock-input rounded-2xl px-4 py-3 font-semibold">
-        <input name="latitude" required placeholder="ละติจูด" class="stock-input rounded-2xl px-4 py-3 font-semibold">
-        <input name="longitude" required placeholder="ลองจิจูด" class="stock-input rounded-2xl px-4 py-3 font-semibold">
-        <label class="rounded-2xl bg-neutral-50 px-4 py-3 font-bold">
-            <input type="checkbox" name="is_active" checked>
+        <label class="grid gap-2 text-sm font-black text-neutral-700">
+            <span>ชื่ออำเภอ <?= required_mark() ?></span>
+            <input name="district_name" required placeholder="ชื่ออำเภอ" class="stock-input rounded-2xl px-4 py-3 font-semibold">
+        </label>
+        <label class="grid gap-2 text-sm font-black text-neutral-700">
+            <span>ละติจูด <?= required_mark() ?></span>
+            <input name="latitude" required placeholder="ละติจูด" class="stock-input rounded-2xl px-4 py-3 font-semibold">
+        </label>
+        <label class="grid gap-2 text-sm font-black text-neutral-700">
+            <span>ลองจิจูด <?= required_mark() ?></span>
+            <input name="longitude" required placeholder="ลองจิจูด" class="stock-input rounded-2xl px-4 py-3 font-semibold">
+        </label>
+        <label class="flex h-[52px] items-center gap-2 rounded-2xl bg-neutral-50 px-4 font-bold text-sm text-neutral-700">
+            <input type="checkbox" name="is_active" checked class="h-5 w-5 accent-red-600">
             เปิดใช้งาน
         </label>
-        <button class="stock-button rounded-2xl px-5 py-3 font-black"><i class="fa-solid fa-plus mr-2"></i>เพิ่ม/อัปเดต</button>
+        <button class="stock-button h-[52px] rounded-2xl px-5 font-black"><i class="fa-solid fa-plus mr-2"></i>เพิ่ม/อัปเดต</button>
     </form>
 
     <div class="stock-card mt-6 overflow-x-auto rounded-[1.5rem] p-5">

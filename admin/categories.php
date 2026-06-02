@@ -148,7 +148,7 @@ include __DIR__ . '/../includes/header.php';
         <div class="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-6">
             <div class="xl:col-span-2">
                 <label class="block text-sm font-black text-neutral-700" for="name">
-                    <i class="fa-solid fa-tag mr-2 text-red-600"></i>ชื่อหมวดหมู่งาน
+                    <i class="fa-solid fa-tag mr-2 text-red-600"></i>ชื่อหมวดหมู่งาน <?= required_mark() ?>
                 </label>
                 <input id="name" name="name" required placeholder="เช่น งานแต่งงาน" class="stock-input mt-2 w-full rounded-2xl px-4 py-3 font-semibold">
             </div>

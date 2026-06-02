@@ -234,7 +234,10 @@ include __DIR__ . '/../includes/header.php';
                 <?php endif; ?>
             </div>
 
-            <input name="title" required value="<?php if ($editArticle): ?><?= h($editArticle['title']) ?><?php endif; ?>" placeholder="หัวข้อบทความ" class="stock-input rounded-2xl px-4 py-3 font-semibold">
+            <label class="grid gap-2 text-sm font-black text-neutral-700">
+                <span><i class="fa-solid fa-heading mr-2 text-red-600"></i>หัวข้อบทความ <?= required_mark() ?></span>
+                <input name="title" required value="<?php if ($editArticle): ?><?= h($editArticle['title']) ?><?php endif; ?>" placeholder="หัวข้อบทความ" class="stock-input rounded-2xl px-4 py-3 font-semibold">
+            </label>
 
             <label class="grid gap-2 text-sm font-black text-neutral-700">
                 <span><i class="fa-solid fa-image mr-2 text-red-600"></i>รูปปกบทความ</span>
@@ -248,7 +251,7 @@ include __DIR__ . '/../includes/header.php';
             </label>
 
             <div class="article-editor-panel">
-                <label class="mb-2 block text-sm font-black text-neutral-700"><i class="fa-solid fa-file-lines mr-2 text-red-600"></i>เนื้อหาบทความ</label>
+                <label class="mb-2 block text-sm font-black text-neutral-700"><i class="fa-solid fa-file-lines mr-2 text-red-600"></i>เนื้อหาบทความ <?= required_mark() ?></label>
                 <div class="article-editor-shell overflow-hidden rounded-[1.35rem] border border-neutral-200 bg-white">
                     <div id="article-editor" class="hidden"></div>
                     <textarea

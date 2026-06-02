@@ -65,11 +65,26 @@ include __DIR__ . '/includes/header.php';
                 <p class="section-kicker">ติดต่อเว็บไซต์</p>
                 <h2 class="mt-2 text-2xl font-black text-neutral-950"><i class="fa-solid fa-paper-plane mr-2 text-red-600"></i>ส่งข้อความถึงผู้ดูแลระบบ</h2>
             </div>
-            <label class="icon-input block"><i class="fa-solid fa-user"></i><input name="name" required placeholder="ชื่อ" class="stock-input w-full rounded-2xl px-4 py-3 font-semibold"></label>
-            <label class="icon-input block"><i class="fa-solid fa-envelope"></i><input type="email" name="email" required placeholder="อีเมล" class="stock-input w-full rounded-2xl px-4 py-3 font-semibold"></label>
-            <label class="icon-input block"><i class="fa-solid fa-phone"></i><input name="phone" placeholder="เบอร์โทร" class="stock-input w-full rounded-2xl px-4 py-3 font-semibold"></label>
-            <label class="icon-input block"><i class="fa-solid fa-heading"></i><input name="subject" required placeholder="หัวข้อ" class="stock-input w-full rounded-2xl px-4 py-3 font-semibold"></label>
-            <textarea name="message" required rows="6" placeholder="ข้อความ" class="stock-input rounded-2xl px-4 py-3 font-semibold"></textarea>
+            <label class="grid gap-2 text-sm font-black text-neutral-700">
+                <span><i class="fa-solid fa-user mr-2 text-red-600"></i>ชื่อ <?= required_mark() ?></span>
+                <input name="name" required placeholder="ชื่อ" class="stock-input w-full rounded-2xl px-4 py-3 font-semibold">
+            </label>
+            <label class="grid gap-2 text-sm font-black text-neutral-700">
+                <span><i class="fa-solid fa-envelope mr-2 text-red-600"></i>อีเมล <?= required_mark() ?></span>
+                <input type="email" name="email" required placeholder="อีเมล" class="stock-input w-full rounded-2xl px-4 py-3 font-semibold">
+            </label>
+            <label class="grid gap-2 text-sm font-black text-neutral-700">
+                <span><i class="fa-solid fa-phone mr-2 text-red-600"></i>เบอร์โทร</span>
+                <input name="phone" placeholder="เบอร์โทร" class="stock-input w-full rounded-2xl px-4 py-3 font-semibold">
+            </label>
+            <label class="grid gap-2 text-sm font-black text-neutral-700">
+                <span><i class="fa-solid fa-heading mr-2 text-red-600"></i>หัวข้อ <?= required_mark() ?></span>
+                <input name="subject" required placeholder="หัวข้อ" class="stock-input w-full rounded-2xl px-4 py-3 font-semibold">
+            </label>
+            <label class="grid gap-2 text-sm font-black text-neutral-700">
+                <span><i class="fa-solid fa-message mr-2 text-red-600"></i>ข้อความ <?= required_mark() ?></span>
+                <textarea name="message" required rows="6" placeholder="ข้อความ" class="stock-input w-full rounded-2xl px-4 py-3 font-semibold"></textarea>
+            </label>
             <button class="stock-button rounded-full px-5 py-3 font-black"><i class="fa-solid fa-paper-plane mr-2"></i>ส่งข้อความ</button>
         </form>
 

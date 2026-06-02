@@ -106,14 +106,14 @@ $loginHeroImage = public_image('seed/photo-1519741497674-611481863552.jpg', '/as
             <form method="post" class="mt-8 grid gap-4">
                 <?= csrf_field() ?>
                 <label class="grid gap-2 text-sm font-black text-neutral-700">
-                    <span><i class="fa-solid fa-envelope mr-2 text-red-600"></i>อีเมล</span>
+                    <span><i class="fa-solid fa-envelope mr-2 text-red-600"></i>อีเมล <?= required_mark() ?></span>
                     <span class="icon-input block">
                         <i class="fa-solid fa-envelope"></i>
                         <input type="email" name="email" required autocomplete="email" placeholder="name@example.com" class="stock-input w-full rounded-2xl px-4 py-3.5 font-semibold">
                     </span>
                 </label>
                 <label class="grid gap-2 text-sm font-black text-neutral-700">
-                    <span><i class="fa-solid fa-lock mr-2 text-red-600"></i>รหัสผ่าน</span>
+                    <span><i class="fa-solid fa-lock mr-2 text-red-600"></i>รหัสผ่าน <?= required_mark() ?></span>
                     <span class="relative block">
                         <span class="icon-input block">
                             <i class="fa-solid fa-lock"></i>

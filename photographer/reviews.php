@@ -459,11 +459,11 @@ include __DIR__ . '/../includes/header.php';
                             <input type="hidden" name="review_id" value="<?= (int)$review['id'] ?>">
                             <div class="grid gap-3 md:grid-cols-2">
                                 <label class="grid gap-1 text-xs font-black text-neutral-600">
-                                    <span><i class="fa-solid fa-triangle-exclamation mr-1 text-red-600"></i>เหตุผลในการรายงานรีวิว</span>
+                                    <span><i class="fa-solid fa-triangle-exclamation mr-1 text-red-600"></i>เหตุผลในการรายงานรีวิว <?= required_mark() ?></span>
                                     <input name="reason" required maxlength="180" placeholder="เช่น รีวิวไม่เหมาะสม หรือไม่ตรงข้อเท็จจริง" class="stock-input rounded-xl px-3 py-2 text-sm">
                                 </label>
                                 <label class="grid gap-1 text-xs font-black text-neutral-600">
-                                    <span><i class="fa-solid fa-pen-to-square mr-1 text-red-600"></i>รายละเอียดเพิ่มเติม</span>
+                                    <span><i class="fa-solid fa-pen-to-square mr-1 text-red-600"></i>รายละเอียดเพิ่มเติม <?= required_mark() ?></span>
                                     <textarea name="detail" required maxlength="2000" rows="2" placeholder="อธิบายเหตุผลเพื่อให้ผู้ดูแลตรวจสอบ" class="stock-input rounded-xl px-3 py-2 text-sm"></textarea>
                                 </label>
                             </div>

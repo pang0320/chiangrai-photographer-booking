@@ -24,7 +24,9 @@ if (is_post()) {
 
     $stmt = db()->prepare('INSERT INTO contact_messages (name, email, phone, subject, message, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, "unread", NOW(), NOW())');
     $stmt->execute([$name, $email, $phone, $subject, $message]);
-    log_activity('send_contact_message', 'contact_messages', (int)db()->lastInsertId());
+    $contactMessageId = (int)db()->lastInsertId();
+    log_activity('send_contact_message', 'contact_messages', $contactMessageId);
+    notify_admins('ข้อความติดต่อใหม่', 'จาก: ' . $name . ' เรื่อง: ' . $subject, 'contact', $contactMessageId);
     flash('success', 'ส่งข้อความถึงผู้ดูแลระบบแล้ว');
     redirect('/contact.php');
 }

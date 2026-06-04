@@ -162,12 +162,34 @@ if (is_post()) {
         $stmt->execute([$availableDate, $timeSlot, $status, $note, $id, $pid]);
         flash('success', 'แก้ไขวันว่างแล้ว');
     } else {
-        [$availableDate, $timeSlot, $status, $note] = validate_availability_payload($timeSlots, $statuses);
+        $timeSlot = (string)($_POST['time_slot'] ?? '');
+        $note = trim((string)($_POST['note'] ?? ''));
+
+        if (!array_key_exists($timeSlot, $timeSlots)) {
+            flash('error', 'ช่วงเวลาไม่ถูกต้อง');
+            redirect('/photographer/availability.php');
+        }
+        
+        $rawDates = explode(',', (string)($_POST['available_date'] ?? ''));
+        $datesToInsert = [];
+        foreach ($rawDates as $rawDate) {
+            $parsed = parse_be_date_to_iso($rawDate);
+            if ($parsed !== '' && $parsed >= date('Y-m-d')) {
+                $datesToInsert[] = $parsed;
+            }
+        }
+        
+        if (empty($datesToInsert)) {
+            flash('error', 'รูปแบบวันที่ไม่ถูกต้อง กรุณาเลือกอย่างน้อย 1 วัน (และไม่สามารถป้อนวันย้อนหลังได้)');
+            redirect('/photographer/availability.php');
+        }
 
         $stmt = db()->prepare('INSERT INTO photographer_availability (photographer_id, available_date, time_slot, status, note, created_at, updated_at)
                                VALUES (?, ?, ?, ?, ?, NOW(), NOW())
                                ON DUPLICATE KEY UPDATE status = VALUES(status), note = VALUES(note), updated_at = NOW()');
-        $stmt->execute([$pid, $availableDate, $timeSlot, $status, $note]);
+        foreach ($datesToInsert as $d) {
+            $stmt->execute([$pid, $d, $timeSlot, 'available', $note]);
+        }
         flash('success', 'บันทึกวันว่างแล้ว');
     }
 
@@ -229,8 +251,8 @@ include __DIR__ . '/../includes/header.php';
         <?= csrf_field() ?>
 
         <label class="grid gap-2 text-sm font-black text-neutral-700">
-            <span><i class="fa-solid fa-calendar-day mr-2 text-red-600"></i>วันที่ พ.ศ. <?= required_mark() ?></span>
-            <?= be_date_input('available_date', '', 'stock-input rounded-2xl px-4 py-3 font-semibold', true, 'วันที่ พ.ศ. เช่น 05/05/2569') ?>
+            <span><i class="fa-solid fa-calendar-day mr-2 text-red-600"></i>วันที่ พ.ศ. (เลือกได้หลายวัน) <?= required_mark() ?></span>
+            <?= be_date_input('available_date', '', 'stock-input rounded-2xl px-4 py-3 font-semibold', true, 'เลือกวันที่ พ.ศ. (เลือกได้หลายวัน)', true) ?>
         </label>
 
         <label class="grid gap-2 text-sm font-black text-neutral-700">
@@ -238,15 +260,6 @@ include __DIR__ . '/../includes/header.php';
             <select name="time_slot" class="stock-input rounded-2xl px-4 py-3 font-semibold">
                 <?php foreach ($timeSlots as $value => $label): ?>
                     <option value="<?= h($value) ?>"><?= h($label) ?></option>
-                <?php endforeach; ?>
-            </select>
-        </label>
-
-        <label class="grid gap-2 text-sm font-black text-neutral-700">
-            <span><i class="fa-solid fa-toggle-on mr-2 text-red-600"></i>สถานะ</span>
-            <select name="status" class="stock-input rounded-2xl px-4 py-3 font-semibold">
-                <?php foreach ($statuses as $status): ?>
-                    <option value="<?= h($status) ?>"><?= h(booking_status_label($status)) ?></option>
                 <?php endforeach; ?>
             </select>
         </label>

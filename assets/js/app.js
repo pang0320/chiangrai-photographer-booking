@@ -288,6 +288,7 @@ function initCalendarDateInputs() {
       const firstDay = new Date(year, month, 1).getDay();
       const daysInMonth = new Date(year, month + 1, 0).getDate();
       const selected = parseBeDateToIso(hidden.value);
+      const selectedMultiple = calendar.hasAttribute('data-multiple') ? (hidden.value ? hidden.value.split(',').map(d => d.trim()).filter(d => d) : []) : [];
       const todayIso = buildIsoDate(today.getFullYear(), today.getMonth() + 1, today.getDate());
 
       monthLabel.textContent = thaiMonths[month] + ' ' + (year + 543);
@@ -325,22 +326,49 @@ function initCalendarDateInputs() {
           button.className += ' calendar-day-disabled';
         }
 
-        if (iso === selected) {
-          button.className += ' calendar-day-selected';
+        if (calendar.hasAttribute('data-multiple')) {
+          if (selectedMultiple.indexOf(iso) !== -1) {
+            button.className += ' calendar-day-selected';
+          }
+        } else {
+          if (iso === selected) {
+            button.className += ' calendar-day-selected';
+          }
         }
 
         button.addEventListener('click', function () {
           if (isDisabled) return;
-          hidden.value = iso;
-          if (selectedLabel) {
-            selectedLabel.textContent = formatIsoToBeDate(iso);
+          
+          if (calendar.hasAttribute('data-multiple')) {
+            let currentDates = hidden.value ? hidden.value.split(',').map(d => d.trim()).filter(d => d) : [];
+            if (currentDates.indexOf(iso) !== -1) {
+              currentDates = currentDates.filter(d => d !== iso);
+            } else {
+              currentDates.push(iso);
+            }
+            hidden.value = currentDates.join(',');
+            
+            const labels = currentDates.map(d => formatIsoToBeDate(d)).join(', ');
+            if (selectedLabel) {
+              selectedLabel.textContent = labels || 'เลือกวันที่';
+            }
+            if (selectedPopoverLabel) {
+              selectedPopoverLabel.textContent = labels || 'ยังไม่ได้เลือกวันที่';
+            }
+            renderCalendar();
+            hidden.dispatchEvent(new Event('change', { bubbles: true }));
+          } else {
+            hidden.value = iso;
+            if (selectedLabel) {
+              selectedLabel.textContent = formatIsoToBeDate(iso);
+            }
+            if (selectedPopoverLabel) {
+              selectedPopoverLabel.textContent = formatIsoToBeDate(iso);
+            }
+            closeCalendar();
+            renderCalendar();
+            hidden.dispatchEvent(new Event('change', { bubbles: true }));
           }
-          if (selectedPopoverLabel) {
-            selectedPopoverLabel.textContent = formatIsoToBeDate(iso);
-          }
-          closeCalendar();
-          renderCalendar();
-          hidden.dispatchEvent(new Event('change', { bubbles: true }));
         });
 
         grid.appendChild(button);

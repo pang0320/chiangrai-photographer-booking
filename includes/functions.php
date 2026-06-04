@@ -1446,11 +1446,26 @@ function be_date_input_value(?string $value): string
  * @param string $classes ชื่อคลาส CSS เพิ่มเติม
  * @param bool $required กำหนดว่าช่องข้อมูลนี้จำเป็นต้องกรอกหรือไม่ (Required)
  * @param string $placeholder ข้อความคำใบ้ลายน้ำในช่องรับข้อมูล (Placeholder)
+ * @param bool $multiple กำหนดว่าสามารถเลือกได้หลายวันหรือไม่ (Multiple)
  * @return string ข้อความ
  */
-function be_date_input(string $name, ?string $value = '', string $classes = '', bool $required = false, string $placeholder = 'วว/ดด/พ.ศ.'): string
+function be_date_input(string $name, ?string $value = '', string $classes = '', bool $required = false, string $placeholder = 'วว/ดด/พ.ศ.', bool $multiple = false): string
 {
     $isoDate = parse_be_date_to_iso($value);
+    if ($multiple) {
+        $isoDate = '';
+        if (is_string($value)) {
+            $parts = array_filter(array_map('trim', explode(',', $value)));
+            $parsedParts = [];
+            foreach ($parts as $p) {
+                $parsed = parse_be_date_to_iso($p);
+                if ($parsed !== '') {
+                    $parsedParts[] = $parsed;
+                }
+            }
+            $isoDate = implode(',', $parsedParts);
+        }
+    }
     $calendarNames = ['available_date', 'booking_date'];
 
     if (in_array($name, $calendarNames, true)) {
@@ -1464,7 +1479,7 @@ function be_date_input(string $name, ?string $value = '', string $classes = '', 
             $label = $GLOBALS['calendar_date_labels'][$name];
         }
 
-        return calendar_date_input($name, $isoDate, $statuses, $required, $label);
+        return calendar_date_input($name, $isoDate, $statuses, $required, $label, $multiple);
     }
 
     $id = 'be_date_' . bin2hex(random_bytes(4));
@@ -1486,11 +1501,15 @@ function be_date_input(string $name, ?string $value = '', string $classes = '', 
  * @param array $dateStatuses อาร์เรย์รวมสถานะของวันที่สำหรับระบายสีปฏิทิน
  * @param bool $required กำหนดว่าช่องข้อมูลนี้จำเป็นต้องกรอกหรือไม่ (Required)
  * @param string $label ข้อความป้ายกำกับช่องป้อนข้อมูล (Label)
+ * @param bool $multiple กำหนดว่าสามารถเลือกได้หลายวันหรือไม่ (Multiple)
  * @return string ข้อความ
  */
-function calendar_date_input(string $name, ?string $value = '', array $dateStatuses = [], bool $required = false, string $label = 'วันที่ต้องการจ้าง'): string
+function calendar_date_input(string $name, ?string $value = '', array $dateStatuses = [], bool $required = false, string $label = 'วันที่ต้องการจ้าง', bool $multiple = false): string
 {
     $isoDate = parse_be_date_to_iso($value);
+    if ($multiple) {
+        $isoDate = $value;
+    }
     $id = 'calendar_date_' . bin2hex(random_bytes(4));
     $requiredAttribute = $required ? ' required' : '';
     $statusJson = h(json_encode($dateStatuses, JSON_UNESCAPED_UNICODE));
@@ -1513,14 +1532,30 @@ function calendar_date_input(string $name, ?string $value = '', array $dateStatu
         $legendHtml = '<div class="calendar-date-legend"><span><i class="calendar-dot calendar-dot-available"></i>ว่าง</span><span><i class="calendar-dot calendar-dot-unavailable"></i>ไม่ว่าง</span><span><i class="calendar-dot calendar-dot-booked"></i>ถูกจอง</span><span><i class="calendar-dot calendar-dot-pending"></i>รอตอบรับ</span></div>';
     }
 
-    return '<div class="calendar-date" data-calendar-date data-target="' . h($id) . '" data-statuses="' . $statusJson . '" data-default-status="' . h($defaultStatus) . '" data-selectable-statuses="' . $selectableJson . '">'
+    $multipleAttr = $multiple ? ' data-multiple="true"' : '';
+    
+    $displayLabel = 'ยังไม่ได้เลือกวันที่';
+    if ($isoDate) {
+        if ($multiple) {
+            $parts = array_filter(array_map('trim', explode(',', $isoDate)));
+            $labels = [];
+            foreach ($parts as $p) {
+                $labels[] = format_be_date($p);
+            }
+            $displayLabel = implode(', ', $labels);
+        } else {
+            $displayLabel = format_be_date($isoDate);
+        }
+    }
+
+    return '<div class="calendar-date" data-calendar-date data-target="' . h($id) . '" data-statuses="' . $statusJson . '" data-default-status="' . h($defaultStatus) . '" data-selectable-statuses="' . $selectableJson . '"' . $multipleAttr . '>'
         . '<input type="hidden" id="' . h($id) . '" name="' . h($name) . '" value="' . h($isoDate) . '"' . $requiredAttribute . '>'
         . '<button type="button" class="calendar-date-trigger" data-calendar-trigger>'
-        . '<span><i class="fa-solid fa-calendar-days"></i><span><b>' . h($label) . '</b><small data-calendar-selected>' . h($isoDate ? format_be_date($isoDate) : 'เลือกวันที่') . '</small></span></span><i class="fa-solid fa-chevron-down"></i>'
+        . '<span><i class="fa-solid fa-calendar-days"></i><span><b>' . h($label) . '</b><small data-calendar-selected>' . h($isoDate ? $displayLabel : 'เลือกวันที่') . '</small></span></span><i class="fa-solid fa-chevron-down"></i>'
         . '</button>'
         . '<div class="calendar-date-popover" data-calendar-popover>'
         . '<div class="calendar-date-header">'
-        . '<div><p class="calendar-date-label">' . h($label) . '</p><p class="calendar-date-selected" data-calendar-selected-popover>' . h($isoDate ? format_be_date($isoDate) : 'ยังไม่ได้เลือกวันที่') . '</p></div>'
+        . '<div><p class="calendar-date-label">' . h($label) . '</p><p class="calendar-date-selected" data-calendar-selected-popover>' . h($isoDate ? $displayLabel : 'ยังไม่ได้เลือกวันที่') . '</p></div>'
         . '<div class="calendar-date-controls"><button type="button" data-calendar-prev aria-label="เดือนก่อนหน้า"><i class="fa-solid fa-chevron-left"></i></button><button type="button" data-calendar-next aria-label="เดือนถัดไป"><i class="fa-solid fa-chevron-right"></i></button></div>'
         . '</div>'
         . '<div class="calendar-date-month" data-calendar-month></div>'

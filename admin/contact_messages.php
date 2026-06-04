@@ -1,4 +1,4 @@
-<?php
+ <?php
 require_once __DIR__ . '/../includes/functions.php';
 requireRole('admin');
 $cleanContext = clean_context_init(['q', 'status', 'date_from', 'date_to']);

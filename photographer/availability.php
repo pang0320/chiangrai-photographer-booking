@@ -175,7 +175,7 @@ if (is_post()) {
     redirect('/photographer/availability.php');
 }
 
-$stmt = db()->prepare('SELECT * FROM photographer_availability WHERE photographer_id = ? ORDER BY available_date DESC, time_slot');
+$stmt = db()->prepare('SELECT * FROM photographer_availability WHERE photographer_id = ? AND available_date >= CURDATE() ORDER BY available_date DESC, time_slot');
 $stmt->execute([$pid]);
 $items = $stmt->fetchAll();
 

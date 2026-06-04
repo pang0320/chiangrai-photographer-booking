@@ -970,6 +970,10 @@ function notification_target_url(array $notification, array $user): string
         return $role === 'customer' ? '/customer/notifications.php' : '/notifications.php';
     }
 
+    if ($type === 'contact') {
+        return '/admin/contact_messages.php';
+    }
+
     if ($type === 'article' && $relatedId > 0) {
         return '/blog.php';
     }
@@ -986,6 +990,23 @@ function notification_target_url(array $notification, array $user): string
 function unread_notifications_count(int $userId): int
 {
     return (int)request_cache_remember('unread_notifications_count:' . $userId, function () use ($userId) {
+        $roleStmt = db()->prepare('SELECT r.name FROM users u JOIN roles r ON r.id = u.role_id WHERE u.id = ? LIMIT 1');
+        $roleStmt->execute([$userId]);
+        if ($roleStmt->fetchColumn() === 'admin') {
+            db()->exec("INSERT INTO notifications (user_id, title, message, type, related_id, is_read, created_at)
+                        SELECT u.id, 'ข้อความติดต่อใหม่', CONCAT('จาก: ', c.name, ' เรื่อง: ', c.subject), 'contact', c.id, 0, c.created_at
+                        FROM contact_messages c
+                        CROSS JOIN users u
+                        JOIN roles r ON r.id = u.role_id
+                        WHERE c.status = 'unread'
+                          AND r.name = 'admin'
+                          AND u.status = 'active'
+                          AND u.deleted_at IS NULL
+                          AND NOT EXISTS (
+                            SELECT 1 FROM notifications n WHERE n.type = 'contact' AND n.related_id = c.id AND n.user_id = u.id
+                          )");
+        }
+
         $stmt = db()->prepare('SELECT COUNT(*) FROM notifications WHERE user_id = ? AND is_read = 0');
         $stmt->execute([$userId]);
         return (int)$stmt->fetchColumn();

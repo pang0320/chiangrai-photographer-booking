@@ -17,10 +17,12 @@ $sidebarInitial = '';
 if ($me) {
     $sidebarAvatarUrl = user_avatar_url($me);
     $sidebarInitial = mb_substr((string)$me['name'], 0, 1, 'UTF-8');
+    $unreadNotifications = unread_notifications_count((int)$me['id']);
 
     if ($me['role_name'] === 'admin') {
         $roleTitle = 'ผู้ดูแลระบบ';
         $roleIcon = 'fa-user-shield';
+        $unreadContactMessages = (int)db_fetch_value('SELECT COUNT(*) FROM contact_messages WHERE status = "unread"');
         $navItems = [
             ['/admin/dashboard.php', 'แดชบอร์ด', 'fa-gauge'],
             ['/admin/users.php', 'สมาชิก', 'fa-users'],
@@ -35,10 +37,10 @@ if ($me) {
             ['/admin/faqs.php', 'คำถามที่พบบ่อย', 'fa-circle-question'],
             ['/admin/reports.php', 'รายงานสรุป', 'fa-chart-line'],
             ['/admin/reports_moderation.php', 'ตรวจรายงานปัญหา', 'fa-shield-halved'],
-            ['/admin/contact_messages.php', 'ข้อความติดต่อ', 'fa-envelope-open-text'],
+            ['/admin/contact_messages.php', 'ข้อความติดต่อ', 'fa-envelope-open-text', $unreadContactMessages],
             ['/admin/activity_logs.php', 'ประวัติการใช้งาน', 'fa-clipboard-list'],
             ['/admin/settings.php', 'ตั้งค่า', 'fa-gear'],
-            ['/notifications.php', 'แจ้งเตือน', 'fa-bell'],
+            ['/notifications.php', 'แจ้งเตือน', 'fa-bell', $unreadNotifications],
         ];
     }
 
@@ -52,7 +54,6 @@ if ($me) {
             $pendingBookings = (int)db_fetch_value('SELECT COUNT(*) FROM bookings WHERE photographer_id = ? AND status = "pending" AND deleted_at IS NULL', [$photographerId]);
             $activeBookings = (int)db_fetch_value('SELECT COUNT(*) FROM bookings WHERE photographer_id = ? AND status IN ("pending","accepted","confirmed") AND deleted_at IS NULL', [$photographerId]);
         }
-        $unreadNotifications = unread_notifications_count((int)$me['id']);
         $navItems = [
             ['/photographer/dashboard.php', 'แดชบอร์ด', 'fa-gauge'],
             ['/photographer/onboarding.php', 'ตั้งค่าเริ่มต้น', 'fa-list-check'],
@@ -82,7 +83,7 @@ if ($me) {
             ['/customer/reports.php', 'รายงานปัญหาของฉัน', 'fa-shield-halved'],
             ['/customer/favorites.php', 'รายการโปรด', 'fa-heart'],
             ['/customer/recently_viewed.php', 'ช่างภาพที่เคยดู', 'fa-clock-rotate-left'],
-            ['/notifications.php', 'แจ้งเตือน', 'fa-bell'],
+            ['/notifications.php', 'แจ้งเตือน', 'fa-bell', $unreadNotifications],
         ];
     }
 }

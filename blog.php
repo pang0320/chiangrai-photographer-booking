@@ -145,8 +145,8 @@ $categories = db_fetch_all_cached('blog_public_categories_active', 300, 'SELECT 
 
 $sourceTabs = [
     ['all', 'ทั้งหมด', $allCount, 'fa-newspaper'],
-    ['system', 'จากระบบ', $systemCount, 'fa-user-shield'],
-    ['photographer', 'จากช่างภาพ', $photographerCount, 'fa-camera-retro'],
+    ['system', 'ผู้ดูแลระบบ', $systemCount, 'fa-user-shield'],
+    ['photographer', 'ช่างภาพ', $photographerCount, 'fa-camera-retro'],
 ];
 
 $pageTitle = 'บทความ';
@@ -162,7 +162,7 @@ include __DIR__ . '/includes/header.php';
                 </p>
                 <h1 class="mt-2 text-4xl font-black md:text-5xl">รวมบทความถ่ายภาพและคำแนะนำการจอง</h1>
                 <p class="mt-4 max-w-3xl text-base font-semibold leading-8 text-white/75 md:text-lg">
-                    อ่านบทความจากผู้ดูแลระบบและช่างภาพในเชียงรายในหน้าเดียว ค้นหาด้วยชื่อบทความ ผู้เขียน หรือประเภทบทความได้ทันที
+                    อ่านบทความผู้ดูแลระบบและช่างภาพในเชียงรายในหน้าเดียว ค้นหาด้วยชื่อบทความ ผู้เขียน หรือประเภทบทความได้ทันที
                 </p>
             </div>
             <div class="grid grid-cols-3 gap-3">
@@ -226,8 +226,8 @@ include __DIR__ . '/includes/header.php';
                 <span class="text-sm font-black text-neutral-700"><i class="fa-solid fa-filter mr-2 text-red-600"></i>แหล่งบทความ</span>
                 <select name="source" class="stock-input mt-2 w-full rounded-2xl px-4 py-3 font-semibold">
                     <option value="all" <?= $source === 'all' ? 'selected' : '' ?>>ทั้งหมด</option>
-                    <option value="system" <?= $source === 'system' ? 'selected' : '' ?>>จากระบบ</option>
-                    <option value="photographer" <?= $source === 'photographer' ? 'selected' : '' ?>>จากช่างภาพ</option>
+                    <option value="system" <?= $source === 'system' ? 'selected' : '' ?>>ผู้ดูแลระบบ</option>
+                    <option value="photographer" <?= $source === 'photographer' ? 'selected' : '' ?>>ช่างภาพ</option>
                 </select>
             </label>
         </div>
@@ -250,7 +250,7 @@ include __DIR__ . '/includes/header.php';
         <div class="mt-5 flex flex-wrap gap-2">
             <?php if ($source !== 'all'): ?>
                 <span class="rounded-full bg-neutral-950 px-4 py-2 text-sm font-black text-white">
-                    <i class="fa-solid fa-filter mr-1"></i><?= $source === 'system' ? 'จากระบบ' : 'จากช่างภาพ' ?>
+                    <i class="fa-solid fa-filter mr-1"></i><?= $source === 'system' ? 'ผู้ดูแลระบบ' : 'ช่างภาพ' ?>
                 </span>
             <?php endif; ?>
             <?php if ($keyword !== ''): ?>
@@ -272,12 +272,12 @@ include __DIR__ . '/includes/header.php';
             $isSystemArticle = $article['article_source'] === 'system';
             $articleBadgeClass = 'bg-red-50 text-red-700';
             $articleBadgeIcon = 'fa-user-shield';
-            $articleBadgeText = 'จากระบบ';
+            $articleBadgeText = 'ผู้ดูแลระบบ';
             $detailPath = '/blog_detail.php';
             if (!$isSystemArticle) {
                 $articleBadgeClass = 'bg-amber-50 text-amber-700';
                 $articleBadgeIcon = 'fa-camera-retro';
-                $articleBadgeText = 'จากช่างภาพ';
+                $articleBadgeText = 'ช่างภาพ';
                 $detailPath = '/article_detail.php';
             }
             $articleExcerpt = trim((string)$article['excerpt']);

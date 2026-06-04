@@ -306,6 +306,20 @@ include __DIR__ . '/includes/header.php';
     </div>
 </section>
 
+<section class="stock-shell px-4 py-16 sm:px-6 lg:px-8">
+    <div class="flex flex-wrap items-end justify-between gap-5">
+        <div>
+            <p class="section-kicker">Popular Districts</p>
+            <h2 class="mt-2 text-3xl font-black text-neutral-950">อำเภอยอดนิยมในเชียงราย</h2>
+        </div>
+    </div>
+    <div class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <?php foreach ($popularDistricts as $district): ?>
+            <?= clean_context_button('/photographers.php', ['district_id' => (int)$district['id']], '<div class="flex items-center justify-between gap-4"><div><h3 class="text-xl font-black text-neutral-950">' . h($district['district_name']) . '</h3><p class="mt-1 text-sm font-bold text-neutral-500">' . (int)$district['photographer_count'] . ' ช่างภาพ</p></div><div class="grid h-12 w-12 place-items-center rounded-2xl bg-red-50 text-red-600"><i class="fa-solid fa-location-dot"></i></div></div>', 'stock-card stock-card-hover w-full rounded-[1.6rem] p-6 text-left', 'contents') ?>
+        <?php endforeach; ?>
+    </div>
+</section>
+
 <section class="marketplace-band py-16">
     <div class="stock-shell px-4 sm:px-6 lg:px-8">
         <div class="flex flex-wrap items-end justify-between gap-5">
@@ -365,20 +379,6 @@ include __DIR__ . '/includes/header.php';
                 </div>
             <?php endforeach; ?>
         </div>
-    </div>
-</section>
-
-<section class="stock-shell px-4 py-16 sm:px-6 lg:px-8">
-    <div class="flex flex-wrap items-end justify-between gap-5">
-        <div>
-            <p class="section-kicker">Popular Districts</p>
-            <h2 class="mt-2 text-3xl font-black text-neutral-950">อำเภอยอดนิยมในเชียงราย</h2>
-        </div>
-    </div>
-    <div class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <?php foreach ($popularDistricts as $district): ?>
-            <?= clean_context_button('/photographers.php', ['district_id' => (int)$district['id']], '<div class="flex items-center justify-between gap-4"><div><h3 class="text-xl font-black text-neutral-950">' . h($district['district_name']) . '</h3><p class="mt-1 text-sm font-bold text-neutral-500">' . (int)$district['photographer_count'] . ' ช่างภาพ</p></div><div class="grid h-12 w-12 place-items-center rounded-2xl bg-red-50 text-red-600"><i class="fa-solid fa-location-dot"></i></div></div>', 'stock-card stock-card-hover w-full rounded-[1.6rem] p-6 text-left', 'contents') ?>
-        <?php endforeach; ?>
     </div>
 </section>
 

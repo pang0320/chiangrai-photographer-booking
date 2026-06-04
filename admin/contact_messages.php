@@ -93,6 +93,12 @@ if (is_post()) {
 
     $stmt = db()->prepare('UPDATE contact_messages SET status = ?, updated_at = NOW() WHERE id = ?');
     $stmt->execute([$status, $id]);
+    
+    if ($status === 'read' || $status === 'replied') {
+        $notifStmt = db()->prepare('UPDATE notifications SET is_read = 1 WHERE type = "contact" AND related_id = ?');
+        $notifStmt->execute([$id]);
+    }
+    
     log_activity('update_contact_message', 'contact_messages', $id);
     flash('success', 'อัปเดตข้อความติดต่อแล้ว');
     redirect('/admin/contact_messages.php');

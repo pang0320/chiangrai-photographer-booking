@@ -93,9 +93,9 @@ if ($footerLogo !== '') {
 
             <div>
                 <div class="font-black text-white">อำเภอยอดนิยม</div>
-                <div class="mt-4 flex flex-wrap gap-2 text-sm text-white/62">
+                <div class="mt-4 grid grid-cols-2 gap-x-4 gap-y-2 text-sm text-white/62">
                     <?php foreach ($footerDistricts as $district): ?>
-                        <span class="rounded-full bg-white/8 px-3 py-1.5"><i class="fa-solid fa-location-dot mr-1 text-red-400"></i><?= h($district['district_name']) ?></span>
+                        <?= clean_context_button('/photographers.php', ['district_id' => (int)$district['id']], '<i class="fa-solid fa-location-dot mr-2 text-red-400"></i>' . h($district['district_name']), 'text-left hover:text-red-400 w-full truncate', 'block') ?>
                     <?php endforeach; ?>
                 </div>
                 <?php if (!$footerIsContactPage): ?>

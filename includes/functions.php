@@ -2114,12 +2114,12 @@ function photographer_completion_percent(int $photographerId): int
  */
 function footer_public_data(): array
 {
-    return cache_remember('footer_public_data_v2', 300, function () {
+    return cache_remember('footer_public_data_v3', 300, function () {
         ensure_service_categories_deleted_at_column();
 
         return [
             'categories' => db_fetch_all('SELECT id, name, slug FROM service_categories WHERE is_active = 1 AND deleted_at IS NULL ORDER BY sort_order, name LIMIT 6'),
-            'districts' => db_fetch_all('SELECT district_name FROM districts WHERE is_active = 1 ORDER BY district_name LIMIT 8'),
+            'districts' => db_fetch_all('SELECT id, district_name FROM districts WHERE is_active = 1 ORDER BY district_name LIMIT 8'),
         ];
     });
 }

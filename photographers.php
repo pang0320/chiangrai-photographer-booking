@@ -352,6 +352,7 @@ include __DIR__ . '/includes/header.php';
                 </form>
             </div>
 
+            <?php /*
             <div class="stock-card mt-5 rounded-[2rem] p-5">
                 <h3 class="font-black text-neutral-950">ตัวอย่างแผนที่</h3>
                 <div class="mt-4 grid h-56 place-items-center rounded-[1.5rem] bg-[radial-gradient(circle_at_30%_30%,rgba(226,27,45,.18),transparent_9rem),linear-gradient(135deg,#f8fafc,#e7edf4)] text-center">
@@ -362,6 +363,7 @@ include __DIR__ . '/includes/header.php';
                     </div>
                 </div>
             </div>
+            */ ?>
         </aside>
 
         <div>

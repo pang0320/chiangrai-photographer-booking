@@ -384,11 +384,16 @@ include __DIR__ . '/includes/header.php';
                         <h2 class="mt-1 text-3xl font-black text-neutral-950">ปฏิทินวันว่างสำหรับส่งคำขอจอง</h2>
                         <p class="mt-2 max-w-2xl text-base font-semibold leading-7 text-neutral-600">เลือกได้เฉพาะวันที่ช่างภาพเปิดว่าง ระบบจะตรวจซ้ำอีกครั้งตอนส่งคำขอจอง</p>
                     </div>
-                    <?php if ($availabilityIsSlider): ?>
-                        <div class="rounded-full bg-red-50 px-4 py-2 text-sm font-black text-red-700">
-                            <i class="fa-solid fa-arrows-left-right mr-1"></i>เลื่อนซ้าย-ขวาเพื่อดูวันว่างทั้งหมด
-                        </div>
-                    <?php endif; ?>
+                    <div class="flex items-center gap-3">
+                        <?php if ($availabilityIsSlider): ?>
+                            <div class="rounded-full bg-red-50 px-4 py-2 text-sm font-black text-red-700">
+                                <i class="fa-solid fa-arrows-left-right mr-1"></i>เลื่อนซ้าย-ขวาเพื่อดูวันว่างทั้งหมด
+                            </div>
+                        <?php endif; ?>
+                        <?php if ($canSendBookingRequest): ?>
+                            <?= clean_context_button('/customer/create_booking.php', ['photographer_id' => $id], '<i class="fa-solid fa-calendar-plus mr-2"></i>จองคิว', 'btn-danger btn-lg shadow-xl shadow-red-600/30') ?>
+                        <?php endif; ?>
+                    </div>
                 </div>
                 <div class="<?= h($availabilityLayoutClass) ?>">
                     <?php foreach ($availability as $a): ?>

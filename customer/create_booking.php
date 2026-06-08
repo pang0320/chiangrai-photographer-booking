@@ -351,25 +351,17 @@ include __DIR__ . '/../includes/header.php';
                         <?= booking_field_error_html('category_id', $bookingFormErrors) ?>
                     </label>
 
-                    <?php if ($lockedTimeSlot !== ''): ?>
-                        <div class="block">
-                            <span class="text-sm font-black text-neutral-700"><i class="fa-solid fa-lock mr-2 text-red-600"></i>ช่วงเวลาที่เลือกไว้</span>
-                            <input type="hidden" name="time_slot" value="<?= h($lockedTimeSlot) ?>">
-                            <div class="mt-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 font-black text-emerald-700"><?= h(time_slot_label($lockedTimeSlot)) ?></div>
-                        </div>
-                    <?php else: ?>
-                        <label class="block<?= h(booking_field_wrap_class('time_slot', $bookingFormErrors)) ?>">
-                            <span class="text-sm font-black text-neutral-700"><i class="fa-solid fa-clock mr-2 text-red-600"></i>ช่วงเวลา <?= required_mark() ?></span>
-                            <select name="time_slot" required class="stock-input mt-2 w-full rounded-2xl px-4 py-3 font-semibold<?= h(booking_field_error_class('time_slot', $bookingFormErrors)) ?>">
-                                <option value="">เลือกช่วงเวลา</option>
-                                <option value="morning" <?php if ($bookingFormOld['time_slot'] === 'morning'): ?>selected<?php endif; ?>>เช้า</option>
-                                <option value="afternoon" <?php if ($bookingFormOld['time_slot'] === 'afternoon'): ?>selected<?php endif; ?>>บ่าย</option>
-                                <option value="evening" <?php if ($bookingFormOld['time_slot'] === 'evening'): ?>selected<?php endif; ?>>เย็น</option>
-                                <option value="full_day" <?php if ($bookingFormOld['time_slot'] === 'full_day'): ?>selected<?php endif; ?>>เต็มวัน</option>
-                            </select>
-                            <?= booking_field_error_html('time_slot', $bookingFormErrors) ?>
-                        </label>
-                    <?php endif; ?>
+                    <label class="block<?= h(booking_field_wrap_class('time_slot', $bookingFormErrors)) ?>">
+                        <span class="text-sm font-black text-neutral-700"><i class="fa-solid fa-clock mr-2 text-red-600"></i>ช่วงเวลา <?= required_mark() ?></span>
+                        <select name="time_slot" required class="stock-input mt-2 w-full rounded-2xl px-4 py-3 font-semibold<?= h(booking_field_error_class('time_slot', $bookingFormErrors)) ?>">
+                            <option value="">เลือกช่วงเวลา</option>
+                            <option value="morning" <?php if ($bookingFormOld['time_slot'] === 'morning'): ?>selected<?php endif; ?>>เช้า</option>
+                            <option value="afternoon" <?php if ($bookingFormOld['time_slot'] === 'afternoon'): ?>selected<?php endif; ?>>บ่าย</option>
+                            <option value="evening" <?php if ($bookingFormOld['time_slot'] === 'evening'): ?>selected<?php endif; ?>>เย็น</option>
+                            <option value="full_day" <?php if ($bookingFormOld['time_slot'] === 'full_day'): ?>selected<?php endif; ?>>เต็มวัน</option>
+                        </select>
+                        <?= booking_field_error_html('time_slot', $bookingFormErrors) ?>
+                    </label>
 
                     <div class="sm:col-span-2<?= h(booking_field_wrap_class('booking_date', $bookingFormErrors)) ?>">
                         <label class="mb-2 block text-sm font-black text-neutral-700">
@@ -386,7 +378,7 @@ include __DIR__ . '/../includes/header.php';
                         <?= booking_field_error_html('booking_date', $bookingFormErrors) ?>
                         <?php if ($lockedBookingDate !== ''): ?>
                             <p class="mt-2 rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-black text-emerald-700">
-                                <i class="fa-solid fa-circle-check mr-1"></i>ล็อกวันที่และช่วงเวลาจากหน้าโปรไฟล์แล้ว: <?= h(format_be_date($lockedBookingDate)) ?> · <?= h(time_slot_label($lockedTimeSlot)) ?>
+                                <i class="fa-solid fa-circle-check mr-1"></i>ล็อกวันที่จากหน้าโปรไฟล์แล้ว: <?= h(format_be_date($lockedBookingDate)) ?>
                             </p>
                         <?php endif; ?>
                     </div>

@@ -882,21 +882,39 @@ INSERT INTO blogs (admin_id, title, slug, cover_image, excerpt, content, status,
 (1, 'เช็กลิสต์ก่อนวันถ่ายภาพ', 'photo-day-checklist', 'seed/photo-1520854221256-17451cc331bf.jpg', 'รวมสิ่งที่ควรเตรียมก่อนถึงวันถ่ายจริง', 'เตรียม reference ชุด พร็อพ แผนเดินทาง และเผื่อเวลาแต่งหน้าเดินทางอย่างน้อย 30-60 นาที เพื่อให้วันถ่ายไม่เร่งเกินไป', 'published', NOW());
 
 INSERT INTO tags (id, name, slug) VALUES
-(1, 'Wedding', 'wedding'),
-(2, 'Portrait', 'portrait'),
-(3, 'Graduation', 'graduation'),
-(4, 'Family', 'family'),
-(5, 'Product', 'product'),
-(6, 'Chiang Rai', 'chiang-rai');
+(1, 'งานแต่งงาน', 'wedding-th'),
+(2, 'รับปริญญา', 'graduation-th'),
+(3, 'ครอบครัว', 'family-th'),
+(4, 'สินค้าและร้านค้า', 'product-th'),
+(5, 'อีเวนต์', 'event-th'),
+(6, 'โปรไฟล์ส่วนตัว', 'portrait-th'),
+(7, 'เมืองเชียงราย', 'mueang-chiang-rai'),
+(8, 'เวียงชัย', 'wiang-chai'),
+(9, 'เชียงของ', 'chiang-khong'),
+(10, 'เทิง', 'thoeng'),
+(11, 'พาน', 'phan'),
+(12, 'ป่าแดด', 'pa-daed'),
+(13, 'แม่จัน', 'mae-chan'),
+(14, 'เชียงแสน', 'chiang-saen'),
+(15, 'แม่สาย', 'mae-sai'),
+(16, 'แม่สรวย', 'mae-suai'),
+(17, 'เวียงป่าเป้า', 'wiang-pa-pao'),
+(18, 'พญาเม็งราย', 'phaya-mengrai'),
+(19, 'เวียงแก่น', 'wiang-kaen'),
+(20, 'ขุนตาล', 'khun-tan'),
+(21, 'แม่ฟ้าหลวง', 'mae-fah-luang'),
+(22, 'แม่ลาว', 'mae-lao'),
+(23, 'เวียงเชียงรุ้ง', 'wiang-chiang-rung'),
+(24, 'ดอยหลวง', 'doi-luang');
 
 INSERT INTO blog_tags (blog_id, tag_id) VALUES
-(1, 6), (1, 2), (2, 3), (2, 6), (3, 6), (4, 2);
+(1, 7), (1, 6), (2, 2), (2, 7), (3, 7), (4, 6);
 
 INSERT INTO article_tags (article_id, tag_id) VALUES
-(1, 1), (2, 4), (3, 2), (4, 1), (5, 5), (6, 3);
+(1, 1), (2, 3), (3, 6), (4, 1), (5, 4), (6, 2);
 
 INSERT INTO portfolio_tags (portfolio_id, tag_id)
-SELECT id, 6 FROM photographer_portfolios WHERE id <= 12;
+SELECT id, 7 FROM photographer_portfolios WHERE id <= 12;
 
 INSERT INTO contact_messages (name, email, phone, subject, message, status) VALUES
 ('ลูกค้าทดลอง', 'demo-contact@example.com', '0800000000', 'สอบถามการใช้งาน', 'ต้องการทราบวิธีติดต่อช่างภาพหลังส่งคำขอจอง', 'unread');

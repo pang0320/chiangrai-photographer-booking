@@ -1,4 +1,4 @@
- <?php
+<?php
 require_once __DIR__ . '/../includes/functions.php';
 requireRole('admin');
 $cleanContext = clean_context_init(['q', 'status', 'date_from', 'date_to']);
@@ -87,20 +87,24 @@ if (is_post()) {
     $id = (int)($_POST['id'] ?? 0);
     $status = (string)($_POST['status'] ?? 'read');
     $allowed = ['unread', 'read', 'replied'];
+    
     if (!in_array($status, $allowed, true)) {
         $status = 'read';
     }
 
-    $stmt = db()->prepare('UPDATE contact_messages SET status = ?, updated_at = NOW() WHERE id = ?');
-    $stmt->execute([$status, $id]);
-    
-    if ($status === 'read' || $status === 'replied') {
-        $notifStmt = db()->prepare('UPDATE notifications SET is_read = 1 WHERE type = "contact" AND related_id = ?');
-        $notifStmt->execute([$id]);
+    if ($id > 0) {
+        $stmt = db()->prepare('UPDATE contact_messages SET status = ?, updated_at = NOW() WHERE id = ?');
+        $stmt->execute([$status, $id]);
+        
+        if ($status === 'read' || $status === 'replied') {
+            $notifStmt = db()->prepare('UPDATE notifications SET is_read = 1 WHERE type = "contact" AND related_id = ?');
+            $notifStmt->execute([$id]);
+        }
+        
+        log_activity('update_contact_message', 'contact_messages', $id);
+        flash('success', 'อัปเดตข้อความติดต่อแล้ว');
     }
     
-    log_activity('update_contact_message', 'contact_messages', $id);
-    flash('success', 'อัปเดตข้อความติดต่อแล้ว');
     redirect('/admin/contact_messages.php');
 }
 
@@ -201,17 +205,21 @@ include __DIR__ . '/../includes/header.php';
                                     <i class="fa-brands fa-google"></i>ตอบกลับ Gmail
                                 </a>
 
+                                <?php if ($item['status'] === 'unread'): ?>
                                 <form method="post" class="contents">
                                     <?= csrf_field() ?>
                                     <input type="hidden" name="id" value="<?= (int)$item['id'] ?>">
                                     <button name="status" value="read" class="btn-muted btn-sm"><i class="fa-solid fa-eye"></i>อ่านแล้ว</button>
                                 </form>
+                                <?php endif; ?>
 
+                                <?php if ($item['status'] !== 'replied'): ?>
                                 <form method="post" class="contents">
                                     <?= csrf_field() ?>
                                     <input type="hidden" name="id" value="<?= (int)$item['id'] ?>">
                                     <button name="status" value="replied" class="btn-primary btn-sm"><i class="fa-solid fa-circle-check"></i>ทำเครื่องหมายตอบแล้ว</button>
                                 </form>
+                                <?php endif; ?>
                             </div>
                         </td>
                     </tr>

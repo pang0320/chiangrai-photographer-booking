@@ -15,7 +15,7 @@ $stats = [
     'total_bookings' => 0,
     'pending' => 0,
     'accepted' => 0,
-    'confirmed' => 0,
+    'in_progress' => 0,
     'active' => 0,
     'completed' => 0,
     'rejected' => 0,
@@ -43,11 +43,11 @@ foreach ($statusRows as $row) {
 }
 
 $stats['active'] = $stats['pending']
-    + (int)db_fetch_value('SELECT COUNT(*) FROM bookings WHERE photographer_id = ? AND status IN ("accepted","confirmed") AND deleted_at IS NULL', [$pid]);
+    + (int)db_fetch_value('SELECT COUNT(*) FROM bookings WHERE photographer_id = ? AND status IN ("accepted","in_progress") AND deleted_at IS NULL', [$pid]);
 $stats['won_jobs'] = (int)db_fetch_value('SELECT COUNT(*)
                                           FROM bookings
                                           WHERE photographer_id = ?
-                                            AND status IN ("accepted","confirmed","completed")
+                                            AND status IN ("accepted","in_progress","completed")
                                             AND deleted_at IS NULL', [$pid]);
 $stats['this_month'] = (int)db_fetch_value('SELECT COUNT(*)
                                             FROM bookings
@@ -91,7 +91,7 @@ $thaiMonths = [
 
 $monthlyRows = db_fetch_all('SELECT DATE_FORMAT(created_at, "%Y-%m") AS ym,
                                     COUNT(*) AS total,
-                                    SUM(CASE WHEN status IN ("accepted","confirmed","completed") THEN 1 ELSE 0 END) AS won_total,
+                                    SUM(CASE WHEN status IN ("accepted","in_progress","completed") THEN 1 ELSE 0 END) AS won_total,
                                     SUM(CASE WHEN status = "completed" THEN 1 ELSE 0 END) AS completed_total
                              FROM bookings
                              WHERE photographer_id = ?

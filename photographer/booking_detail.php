@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../includes/functions.php';
 requireRole('photographer');
+ensure_booking_range_columns();
 
 $profile = photographer_profile_by_user((int)current_user()['id']);
 $pid = (int)$profile['id'];
@@ -52,7 +53,7 @@ include __DIR__ . '/../includes/header.php';
                 <b>ข้อมูลงาน</b>
                 <p class="mt-2"><?= nl2br(h($booking['job_detail'])) ?></p>
                 <p class="mt-3 text-sm text-neutral-600">
-                    <?= h(format_be_date($booking['booking_date'])) ?> · <?= h(time_slot_label($booking['time_slot'])) ?> · <?= h($booking['district_name']) ?>
+                    <?= h(booking_range_label($booking)) ?> · <?= h($booking['district_name']) ?>
                 </p>
             </div>
             <div class="rounded-[1.35rem] bg-neutral-50 p-5">

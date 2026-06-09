@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../includes/functions.php';
 requireRole(['customer', 'photographer']);
+ensure_booking_range_columns();
 $user = current_user();
 $isPhotographerHiring = (string)$user['role_name'] === 'photographer';
 $cleanContext = clean_context_init(['id']);
@@ -14,30 +15,9 @@ $stmt->execute([$id, (int)$user['id']]);
 $booking = $stmt->fetch();
 if (!$booking) exit('Booking not found');
 
-$postedAction = '';
-if (isset($_POST['action'])) {
-    $postedAction = (string)$_POST['action'];
-}
-if (is_post() && $postedAction === 'cancel') {
+if (is_post()) {
     verify_csrf();
-    if (!in_array($booking['status'], ['completed','cancelled'], true)) {
-        db()->prepare('UPDATE bookings SET status="cancelled", updated_at=NOW() WHERE id=?')->execute([$id]);
-        $cancelNote = 'ลูกค้ายกเลิก';
-        if ($isPhotographerHiring) {
-            $cancelNote = 'ช่างภาพผู้จ้างยกเลิก';
-        }
-        add_booking_status_log($id, $booking['status'], 'cancelled', (int)$user['id'], $cancelNote);
-        sync_availability_after_booking_status($id);
-        $ownerStmt = db()->prepare('SELECT user_id FROM photographer_profiles WHERE id = ?');
-        $ownerStmt->execute([(int)$booking['photographer_id']]);
-        $cancelTitle = 'ลูกค้ายกเลิกคำขอจอง';
-        if ($isPhotographerHiring) {
-            $cancelTitle = 'ช่างภาพผู้จ้างยกเลิกคำขอจอง';
-        }
-        notify_user((int)$ownerStmt->fetchColumn(), $cancelTitle, $booking['booking_code'], 'booking', $id);
-        log_activity('cancel_booking', 'bookings', $id);
-        flash('success', 'ยกเลิกคำขอจองแล้ว');
-    }
+    flash('warning', 'ลูกค้าไม่สามารถเปลี่ยนสถานะงานจากหน้านี้ได้ หากต้องการยกเลิกให้ติดต่อผู้ดูแลระบบหรือช่างภาพโดยตรง');
     clean_redirect('/customer/booking_detail.php', ['id' => $id]);
 }
 
@@ -54,18 +34,14 @@ include __DIR__ . '/../includes/header.php';
     <div class="rounded-3xl bg-white p-8 shadow-sm ring-1 ring-slate-200">
         <div class="flex flex-wrap justify-between gap-4"><div><p class="section-kicker"><i class="fa-solid <?= $isPhotographerHiring ? 'fa-camera-retro' : 'fa-user' ?> mr-2"></i><?= $isPhotographerHiring ? 'งานที่ฉันจ้าง' : 'รายละเอียดการจอง' ?></p><h1 class="mt-1 text-2xl font-extrabold"><?= h($booking['booking_code']) ?></h1><p class="text-slate-600"><?= h($booking['display_name']) ?> · <?= h($booking['category_name']) ?></p></div><?= status_badge($booking['status']) ?></div>
         <div class="mt-6 grid gap-4 md:grid-cols-2">
-            <div class="rounded-3xl bg-slate-50 p-5"><b>รายละเอียดงาน</b><p class="mt-2"><?= nl2br(h($booking['job_detail'])) ?></p><p class="mt-3 text-sm text-slate-600"><?= h(format_be_date($booking['booking_date'])) ?> · <?= h(time_slot_label($booking['time_slot'])) ?> · <?= h($booking['district_name']) ?></p></div>
+            <div class="rounded-3xl bg-slate-50 p-5"><b>รายละเอียดงาน</b><p class="mt-2"><?= nl2br(h($booking['job_detail'])) ?></p><p class="mt-3 text-sm text-slate-600"><?= h(booking_range_label($booking)) ?> · <?= h($booking['district_name']) ?></p></div>
             <div class="rounded-3xl bg-slate-50 p-5"><b>ช่องทางติดต่อช่างภาพ</b><p class="mt-2">โทร: <?= h($booking['phone_public']) ?></p><p>LINE: <?= h($booking['line_id']) ?></p><p>Facebook: <?= h($booking['facebook_url']) ?></p><p>Instagram: <?= h($booking['instagram_url']) ?></p></div>
         </div>
         <div class="mt-6 flex flex-wrap gap-3">
-            <?php if (!in_array($booking['status'], ['completed', 'cancelled'], true)): ?>
-                <form method="post">
-                    <?= csrf_field() ?>
-                    <input type="hidden" name="action" value="cancel">
-                    <button data-confirm="ยืนยันยกเลิกคำขอจอง?" class="btn-muted btn-lg rounded-2xl">
-                        <i class="fa-solid fa-xmark mr-2"></i>ยกเลิก
-                    </button>
-                </form>
+            <?php if (!in_array($booking['status'], ['completed', 'cancelled', 'rejected'], true)): ?>
+                <div class="rounded-2xl bg-amber-50 px-4 py-3 text-sm font-black leading-7 text-amber-700">
+                    <i class="fa-solid fa-circle-info mr-2"></i>หากต้องการยกเลิกงาน กรุณาติดต่อผู้ดูแลระบบหรือช่างภาพโดยตรง
+                </div>
             <?php endif; ?>
 
             <?php if ($booking['status'] === 'completed' && !$hasReview): ?>

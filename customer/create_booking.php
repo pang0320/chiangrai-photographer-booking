@@ -1,15 +1,39 @@
 <?php
 require_once __DIR__ . '/../includes/functions.php';
+
 ensure_service_categories_deleted_at_column();
-$cleanContext = clean_context_init(['photographer_id', 'booking_date', 'time_slot']);
+ensure_booking_range_columns();
+ensure_availability_range_columns();
+
+$cleanContext = clean_context_init(['photographer_id', 'booking_date', 'time_slot', 'start_date', 'end_date', 'start_time', 'end_time']);
 requireRole(['customer', 'photographer']);
+
 $user = current_user();
 $photographerId = (int)clean_context_value($cleanContext, 'photographer_id', ($_POST['photographer_id'] ?? 0));
 $selectedBookingDate = parse_be_date_to_iso((string)clean_context_value($cleanContext, 'booking_date', ''));
 $selectedTimeSlot = (string)clean_context_value($cleanContext, 'time_slot', '');
-if (!in_array($selectedTimeSlot, ['morning', 'afternoon', 'evening', 'full_day'], true)) {
-    $selectedTimeSlot = '';
+$selectedStartDate = parse_be_date_to_iso((string)clean_context_value($cleanContext, 'start_date', $selectedBookingDate));
+$selectedEndDate = parse_be_date_to_iso((string)clean_context_value($cleanContext, 'end_date', $selectedStartDate));
+$selectedStartTime = normalize_time_input((string)clean_context_value($cleanContext, 'start_time', ''));
+$selectedEndTime = normalize_time_input((string)clean_context_value($cleanContext, 'end_time', ''));
+
+if (in_array($selectedTimeSlot, ['morning', 'afternoon', 'evening', 'full_day'], true)) {
+    [$slotStartTime, $slotEndTime] = slot_time_range($selectedTimeSlot);
+    if ($selectedStartTime === '') {
+        $selectedStartTime = $slotStartTime;
+    }
+    if ($selectedEndTime === '') {
+        $selectedEndTime = $slotEndTime;
+    }
 }
+
+if ($selectedStartTime === '') {
+    $selectedStartTime = '09:00';
+}
+if ($selectedEndTime === '') {
+    $selectedEndTime = '17:00';
+}
+
 $stmt = db()->prepare('SELECT p.*, u.id AS photographer_user_id
                        FROM photographer_profiles p
                        JOIN users u ON u.id = p.user_id
@@ -22,82 +46,50 @@ $stmt = db()->prepare('SELECT p.*, u.id AS photographer_user_id
                        LIMIT 1');
 $stmt->execute([$photographerId]);
 $profile = $stmt->fetch();
-if (!$profile) exit('ช่างภาพไม่พร้อมรับจอง');
+
+if (!$profile) {
+    exit('ช่างภาพไม่พร้อมรับจอง');
+}
 
 if ($user && (string)$user['role_name'] === 'photographer' && (int)$profile['photographer_user_id'] === (int)$user['id']) {
     flash('warning', 'ไม่สามารถส่งคำขอจองให้โปรไฟล์ช่างภาพของตัวเองได้');
     clean_redirect('/photographers.php', []);
 }
 
-$categories = db()->prepare('SELECT sc.* FROM photographer_services ps JOIN service_categories sc ON sc.id=ps.category_id WHERE ps.photographer_id=? AND ps.is_active=1 AND sc.is_active=1 AND sc.deleted_at IS NULL ORDER BY sc.sort_order');
-$categories->execute([$photographerId]);
-$categories = $categories->fetchAll();
-$districts = db()->prepare('SELECT d.* FROM photographer_service_areas psa JOIN districts d ON d.id=psa.district_id WHERE psa.photographer_id=? AND psa.is_active=1 ORDER BY psa.is_primary DESC, d.district_name');
-$districts->execute([$photographerId]);
-$districts = $districts->fetchAll();
+$categoriesStmt = db()->prepare('SELECT sc.*
+                                 FROM photographer_services ps
+                                 JOIN service_categories sc ON sc.id = ps.category_id
+                                 WHERE ps.photographer_id = ?
+                                   AND ps.is_active = 1
+                                   AND sc.is_active = 1
+                                   AND sc.deleted_at IS NULL
+                                 ORDER BY sc.sort_order, sc.name');
+$categoriesStmt->execute([$photographerId]);
+$categories = $categoriesStmt->fetchAll();
 
-$lockedBookingDate = '';
-$lockedTimeSlot = '';
-if ($selectedBookingDate !== '' && $selectedTimeSlot !== '' && can_book_slot($photographerId, $selectedBookingDate, $selectedTimeSlot)) {
-    $lockedBookingDate = $selectedBookingDate;
-    $lockedTimeSlot = $selectedTimeSlot;
-}
+$districtsStmt = db()->prepare('SELECT d.*
+                                FROM photographer_service_areas psa
+                                JOIN districts d ON d.id = psa.district_id
+                                WHERE psa.photographer_id = ?
+                                  AND psa.is_active = 1
+                                  AND d.is_active = 1
+                                ORDER BY psa.is_primary DESC, d.district_name');
+$districtsStmt->execute([$photographerId]);
+$districts = $districtsStmt->fetchAll();
 
-$calendarRows = db_fetch_all('SELECT pa.available_date, pa.status, pa.time_slot,
-                              (SELECT b.status
-                               FROM bookings b
-                               WHERE b.photographer_id = pa.photographer_id
-                                 AND b.booking_date = pa.available_date
-                                 AND b.status IN ("pending","accepted","confirmed")
-                                 AND b.deleted_at IS NULL
-                                 AND (b.time_slot = pa.time_slot OR b.time_slot = "full_day" OR pa.time_slot = "full_day")
-                               ORDER BY FIELD(b.status, "confirmed", "accepted", "pending")
-                               LIMIT 1) AS booking_status
-                              FROM photographer_availability pa
-                              WHERE pa.photographer_id = ?
-                                AND pa.available_date >= CURDATE()', [$photographerId]);
-$GLOBALS['calendar_date_statuses']['booking_date'] = [];
-$GLOBALS['calendar_date_default_status']['booking_date'] = 'unavailable';
-$GLOBALS['calendar_date_selectable_statuses']['booking_date'] = ['available'];
-$calendarStatusPriority = ['unavailable' => 0, 'available' => 1, 'pending' => 2, 'booked' => 3];
-$availableSlotsByDate = [];
+$availabilityRows = db_fetch_all('SELECT id,
+                                         COALESCE(start_date, available_date) AS start_date,
+                                         COALESCE(end_date, available_date) AS end_date,
+                                         COALESCE(start_time, CASE time_slot WHEN "morning" THEN "09:00:00" WHEN "afternoon" THEN "13:00:00" WHEN "evening" THEN "17:00:00" ELSE "09:00:00" END) AS start_time,
+                                         COALESCE(end_time, CASE time_slot WHEN "morning" THEN "12:00:00" WHEN "afternoon" THEN "17:00:00" WHEN "evening" THEN "20:00:00" ELSE "17:00:00" END) AS end_time,
+                                         note
+                                  FROM photographer_availability
+                                  WHERE photographer_id = ?
+                                    AND status = "available"
+                                    AND COALESCE(end_date, available_date) >= CURDATE()
+                                  ORDER BY COALESCE(start_date, available_date) ASC, COALESCE(start_time, "09:00:00") ASC
+                                  LIMIT 12', [$photographerId]);
 
-foreach ($calendarRows as $row) {
-    $dateKey = (string)$row['available_date'];
-    $statusKey = (string)$row['status'];
-    if ($row['booking_status'] === 'pending') {
-        $statusKey = 'pending';
-    } elseif (in_array((string)$row['booking_status'], ['accepted', 'confirmed'], true)) {
-        $statusKey = 'booked';
-    }
-    
-    if ($statusKey === 'available') {
-        if (!isset($availableSlotsByDate[$dateKey])) {
-            $availableSlotsByDate[$dateKey] = [];
-        }
-        $availableSlotsByDate[$dateKey][] = (string)$row['time_slot'];
-        
-        if ((string)$row['time_slot'] === 'full_day') {
-            $availableSlotsByDate[$dateKey][] = 'morning';
-            $availableSlotsByDate[$dateKey][] = 'afternoon';
-            $availableSlotsByDate[$dateKey][] = 'evening';
-        }
-    }
-
-    $currentStatus = $GLOBALS['calendar_date_statuses']['booking_date'][$dateKey] ?? 'unavailable';
-    if (($calendarStatusPriority[$statusKey] ?? 0) >= ($calendarStatusPriority[$currentStatus] ?? 0)) {
-        $GLOBALS['calendar_date_statuses']['booking_date'][$dateKey] = $statusKey;
-    }
-}
-$GLOBALS['calendar_date_labels']['booking_date'] = 'วันที่ต้องการจ้าง';
-
-/**
- * คืนค่าคลาส CSS สำหรับฟิลด์ที่มีข้อผิดพลาด เพื่อเน้นสีแดงรอบช่องอินพุต
- *
- * @param string $field ชื่อฟิลด์ที่ต้องการตรวจสอบ
- * @param array $errors รายการข้อผิดพลาดที่พบ
- * @return string คลาส CSS สำหรับแสดงสถานะข้อผิดพลาด
- */
 function booking_field_error_class(string $field, array $errors): string
 {
     if (!isset($errors[$field])) {
@@ -107,13 +99,6 @@ function booking_field_error_class(string $field, array $errors): string
     return ' border-red-300 bg-red-50 ring-2 ring-red-100';
 }
 
-/**
- * คืนค่าคลาส CSS สำหรับกรอบหุ้ม (Wrapper) ฟิลด์ที่มีข้อผิดพลาด เพื่อเน้นพื้นที่ส่วนนั้น
- *
- * @param string $field ชื่อฟิลด์ที่ต้องการตรวจสอบ
- * @param array $errors รายการข้อผิดพลาดที่พบ
- * @return string คลาส CSS สำหรับกรอบหุ้ม
- */
 function booking_field_wrap_class(string $field, array $errors): string
 {
     if (!isset($errors[$field])) {
@@ -123,13 +108,6 @@ function booking_field_wrap_class(string $field, array $errors): string
     return ' booking-field-error rounded-[1.5rem] border border-red-200 bg-red-50/35 p-3';
 }
 
-/**
- * สร้าง HTML สำหรับแสดงข้อความแจ้งเตือนข้อผิดพลาดใต้ฟิลด์
- *
- * @param string $field ชื่อฟิลด์
- * @param array $errors รายการข้อผิดพลาด
- * @return string โค้ด HTML ของข้อความแสดงข้อผิดพลาด
- */
 function booking_field_error_html(string $field, array $errors): string
 {
     if (!isset($errors[$field])) {
@@ -142,8 +120,10 @@ function booking_field_error_html(string $field, array $errors): string
 $bookingFormOld = [
     'category_id' => '',
     'district_id' => '',
-    'booking_date' => $selectedBookingDate,
-    'time_slot' => $selectedTimeSlot,
+    'start_date' => $selectedStartDate,
+    'end_date' => $selectedEndDate,
+    'start_time' => $selectedStartTime,
+    'end_time' => $selectedEndTime,
     'contact_name' => (string)($user['name'] ?? ''),
     'contact_phone' => (string)($user['phone'] ?? ''),
     'contact_channel' => '',
@@ -158,10 +138,18 @@ if (is_post()) {
     }
 
     verify_csrf();
+
     $categoryId = (int)$bookingFormOld['category_id'];
     $districtId = (int)$bookingFormOld['district_id'];
-    $date = parse_be_date_to_iso($bookingFormOld['booking_date']);
-    $slot = (string)$bookingFormOld['time_slot'];
+    $startDate = parse_be_date_to_iso($bookingFormOld['start_date']);
+    $endDate = parse_be_date_to_iso($bookingFormOld['end_date']);
+    $startTime = normalize_time_input($bookingFormOld['start_time']);
+    $endTime = normalize_time_input($bookingFormOld['end_time']);
+
+    $bookingFormOld['start_date'] = $startDate;
+    $bookingFormOld['end_date'] = $endDate;
+    $bookingFormOld['start_time'] = $startTime;
+    $bookingFormOld['end_time'] = $endTime;
 
     $categoryAllowed = false;
     foreach ($categories as $category) {
@@ -180,23 +168,43 @@ if (is_post()) {
     }
 
     if (!$categoryAllowed) {
-        $bookingFormErrors['category_id'] = 'กรุณาเลือกประเภทงาน';
+        $bookingFormErrors['category_id'] = 'กรุณาเลือกประเภทงานถ่ายภาพที่ช่างภาพระบุไว้';
     }
 
     if (!$districtAllowed) {
-        $bookingFormErrors['district_id'] = 'กรุณาเลือกอำเภอที่ถ่ายงาน';
+        $bookingFormErrors['district_id'] = 'กรุณาเลือกอำเภอที่ช่างภาพเปิดรับงาน';
     }
 
-    if ($date === '' || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
-        $bookingFormErrors['booking_date'] = 'กรุณาเลือกวันที่ต้องการจ้าง';
+    if ($startDate === '') {
+        $bookingFormErrors['start_date'] = 'กรุณาเลือกวันที่เริ่มต้น';
+    } elseif ($startDate < date('Y-m-d')) {
+        $bookingFormErrors['start_date'] = 'ไม่สามารถจองย้อนหลังได้';
     }
 
-    if (!in_array($slot, ['morning','afternoon','evening','full_day'], true)) {
-        $bookingFormErrors['time_slot'] = 'กรุณาเลือกช่วงเวลา';
+    if ($endDate === '') {
+        $bookingFormErrors['end_date'] = 'กรุณาเลือกวันที่สิ้นสุด';
+    } elseif ($startDate !== '' && $endDate < $startDate) {
+        $bookingFormErrors['end_date'] = 'วันที่สิ้นสุดต้องไม่น้อยกว่าวันที่เริ่มต้น';
     }
 
-    if (!isset($bookingFormErrors['booking_date']) && !isset($bookingFormErrors['time_slot']) && !can_book_slot($photographerId, $date, $slot)) {
-        $bookingFormErrors['booking_date'] = 'วันหรือช่วงเวลานี้ไม่พร้อมจอง กรุณาเลือกใหม่';
+    if ($startTime === '') {
+        $bookingFormErrors['start_time'] = 'กรุณาเลือกเวลาเริ่มต้น';
+    }
+
+    if ($endTime === '') {
+        $bookingFormErrors['end_time'] = 'กรุณาเลือกเวลาสิ้นสุด';
+    } elseif ($startTime !== '' && $endTime <= $startTime) {
+        $bookingFormErrors['end_time'] = 'เวลาสิ้นสุดต้องมากกว่าเวลาเริ่มต้น';
+    }
+
+    if (
+        !isset($bookingFormErrors['start_date']) &&
+        !isset($bookingFormErrors['end_date']) &&
+        !isset($bookingFormErrors['start_time']) &&
+        !isset($bookingFormErrors['end_time']) &&
+        !can_book_range($photographerId, $startDate, $endDate, $startTime, $endTime)
+    ) {
+        $bookingFormErrors['start_date'] = 'ช่วงวัน/เวลานี้ไม่พร้อมจอง หรือมีงานอื่นชนอยู่แล้ว';
     }
 
     if (trim($bookingFormOld['contact_name']) === '') {
@@ -219,33 +227,52 @@ if (is_post()) {
         flash('error', 'กรุณากรอกข้อมูลสำคัญให้ครบ');
     } else {
         $code = generate_booking_code();
-        db()->beginTransaction();
-        $stmt = db()->prepare('INSERT INTO bookings (booking_code, customer_id, photographer_id, category_id, district_id, booking_date, time_slot, contact_name, contact_phone, contact_channel, job_detail, note, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "pending", NOW(), NOW())');
-        $stmt->execute([$code, (int)$user['id'], $photographerId, $categoryId, $districtId, $date, $slot, trim($bookingFormOld['contact_name']), trim($bookingFormOld['contact_phone']), trim($bookingFormOld['contact_channel']), trim($bookingFormOld['job_detail']), trim($bookingFormOld['note'])]);
-        $bookingId = (int)db()->lastInsertId();
-        
-        if ($slot !== 'full_day') {
-            $stmtFull = db()->prepare('SELECT id FROM photographer_availability WHERE photographer_id = ? AND available_date = ? AND time_slot = "full_day" AND status = "available" LIMIT 1');
-            $stmtFull->execute([$photographerId, $date]);
-            $fullDayId = $stmtFull->fetchColumn();
-
-            if ($fullDayId) {
-                // Delete the full_day slot
-                $stmtDelete = db()->prepare('DELETE FROM photographer_availability WHERE id = ?');
-                $stmtDelete->execute([$fullDayId]);
-                
-                // Insert individual slots
-                $stmtInsert = db()->prepare('INSERT INTO photographer_availability (photographer_id, available_date, time_slot, status, created_at, updated_at) VALUES (?, ?, ?, "available", NOW(), NOW())');
-                $stmtInsert->execute([$photographerId, $date, 'morning']);
-                $stmtInsert->execute([$photographerId, $date, 'afternoon']);
-                $stmtInsert->execute([$photographerId, $date, 'evening']);
+        $legacySlot = 'full_day';
+        foreach (['morning', 'afternoon', 'evening', 'full_day'] as $slotName) {
+            [$slotStart, $slotEnd] = slot_time_range($slotName);
+            if ($slotStart === $startTime && $slotEnd === $endTime) {
+                $legacySlot = $slotName;
+                break;
             }
         }
 
+        db()->beginTransaction();
+        $stmt = db()->prepare('INSERT INTO bookings (
+            booking_code, customer_id, photographer_id, category_id, district_id,
+            booking_date, time_slot, start_date, end_date, start_time, end_time,
+            contact_name, contact_phone, contact_channel, job_detail, note,
+            status, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "pending", NOW(), NOW())');
+        $stmt->execute([
+            $code,
+            (int)$user['id'],
+            $photographerId,
+            $categoryId,
+            $districtId,
+            $startDate,
+            $legacySlot,
+            $startDate,
+            $endDate,
+            $startTime . ':00',
+            $endTime . ':00',
+            trim($bookingFormOld['contact_name']),
+            trim($bookingFormOld['contact_phone']),
+            trim($bookingFormOld['contact_channel']),
+            trim($bookingFormOld['job_detail']),
+            trim($bookingFormOld['note']),
+        ]);
+        $bookingId = (int)db()->lastInsertId();
+
         add_booking_status_log($bookingId, null, 'pending', (int)$user['id'], 'สร้างคำขอจอง');
-        notify_user((int)$profile['photographer_user_id'], 'มีคำขอจองใหม่', $code, 'booking', $bookingId);
+        notify_user((int)$profile['photographer_user_id'], 'มีคำขอจองใหม่', $code . ' · ' . booking_range_label([
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+            'start_time' => $startTime,
+            'end_time' => $endTime,
+        ]), 'booking', $bookingId);
         log_activity('create_booking', 'bookings', $bookingId);
         db()->commit();
+
         flash('success', 'ส่งคำขอจองแล้ว');
         clean_redirect('/customer/booking_detail.php', ['id' => $bookingId]);
     }
@@ -259,6 +286,7 @@ if ($user && (string)$user['role_name'] === 'photographer') {
 $pageTitle = 'ส่งคำขอจอง';
 include __DIR__ . '/../includes/header.php';
 ?>
+
 <section class="stock-shell px-4 py-10 sm:px-6 lg:px-8">
     <div class="dashboard-hero overflow-hidden rounded-[2rem] p-6 text-white md:p-8">
         <div class="grid gap-6 lg:grid-cols-[1fr_360px] lg:items-end">
@@ -266,11 +294,11 @@ include __DIR__ . '/../includes/header.php';
                 <p class="text-sm font-black uppercase tracking-[0.22em] text-white/60">
                     <i class="fa-solid fa-calendar-check mr-2"></i>คำขอจอง
                 </p>
-                <h1 class="mt-2 text-3xl font-black md:text-4xl">ส่งคำขอจองช่างภาพ</h1>
+                <h1 class="mt-2 text-3xl font-black md:text-4xl">ส่งคำขอจ้างช่างภาพ</h1>
                 <p class="mt-3 max-w-3xl text-base font-semibold leading-8 text-white/75 md:text-lg">
-                    กรอกข้อมูลสำคัญให้ครบใน 5 ส่วน เพื่อให้ช่างภาพประเมินงานและตอบกลับได้เร็วขึ้น
+                    เลือกประเภทงานจากความเชี่ยวชาญของช่างภาพ กำหนดช่วงวันที่และช่วงเวลาที่ต้องการจ้าง แล้วส่งคำขอให้ช่างภาพพิจารณา
                     <?php if ($bookingActorLabel === 'ช่างภาพผู้จ้าง'): ?>
-                        บัญชีช่างภาพสามารถส่งคำขอจองช่างภาพคนอื่นได้เหมือนลูกค้า
+                        บัญชีช่างภาพสามารถจ้างช่างภาพคนอื่นได้เหมือนลูกค้า
                     <?php endif; ?>
                 </p>
             </div>
@@ -288,7 +316,7 @@ include __DIR__ . '/../includes/header.php';
         </div>
     <?php endif; ?>
 
-    <div class="mt-6 grid gap-6 lg:grid-cols-[1fr_360px]">
+    <div class="mt-6 grid gap-6 lg:grid-cols-[1fr_380px]">
         <form method="post" class="grid gap-6" novalidate data-booking-form>
             <?= csrf_field() ?>
             <input type="hidden" name="photographer_id" value="<?= $photographerId ?>">
@@ -334,14 +362,14 @@ include __DIR__ . '/../includes/header.php';
             </section>
 
             <section class="stock-card rounded-[1.75rem] p-6">
-                <p class="section-kicker"><i class="fa-solid fa-calendar-days mr-2"></i>วันที่ต้องการจ้าง</p>
-                <h2 class="mt-1 text-2xl font-black text-neutral-950">เลือกประเภทงาน วันที่ และช่วงเวลา</h2>
-                <p class="mt-2 text-base font-semibold leading-7 text-neutral-600">ระบบจะรับจองเฉพาะวันที่ช่างภาพเปิดว่างและยังไม่ถูกจองซ้ำ</p>
+                <p class="section-kicker"><i class="fa-solid fa-calendar-days mr-2"></i>ช่วงวันที่และเวลา</p>
+                <h2 class="mt-1 text-2xl font-black text-neutral-950">เลือกประเภทงาน วันที่ และเวลาที่ต้องการจ้าง</h2>
+                <p class="mt-2 text-base font-semibold leading-7 text-neutral-600">ถ้าเลือกหลายวัน ระบบจะใช้ช่วงเวลาเดียวกันกับทุกวันในช่วงนั้น</p>
                 <div class="mt-5 grid gap-4 sm:grid-cols-2">
-                    <label class="block<?= h(booking_field_wrap_class('category_id', $bookingFormErrors)) ?>">
-                        <span class="text-sm font-black text-neutral-700"><i class="fa-solid fa-layer-group mr-2 text-red-600"></i>ประเภทงาน <?= required_mark() ?></span>
+                    <label class="block sm:col-span-2<?= h(booking_field_wrap_class('category_id', $bookingFormErrors)) ?>">
+                        <span class="text-sm font-black text-neutral-700"><i class="fa-solid fa-layer-group mr-2 text-red-600"></i>ประเภทงานถ่ายภาพ <?= required_mark() ?></span>
                         <select name="category_id" required class="stock-input mt-2 w-full rounded-2xl px-4 py-3 font-semibold<?= h(booking_field_error_class('category_id', $bookingFormErrors)) ?>">
-                            <option value="">เลือกประเภทงาน</option>
+                            <option value="">เลือกประเภทงานจากความเชี่ยวชาญของช่างภาพ</option>
                             <?php foreach ($categories as $category): ?>
                                 <option value="<?= (int)$category['id'] ?>" <?php if ((int)$bookingFormOld['category_id'] === (int)$category['id']): ?>selected<?php endif; ?>>
                                     <?= h($category['name']) ?>
@@ -351,37 +379,29 @@ include __DIR__ . '/../includes/header.php';
                         <?= booking_field_error_html('category_id', $bookingFormErrors) ?>
                     </label>
 
-                    <label class="block<?= h(booking_field_wrap_class('time_slot', $bookingFormErrors)) ?>">
-                        <span class="text-sm font-black text-neutral-700"><i class="fa-solid fa-clock mr-2 text-red-600"></i>ช่วงเวลา <?= required_mark() ?></span>
-                        <select name="time_slot" required class="stock-input mt-2 w-full rounded-2xl px-4 py-3 font-semibold<?= h(booking_field_error_class('time_slot', $bookingFormErrors)) ?>">
-                            <option value="">เลือกช่วงเวลา</option>
-                            <option value="morning" <?php if ($bookingFormOld['time_slot'] === 'morning'): ?>selected<?php endif; ?>>เช้า</option>
-                            <option value="afternoon" <?php if ($bookingFormOld['time_slot'] === 'afternoon'): ?>selected<?php endif; ?>>บ่าย</option>
-                            <option value="evening" <?php if ($bookingFormOld['time_slot'] === 'evening'): ?>selected<?php endif; ?>>เย็น</option>
-                            <option value="full_day" <?php if ($bookingFormOld['time_slot'] === 'full_day'): ?>selected<?php endif; ?>>เต็มวัน</option>
-                        </select>
-                        <?= booking_field_error_html('time_slot', $bookingFormErrors) ?>
+                    <label class="block<?= h(booking_field_wrap_class('start_date', $bookingFormErrors)) ?>">
+                        <span class="text-sm font-black text-neutral-700"><i class="fa-solid fa-calendar-day mr-2 text-red-600"></i>วันที่เริ่มต้น <?= required_mark() ?></span>
+                        <?= be_date_input('start_date', $bookingFormOld['start_date'], 'stock-input mt-2 w-full rounded-2xl px-4 py-3 font-semibold' . booking_field_error_class('start_date', $bookingFormErrors), true, 'วว/ดด/พ.ศ.') ?>
+                        <?= booking_field_error_html('start_date', $bookingFormErrors) ?>
                     </label>
 
-                    <div class="sm:col-span-2<?= h(booking_field_wrap_class('booking_date', $bookingFormErrors)) ?>">
-                        <label class="mb-2 block text-sm font-black text-neutral-700">
-                            <i class="fa-solid fa-calendar-day mr-2 text-red-600"></i>วันที่ถ่ายงาน <?= required_mark() ?>
-                        </label>
-                        <?php if ($lockedBookingDate !== ''): ?>
-                            <input type="hidden" name="booking_date" value="<?= h($lockedBookingDate) ?>">
-                            <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 font-black text-emerald-700">
-                                <i class="fa-solid fa-lock mr-1"></i><?= h(format_be_date($lockedBookingDate)) ?>
-                            </div>
-                        <?php else: ?>
-                            <?= be_date_input('booking_date', $bookingFormOld['booking_date'], 'stock-input rounded-2xl px-4 py-3 font-semibold' . booking_field_error_class('booking_date', $bookingFormErrors), true, 'วันที่ถ่าย พ.ศ. เช่น 05/05/2569') ?>
-                        <?php endif; ?>
-                        <?= booking_field_error_html('booking_date', $bookingFormErrors) ?>
-                        <?php if ($lockedBookingDate !== ''): ?>
-                            <p class="mt-2 rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-black text-emerald-700">
-                                <i class="fa-solid fa-circle-check mr-1"></i>ล็อกวันที่จากหน้าโปรไฟล์แล้ว: <?= h(format_be_date($lockedBookingDate)) ?>
-                            </p>
-                        <?php endif; ?>
-                    </div>
+                    <label class="block<?= h(booking_field_wrap_class('end_date', $bookingFormErrors)) ?>">
+                        <span class="text-sm font-black text-neutral-700"><i class="fa-solid fa-calendar-check mr-2 text-red-600"></i>วันที่สิ้นสุด <?= required_mark() ?></span>
+                        <?= be_date_input('end_date', $bookingFormOld['end_date'], 'stock-input mt-2 w-full rounded-2xl px-4 py-3 font-semibold' . booking_field_error_class('end_date', $bookingFormErrors), true, 'วว/ดด/พ.ศ.') ?>
+                        <?= booking_field_error_html('end_date', $bookingFormErrors) ?>
+                    </label>
+
+                    <label class="block<?= h(booking_field_wrap_class('start_time', $bookingFormErrors)) ?>">
+                        <span class="text-sm font-black text-neutral-700"><i class="fa-solid fa-clock mr-2 text-red-600"></i>เวลาเริ่มต้น <?= required_mark() ?></span>
+                        <input type="time" name="start_time" value="<?= h($bookingFormOld['start_time']) ?>" required class="stock-input mt-2 w-full rounded-2xl px-4 py-3 font-semibold<?= h(booking_field_error_class('start_time', $bookingFormErrors)) ?>">
+                        <?= booking_field_error_html('start_time', $bookingFormErrors) ?>
+                    </label>
+
+                    <label class="block<?= h(booking_field_wrap_class('end_time', $bookingFormErrors)) ?>">
+                        <span class="text-sm font-black text-neutral-700"><i class="fa-solid fa-clock mr-2 text-red-600"></i>เวลาสิ้นสุด <?= required_mark() ?></span>
+                        <input type="time" name="end_time" value="<?= h($bookingFormOld['end_time']) ?>" required class="stock-input mt-2 w-full rounded-2xl px-4 py-3 font-semibold<?= h(booking_field_error_class('end_time', $bookingFormErrors)) ?>">
+                        <?= booking_field_error_html('end_time', $bookingFormErrors) ?>
+                    </label>
                 </div>
             </section>
 
@@ -433,9 +453,32 @@ include __DIR__ . '/../includes/header.php';
 
         <aside class="space-y-5 lg:sticky lg:top-28 lg:self-start">
             <div class="stock-card rounded-[1.75rem] p-6">
-                <p class="section-kicker"><i class="fa-solid fa-list-check mr-2"></i>สรุปขั้นตอน</p>
+                <p class="section-kicker"><i class="fa-solid fa-calendar-days mr-2"></i>วันว่างที่เปิดรับ</p>
+                <div class="mt-4 grid gap-3">
+                    <?php if ($availabilityRows): ?>
+                        <?php foreach ($availabilityRows as $row): ?>
+                            <div class="rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-sm font-black text-emerald-800">
+                                <p><i class="fa-solid fa-calendar-check mr-2"></i><?= h(format_booking_date_range($row['start_date'], $row['end_date'])) ?></p>
+                                <p class="mt-1 text-emerald-700"><i class="fa-solid fa-clock mr-2"></i><?= h(format_booking_time_range($row['start_time'], $row['end_time'])) ?></p>
+                                <?php if (!empty($row['note'])): ?>
+                                    <p class="mt-1 text-xs font-bold leading-5 text-emerald-700"><?= h($row['note']) ?></p>
+                                <?php endif; ?>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <div class="empty-state rounded-[1.5rem] p-6 text-center">
+                            <i class="fa-solid fa-calendar-xmark text-3xl text-red-600"></i>
+                            <p class="mt-2 font-black text-neutral-950">ยังไม่มีวันว่าง</p>
+                            <p class="mt-1 text-sm font-bold text-neutral-500">ช่างภาพยังไม่ได้เปิดช่วงวันที่รับงาน</p>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <div class="stock-card rounded-[1.75rem] p-6">
+                <p class="section-kicker"><i class="fa-solid fa-list-check mr-2"></i>กติกาการจอง</p>
                 <div class="mt-5 grid gap-3">
-                    <?php foreach ([['ข้อมูลช่างภาพ', 'fa-id-card'], ['พื้นที่รับงาน', 'fa-location-dot'], ['วันที่ต้องการจ้าง', 'fa-calendar-days'], ['ช่องทางติดต่อ', 'fa-address-book'], ['รายละเอียดคำขอจอง', 'fa-clipboard-list']] as $step): ?>
+                    <?php foreach ([['เลือกวันเริ่มต้นและสิ้นสุดได้', 'fa-calendar-days'], ['เวลาสิ้นสุดต้องมากกว่าเวลาเริ่มต้น', 'fa-clock'], ['ระบบกันจองซ้อนอัตโนมัติ', 'fa-shield-halved'], ['ไม่มีการรับชำระเงินในเว็บไซต์', 'fa-ban']] as $step): ?>
                         <div class="flex items-center gap-3 rounded-2xl bg-neutral-50 px-4 py-3 font-black text-neutral-700">
                             <span class="grid h-9 w-9 place-items-center rounded-xl bg-red-50 text-red-600"><i class="fa-solid <?= h($step[1]) ?>"></i></span>
                             <?= h($step[0]) ?>
@@ -443,18 +486,10 @@ include __DIR__ . '/../includes/header.php';
                     <?php endforeach; ?>
                 </div>
             </div>
-
-            <div class="stock-card rounded-[1.75rem] p-6">
-                <p class="section-kicker"><i class="fa-solid fa-location-dot mr-2"></i>พื้นที่รับงานของช่างภาพ</p>
-                <div class="mt-4 flex flex-wrap gap-2">
-                    <?php foreach ($districts as $district): ?>
-                        <span class="rounded-full bg-neutral-100 px-3 py-1.5 text-sm font-black text-neutral-700"><?= h($district['district_name']) ?></span>
-                    <?php endforeach; ?>
-                </div>
-            </div>
         </aside>
     </div>
 </section>
+
 <?php if ($bookingFormErrors): ?>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
@@ -466,9 +501,6 @@ document.addEventListener('DOMContentLoaded', function () {
         setTimeout(function () {
             firstError.scrollIntoView({behavior: 'smooth', block: 'center'});
             var focusable = firstError.querySelector('input, select, textarea, button');
-            if (!focusable && firstError.nextElementSibling && firstError.nextElementSibling.matches('input, select, textarea, button')) {
-                focusable = firstError.nextElementSibling;
-            }
             if (focusable && typeof focusable.focus === 'function') {
                 focusable.focus({preventScroll: true});
             }
@@ -477,57 +509,5 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 <?php endif; ?>
-
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    const availableSlotsByDate = <?= json_encode($availableSlotsByDate, JSON_UNESCAPED_UNICODE) ?>;
-    const timeSlotSelect = document.querySelector('select[name="time_slot"]');
-    const bookingDateInputs = document.querySelectorAll('input[name="booking_date"]');
-
-    function updateAvailableSlots(selectedDate) {
-        if (!timeSlotSelect) return;
-        
-        let slots = [];
-        if (selectedDate && availableSlotsByDate[selectedDate]) {
-            slots = availableSlotsByDate[selectedDate];
-        }
-        
-        const options = timeSlotSelect.options;
-        for (let i = 0; i < options.length; i++) {
-            const opt = options[i];
-            if (opt.value === "") continue;
-            
-            if (selectedDate) {
-                if (slots.includes(opt.value)) {
-                    opt.style.display = '';
-                    opt.disabled = false;
-                } else {
-                    opt.style.display = 'none';
-                    opt.disabled = true;
-                }
-            } else {
-                opt.style.display = '';
-                opt.disabled = false;
-            }
-        }
-        
-        if (timeSlotSelect.value && timeSlotSelect.selectedOptions[0] && timeSlotSelect.selectedOptions[0].disabled) {
-            timeSlotSelect.value = "";
-        }
-    }
-
-    bookingDateInputs.forEach(input => {
-        input.addEventListener('change', (e) => {
-            updateAvailableSlots(e.target.value);
-        });
-    });
-
-    // Initialize on load
-    const activeDateInput = document.querySelector('input[name="booking_date"]');
-    if (activeDateInput && activeDateInput.value) {
-        updateAvailableSlots(activeDateInput.value);
-    }
-});
-</script>
 
 <?php include __DIR__ . '/../includes/footer.php'; ?>

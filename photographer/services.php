@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../includes/functions.php';
 requireRole('photographer');
 ensure_service_categories_deleted_at_column();
+ensure_specialty_requests_table();
 
 $profile = photographer_profile_by_user((int)current_user()['id']);
 $pid = (int)$profile['id'];
@@ -12,7 +13,20 @@ if (is_post()) {
 
     $action = (string)($_POST['action'] ?? 'save');
 
-    if ($action === 'delete') {
+    if ($action === 'request_specialty') {
+        $specialtyName = trim((string)($_POST['specialty_name'] ?? ''));
+        $description = trim((string)($_POST['request_description'] ?? ''));
+
+        if ($specialtyName === '') {
+            flash('error', 'กรุณากรอกชื่อประเภทความเชี่ยวชาญที่ต้องการเพิ่ม');
+            redirect('/photographer/services.php');
+        }
+
+        $stmt = db()->prepare('INSERT INTO specialty_requests (photographer_id, specialty_name, description, status, created_at, updated_at)
+                               VALUES (?, ?, ?, "pending", NOW(), NOW())');
+        $stmt->execute([$pid, $specialtyName, $description]);
+        flash('success', 'ส่งคำขอเพิ่มประเภทความเชี่ยวชาญแล้ว รอผู้ดูแลระบบอนุมัติ');
+    } elseif ($action === 'delete') {
         $id = (int)($_POST['id'] ?? 0);
         $stmt = db()->prepare('UPDATE photographer_services SET is_active = 0, updated_at = NOW() WHERE id = ? AND photographer_id = ?');
         $stmt->execute([$id, $pid]);
@@ -86,6 +100,11 @@ $stmt = db()->prepare('SELECT ps.*, sc.name
                        ORDER BY sc.sort_order');
 $stmt->execute([$pid]);
 $services = $stmt->fetchAll();
+$specialtyRequests = db_fetch_all('SELECT *
+                                   FROM specialty_requests
+                                   WHERE photographer_id = ?
+                                   ORDER BY created_at DESC
+                                   LIMIT 5', [$pid]);
 $activeServiceCount = 0;
 $inactiveServiceCount = 0;
 
@@ -181,6 +200,39 @@ include __DIR__ . '/../includes/header.php';
         </form>
 
         <div class="space-y-4">
+            <form method="post" class="stock-card rounded-[1.75rem] p-6">
+                <?= csrf_field() ?>
+                <input type="hidden" name="action" value="request_specialty">
+                <p class="section-kicker"><i class="fa-solid fa-paper-plane mr-2"></i>ขอเพิ่มประเภทความเชี่ยวชาญ</p>
+                <h2 class="mt-1 text-2xl font-black text-neutral-950">ไม่พบประเภทงานที่รับ?</h2>
+                <p class="mt-2 text-base font-semibold leading-7 text-neutral-600">ส่งคำขอให้ผู้ดูแลระบบตรวจสอบ เมื่ออนุมัติแล้วระบบจะสร้างหมวดหมู่และผูกกับโปรไฟล์ของคุณ</p>
+                <div class="mt-5 grid gap-4 md:grid-cols-2">
+                    <label class="block text-sm font-black text-neutral-700">
+                        <i class="fa-solid fa-tag mr-2 text-red-600"></i>ชื่อประเภทงาน <?= required_mark() ?>
+                        <input name="specialty_name" required placeholder="เช่น Drone Photo, Fashion Editorial" class="stock-input mt-2 w-full rounded-2xl px-4 py-3 font-semibold">
+                    </label>
+                    <label class="block text-sm font-black text-neutral-700">
+                        <i class="fa-solid fa-align-left mr-2 text-red-600"></i>รายละเอียดประกอบ
+                        <input name="request_description" placeholder="อธิบายว่าเป็นงานแบบไหน เพื่อให้แอดมินพิจารณา" class="stock-input mt-2 w-full rounded-2xl px-4 py-3 font-semibold">
+                    </label>
+                </div>
+                <button class="btn-cta btn-md mt-4 rounded-2xl" type="submit"><i class="fa-solid fa-paper-plane"></i>ส่งคำขอ</button>
+
+                <?php if ($specialtyRequests): ?>
+                    <div class="mt-5 grid gap-2">
+                        <?php foreach ($specialtyRequests as $request): ?>
+                            <div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-neutral-50 px-4 py-3">
+                                <div>
+                                    <p class="font-black text-neutral-950"><?= h($request['specialty_name']) ?></p>
+                                    <p class="text-sm font-bold text-neutral-500"><?= h(format_be_datetime($request['created_at'])) ?></p>
+                                </div>
+                                <?= status_badge((string)$request['status']) ?>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+            </form>
+
             <div class="stock-card rounded-[1.75rem] p-6">
                 <div class="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
                     <div>

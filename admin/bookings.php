@@ -1,13 +1,40 @@
 <?php
 require_once __DIR__ . '/../includes/functions.php';
 requireRole('admin');
+ensure_booking_range_columns();
 
-$allowedStatuses = ['pending', 'accepted', 'rejected', 'cancelled', 'confirmed', 'completed'];
+$allowedStatuses = ['pending', 'accepted', 'in_progress', 'rejected', 'completed', 'cancelled'];
 $cleanContext = clean_context_init(['status', 'photographer_id', 'customer_id', 'date', 'tab']);
 
 if (is_post()) {
     verify_csrf();
-    flash('error', 'หน้าคำขอจองของผู้ดูแลระบบเป็นโหมดดูข้อมูลเท่านั้น ไม่สามารถเปลี่ยนสถานะจากหน้านี้ได้');
+    $action = (string)($_POST['action'] ?? '');
+    $bookingId = (int)($_POST['id'] ?? 0);
+
+    if ($action === 'cancel' && $bookingId > 0) {
+        $stmt = db()->prepare('SELECT * FROM bookings WHERE id = ? AND deleted_at IS NULL LIMIT 1');
+        $stmt->execute([$bookingId]);
+        $booking = $stmt->fetch();
+
+        if ($booking && !in_array((string)$booking['status'], ['completed', 'rejected', 'cancelled'], true)) {
+            $stmt = db()->prepare('UPDATE bookings SET status = "cancelled", updated_at = NOW() WHERE id = ?');
+            $stmt->execute([$bookingId]);
+            add_booking_status_log($bookingId, (string)$booking['status'], 'cancelled', (int)current_user()['id'], 'ผู้ดูแลระบบยกเลิกงาน');
+            sync_availability_after_booking_status($bookingId);
+            notify_user((int)$booking['customer_id'], 'รายการจองถูกยกเลิกโดยผู้ดูแลระบบ', (string)$booking['booking_code'], 'booking', $bookingId);
+            $ownerId = (int)db_fetch_value('SELECT user_id FROM photographer_profiles WHERE id = ? LIMIT 1', [(int)$booking['photographer_id']]);
+            if ($ownerId > 0) {
+                notify_user($ownerId, 'รายการจองถูกยกเลิกโดยผู้ดูแลระบบ', (string)$booking['booking_code'], 'booking', $bookingId);
+            }
+            log_activity('admin_cancel_booking', 'bookings', $bookingId);
+            flash('success', 'ยกเลิกรายการจองแล้ว');
+        } else {
+            flash('error', 'รายการนี้ไม่สามารถยกเลิกได้');
+        }
+    } else {
+        flash('error', 'ไม่พบคำสั่งที่ต้องทำรายการ');
+    }
+
     redirect('/admin/bookings.php');
 }
 
@@ -29,7 +56,7 @@ if ($selectedStatus !== '') {
     $where[] = 'b.status = ?';
     $params[] = $selectedStatus;
 } elseif ($tab === 'active') {
-    $where[] = 'b.status IN ("pending", "accepted", "confirmed")';
+    $where[] = 'b.status IN ("pending", "accepted", "in_progress")';
 } elseif ($tab === 'completed') {
     $where[] = 'b.status = "completed"';
 }
@@ -47,7 +74,8 @@ if ($selectedCustomerId !== '') {
 if ($selectedDate !== '') {
     $filterDate = parse_be_date_to_iso($selectedDate);
     if ($filterDate !== '') {
-        $where[] = 'b.booking_date = ?';
+        $where[] = 'COALESCE(b.start_date, b.booking_date) <= ? AND COALESCE(b.end_date, b.booking_date) >= ?';
+        $params[] = $filterDate;
         $params[] = $filterDate;
     }
 }
@@ -76,7 +104,7 @@ $items = $stmt->fetchAll();
 
 $bookingCounts = [
     'all' => (int)db_fetch_value('SELECT COUNT(*) FROM bookings WHERE deleted_at IS NULL'),
-    'active' => (int)db_fetch_value('SELECT COUNT(*) FROM bookings WHERE deleted_at IS NULL AND status IN ("pending", "accepted", "confirmed")'),
+    'active' => (int)db_fetch_value('SELECT COUNT(*) FROM bookings WHERE deleted_at IS NULL AND status IN ("pending", "accepted", "in_progress")'),
     'completed' => (int)db_fetch_value('SELECT COUNT(*) FROM bookings WHERE deleted_at IS NULL AND status = "completed"'),
 ];
 
@@ -89,7 +117,7 @@ include __DIR__ . '/../includes/header.php';
 	        <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">ผู้ดูแลระบบ</p>
 	        <h1 class="mt-1 text-3xl font-black text-neutral-950">ตรวจสอบคำขอจอง</h1>
 	        <p class="mt-2 text-sm font-bold text-neutral-500">แยกดูงานที่กำลังดำเนินการและงานที่เสร็จสิ้นแล้ว พร้อมตัวกรองละเอียดของแอดมิน</p>
-            <p class="mt-1 text-sm font-bold text-amber-700"><i class="fa-solid fa-circle-info mr-1"></i>หน้านี้เป็นโหมดดูข้อมูลเท่านั้น สถานะคำขอจองให้ลูกค้าและช่างภาพดำเนินการตามขั้นตอนของระบบ</p>
+            <p class="mt-1 text-sm font-bold text-amber-700"><i class="fa-solid fa-circle-info mr-1"></i>แอดมินดูรายละเอียดได้ทั้งหมด และยกเลิกงานได้เฉพาะกรณีจำเป็นเท่านั้น</p>
 	    </div>
 
 	    <?php
@@ -164,7 +192,7 @@ include __DIR__ . '/../includes/header.php';
 	                            <td><?= h($booking['customer_name']) ?></td>
 	                            <td><?= h($booking['display_name']) ?></td>
 	                            <td><?= h($booking['category_name']) ?></td>
-	                            <td><?= h(format_be_date($booking['booking_date'])) ?> <?= h(time_slot_label($booking['time_slot'])) ?></td>
+	                            <td><?= h(booking_range_label($booking)) ?></td>
 	                            <td><?= status_badge($booking['status']) ?></td>
 	                            <td>
 	                                <button type="button" data-booking-modal-open="admin-booking-modal-<?= (int)$booking['id'] ?>" class="inline-flex min-w-[116px] items-center justify-center rounded-full bg-neutral-950 px-4 py-2 text-sm font-black text-white transition hover:bg-red-600">
@@ -273,11 +301,11 @@ include __DIR__ . '/../includes/header.php';
                             </div>
                             <div class="rounded-2xl bg-white p-4">
                                 <p class="text-xs font-black uppercase tracking-[0.16em] text-neutral-400">วันที่ถ่าย</p>
-                                <p class="mt-1 font-black text-neutral-950"><?= h(format_be_date($booking['booking_date'])) ?></p>
+                                <p class="mt-1 font-black text-neutral-950"><?= h(format_booking_date_range($booking['start_date'] ?? $booking['booking_date'], $booking['end_date'] ?? $booking['booking_date'])) ?></p>
                             </div>
                             <div class="rounded-2xl bg-white p-4">
                                 <p class="text-xs font-black uppercase tracking-[0.16em] text-neutral-400">ช่วงเวลา</p>
-                                <p class="mt-1 font-black text-neutral-950"><?= h(time_slot_label($booking['time_slot'])) ?></p>
+                                <p class="mt-1 font-black text-neutral-950"><?= h(format_booking_time_range($booking['start_time'] ?? '', $booking['end_time'] ?? '')) ?></p>
                             </div>
                         </div>
                         <div class="mt-4 rounded-2xl bg-white p-4">
@@ -357,12 +385,22 @@ include __DIR__ . '/../includes/header.php';
                     <div class="rounded-[1.5rem] bg-neutral-950 p-5 text-white">
                         <h3 class="text-lg font-black"><i class="fa-solid fa-lock mr-2 text-red-300"></i>สิทธิ์ของผู้ดูแลระบบ</h3>
                         <div class="mt-4 grid gap-3 text-sm font-bold text-white/75">
-                            <p><i class="fa-solid fa-eye mr-2 text-red-300"></i>หน้านี้ใช้ดูและตรวจสอบคำขอจองเท่านั้น</p>
-                            <p><i class="fa-solid fa-ban mr-2 text-red-300"></i>ไม่มีปุ่มเปลี่ยนสถานะสำหรับแอดมิน</p>
+                            <p><i class="fa-solid fa-eye mr-2 text-red-300"></i>ใช้ตรวจสอบคำขอจองและประวัติสถานะ</p>
+                            <p><i class="fa-solid fa-ban mr-2 text-red-300"></i>แอดมินไม่รับ/ปฏิเสธงานแทนช่างภาพ แต่สามารถยกเลิกงานกรณีจำเป็น</p>
                             <p><i class="fa-solid fa-calendar-plus mr-2 text-red-300"></i>สร้างเมื่อ <?= h(format_be_datetime($booking['created_at'])) ?></p>
                             <p><i class="fa-solid fa-pen mr-2 text-red-300"></i>อัปเดตล่าสุด <?= h(format_be_datetime($booking['updated_at'])) ?></p>
                             <p><i class="fa-solid fa-circle-check mr-2 text-red-300"></i>เสร็จสิ้นเมื่อ <?= h($completedAt) ?></p>
                         </div>
+                        <?php if (!in_array((string)$booking['status'], ['completed', 'rejected', 'cancelled'], true)): ?>
+                            <form method="post" class="mt-5">
+                                <?= csrf_field() ?>
+                                <input type="hidden" name="action" value="cancel">
+                                <input type="hidden" name="id" value="<?= (int)$booking['id'] ?>">
+                                <button class="btn-danger btn-md w-full rounded-2xl" data-confirm="ยืนยันยกเลิกรายการจองนี้?" data-confirm-text="ใช้เฉพาะกรณีจำเป็น ระบบจะแจ้งเตือนไปยังลูกค้าและช่างภาพ" data-confirm-button="ยกเลิกรายการ">
+                                    <i class="fa-solid fa-ban"></i>ยกเลิกงานโดยแอดมิน
+                                </button>
+                            </form>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>

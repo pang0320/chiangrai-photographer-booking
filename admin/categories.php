@@ -2,13 +2,67 @@
 require_once __DIR__ . '/../includes/functions.php';
 requireRole('admin');
 ensure_service_categories_deleted_at_column();
+ensure_specialty_requests_table();
 
 if (is_post()) {
     verify_csrf();
 
     $action = (string)($_POST['action'] ?? 'save');
 
-    if ($action === 'delete') {
+    if ($action === 'approve_specialty') {
+        $requestId = (int)($_POST['request_id'] ?? 0);
+        $adminNote = trim((string)($_POST['admin_note'] ?? ''));
+        $request = db_fetch_all('SELECT * FROM specialty_requests WHERE id = ? AND status = "pending" LIMIT 1', [$requestId]);
+
+        if (!$request) {
+            flash('error', 'ไม่พบคำขอที่รออนุมัติ');
+            redirect('/admin/categories.php');
+        }
+
+        $request = $request[0];
+        $name = trim((string)$request['specialty_name']);
+        $slug = unique_slug('service_categories', $name);
+        $categoryId = (int)db_fetch_value('SELECT id FROM service_categories WHERE name = ? AND deleted_at IS NULL LIMIT 1', [$name]);
+
+        if ($categoryId <= 0) {
+            $stmt = db()->prepare('INSERT INTO service_categories (name, slug, icon, description, is_active, sort_order, created_at, updated_at)
+                                   VALUES (?, ?, "fa-camera", ?, 1, 0, NOW(), NOW())');
+            $stmt->execute([$name, $slug, (string)$request['description']]);
+            $categoryId = (int)db()->lastInsertId();
+        } else {
+            $stmt = db()->prepare('UPDATE service_categories SET is_active = 1, updated_at = NOW() WHERE id = ?');
+            $stmt->execute([$categoryId]);
+        }
+
+        $stmt = db()->prepare('INSERT INTO photographer_services (photographer_id, category_id, description, starting_price, is_active, created_at, updated_at)
+                               VALUES (?, ?, ?, 0, 1, NOW(), NOW())
+                               ON DUPLICATE KEY UPDATE description = VALUES(description), is_active = 1, updated_at = NOW()');
+        $stmt->execute([(int)$request['photographer_id'], $categoryId, (string)$request['description']]);
+
+        $stmt = db()->prepare('UPDATE specialty_requests SET status = "approved", admin_note = ?, updated_at = NOW() WHERE id = ?');
+        $stmt->execute([$adminNote, $requestId]);
+
+        $ownerId = (int)db_fetch_value('SELECT user_id FROM photographer_profiles WHERE id = ? LIMIT 1', [(int)$request['photographer_id']]);
+        if ($ownerId > 0) {
+            notify_user($ownerId, 'คำขอเพิ่มประเภทงานได้รับอนุมัติ', $name, 'specialty_request', $requestId);
+        }
+        flash('success', 'อนุมัติและเพิ่มประเภทงานให้ช่างภาพแล้ว');
+    } elseif ($action === 'reject_specialty') {
+        $requestId = (int)($_POST['request_id'] ?? 0);
+        $adminNote = trim((string)($_POST['admin_note'] ?? ''));
+
+        if ($adminNote === '') {
+            $adminNote = 'ไม่ผ่านการอนุมัติ';
+        }
+
+        $stmt = db()->prepare('UPDATE specialty_requests SET status = "rejected", admin_note = ?, updated_at = NOW() WHERE id = ? AND status = "pending"');
+        $stmt->execute([$adminNote, $requestId]);
+        $ownerId = (int)db_fetch_value('SELECT p.user_id FROM specialty_requests sr JOIN photographer_profiles p ON p.id = sr.photographer_id WHERE sr.id = ? LIMIT 1', [$requestId]);
+        if ($ownerId > 0) {
+            notify_user($ownerId, 'คำขอเพิ่มประเภทงานไม่ผ่านการอนุมัติ', $adminNote, 'specialty_request', $requestId);
+        }
+        flash('success', 'ปฏิเสธคำขอเพิ่มประเภทงานแล้ว');
+    } elseif ($action === 'delete') {
         $id = (int)($_POST['id'] ?? 0);
         $stmt = db()->prepare('UPDATE service_categories SET is_active = 0, deleted_at = NOW(), updated_at = NOW() WHERE id = ?');
         $stmt->execute([$id]);
@@ -79,6 +133,11 @@ if (is_post()) {
 }
 
 $items = db_fetch_all('SELECT * FROM service_categories WHERE deleted_at IS NULL ORDER BY sort_order, name');
+$specialtyRequests = db_fetch_all('SELECT sr.*, p.display_name
+                                   FROM specialty_requests sr
+                                   JOIN photographer_profiles p ON p.id = sr.photographer_id
+                                   ORDER BY FIELD(sr.status, "pending", "approved", "rejected"), sr.created_at DESC
+                                   LIMIT 10');
 $activeCount = 0;
 $inactiveCount = 0;
 
@@ -297,6 +356,74 @@ include __DIR__ . '/../includes/header.php';
                         <?php endforeach; ?>
                     </tbody>
                 </table>
+            </div>
+        <?php endif; ?>
+    </div>
+
+    <div class="stock-card mt-6 rounded-[1.75rem] p-5">
+        <div class="mb-5 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+            <div>
+                <p class="section-kicker"><i class="fa-solid fa-paper-plane mr-2"></i>คำขอเพิ่มประเภทความเชี่ยวชาญ</p>
+                <h2 class="mt-1 text-2xl font-black text-neutral-950">คำขอจากช่างภาพ</h2>
+                <p class="mt-2 text-sm font-bold leading-7 text-neutral-500">เมื่ออนุมัติ ระบบจะสร้างหมวดหมู่งานและผูกประเภทงานนี้กับโปรไฟล์ช่างภาพทันที</p>
+            </div>
+        </div>
+
+        <?php if ($specialtyRequests): ?>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm">
+                    <thead class="text-neutral-500">
+                        <tr>
+                            <th class="py-3">ช่างภาพ</th>
+                            <th>ประเภทที่ขอเพิ่ม</th>
+                            <th>รายละเอียด</th>
+                            <th>สถานะ</th>
+                            <th>จัดการ</th>
+                        </tr>
+                    </thead>
+                    <tbody data-block-paginate="5">
+                        <?php foreach ($specialtyRequests as $request): ?>
+                            <tr class="border-t align-top">
+                                <td class="py-3 font-black"><?= h($request['display_name']) ?></td>
+                                <td class="font-black text-neutral-950"><?= h($request['specialty_name']) ?></td>
+                                <td class="max-w-md text-neutral-600"><?= nl2br(h((string)$request['description'])) ?></td>
+                                <td><?= status_badge((string)$request['status']) ?></td>
+                                <td class="min-w-[280px]">
+                                    <?php if ((string)$request['status'] === 'pending'): ?>
+                                        <div class="grid gap-2">
+                                            <form method="post" class="grid gap-2">
+                                                <?= csrf_field() ?>
+                                                <input type="hidden" name="action" value="approve_specialty">
+                                                <input type="hidden" name="request_id" value="<?= (int)$request['id'] ?>">
+                                                <input name="admin_note" placeholder="หมายเหตุถึงช่างภาพ (ถ้ามี)" class="stock-input rounded-xl px-3 py-2 text-sm font-semibold">
+                                                <button class="btn-success btn-sm" data-confirm="อนุมัติประเภทงานนี้?" type="submit">
+                                                    <i class="fa-solid fa-check"></i>อนุมัติ
+                                                </button>
+                                            </form>
+                                            <form method="post" class="grid gap-2">
+                                                <?= csrf_field() ?>
+                                                <input type="hidden" name="action" value="reject_specialty">
+                                                <input type="hidden" name="request_id" value="<?= (int)$request['id'] ?>">
+                                                <input name="admin_note" placeholder="เหตุผลที่ไม่อนุมัติ" class="stock-input rounded-xl px-3 py-2 text-sm font-semibold">
+                                                <button class="btn-danger btn-sm" data-confirm="ปฏิเสธคำขอนี้?" type="submit">
+                                                    <i class="fa-solid fa-xmark"></i>ปฏิเสธ
+                                                </button>
+                                            </form>
+                                        </div>
+                                    <?php else: ?>
+                                        <p class="text-sm font-bold text-neutral-500"><?= h((string)$request['admin_note']) ?></p>
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php else: ?>
+            <div class="empty-state rounded-[1.5rem] p-8 text-center">
+                <i class="fa-solid fa-inbox text-4xl text-red-600"></i>
+                <h3 class="mt-3 text-xl font-black text-neutral-950">ยังไม่มีคำขอเพิ่มประเภทงาน</h3>
+                <p class="mt-2 text-base font-semibold text-neutral-600">เมื่อช่างภาพส่งคำขอ ระบบจะแสดงในส่วนนี้</p>
             </div>
         <?php endif; ?>
     </div>

@@ -72,7 +72,7 @@ $overviewMap = [
         'stats' => [
             ['คำขอจองทั้งหมด', 'SELECT COUNT(*) FROM bookings WHERE deleted_at IS NULL', 'fa-calendar-days', 'text-sky-600', 'รายการจองทั้งหมด', '/admin/bookings.php'],
             ['รอดำเนินการ', 'SELECT COUNT(*) FROM bookings WHERE status = "pending" AND deleted_at IS NULL', 'fa-hourglass-half', 'text-amber-600', 'รอตอบรับ', '/admin/bookings.php?status=pending'],
-            ['ยืนยันแล้ว', 'SELECT COUNT(*) FROM bookings WHERE status = "confirmed" AND deleted_at IS NULL', 'fa-calendar-check', 'text-emerald-600', 'นัดหมายสำเร็จ', '/admin/bookings.php?status=confirmed'],
+            ['กำลังดำเนินงาน', 'SELECT COUNT(*) FROM bookings WHERE status = "in_progress" AND deleted_at IS NULL', 'fa-person-running', 'text-violet-600', 'อยู่ระหว่างทำงาน', '/admin/bookings.php?status=in_progress'],
             ['ยกเลิก/ปฏิเสธ', 'SELECT COUNT(*) FROM bookings WHERE status IN ("cancelled","rejected") AND deleted_at IS NULL', 'fa-circle-xmark', 'text-rose-600', 'ต้องติดตาม', '/admin/bookings.php?status=cancelled'],
         ],
         'cards' => [

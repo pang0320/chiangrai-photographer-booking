@@ -4,7 +4,8 @@ requireRole('photographer');
 
 $profile = photographer_profile_by_user((int)current_user()['id']);
 $pid = (int)$profile['id'];
-$allowedStatuses = ['pending', 'accepted', 'confirmed', 'completed', 'rejected', 'cancelled'];
+ensure_booking_range_columns();
+$allowedStatuses = ['pending', 'accepted', 'in_progress', 'completed', 'rejected', 'cancelled'];
 $cleanContext = clean_context_init(['status', 'tab']);
 
 if (is_post()) {
@@ -18,8 +19,24 @@ if (is_post()) {
     $stmt->execute([$id, $pid]);
     $booking = $stmt->fetch();
 
-    if ($booking && in_array($newStatus, ['accepted', 'rejected', 'cancelled', 'confirmed', 'completed'], true)) {
-        if (in_array($newStatus, ['rejected', 'cancelled'], true) && $reason === '') {
+    if ($booking && in_array($newStatus, $allowedStatuses, true)) {
+        $currentStatus = (string)$booking['status'];
+        $allowedNextStatuses = [];
+
+        if ($currentStatus === 'pending') {
+            $allowedNextStatuses = ['accepted', 'rejected'];
+        } elseif ($currentStatus === 'accepted') {
+            $allowedNextStatuses = ['in_progress'];
+        } elseif ($currentStatus === 'in_progress') {
+            $allowedNextStatuses = ['completed'];
+        }
+
+        if (!in_array($newStatus, $allowedNextStatuses, true)) {
+            flash('error', 'สถานะปัจจุบันไม่สามารถเปลี่ยนเป็นสถานะที่เลือกได้');
+            redirect('/photographer/bookings.php');
+        }
+
+        if ($newStatus === 'rejected' && $reason === '') {
             flash('error', 'กรุณาระบุเหตุผล');
             redirect('/photographer/bookings.php');
         }
@@ -60,11 +77,11 @@ if ($status !== '') {
     $where .= ' AND b.status = ?';
     $params[] = $status;
 } elseif ($tab === 'active') {
-    $where .= ' AND b.status IN ("pending", "accepted", "confirmed")';
+    $where .= ' AND b.status IN ("pending", "accepted", "in_progress")';
 } elseif ($tab === 'pending') {
     $where .= ' AND b.status = "pending"';
 } elseif ($tab === 'accepted') {
-    $where .= ' AND b.status IN ("accepted", "confirmed")';
+    $where .= ' AND b.status IN ("accepted", "in_progress")';
 } elseif ($tab === 'completed') {
     $where .= ' AND b.status = "completed"';
 } elseif ($tab === 'closed') {
@@ -93,9 +110,9 @@ $bookingCounts = [
 
 $countStmt = db()->prepare('SELECT
     COUNT(*) AS total_all,
-    SUM(CASE WHEN status IN ("pending", "accepted", "confirmed") THEN 1 ELSE 0 END) AS total_active,
+    SUM(CASE WHEN status IN ("pending", "accepted", "in_progress") THEN 1 ELSE 0 END) AS total_active,
     SUM(CASE WHEN status = "pending" THEN 1 ELSE 0 END) AS total_pending,
-    SUM(CASE WHEN status IN ("accepted", "confirmed") THEN 1 ELSE 0 END) AS total_accepted,
+    SUM(CASE WHEN status IN ("accepted", "in_progress") THEN 1 ELSE 0 END) AS total_accepted,
     SUM(CASE WHEN status = "completed" THEN 1 ELSE 0 END) AS total_completed,
     SUM(CASE WHEN status IN ("rejected", "cancelled") THEN 1 ELSE 0 END) AS total_closed
     FROM bookings
@@ -141,7 +158,7 @@ include __DIR__ . '/../includes/header.php';
 	    $tabs = [
 	        'active' => ['กำลังดำเนินการ', 'fa-hourglass-half', $bookingCounts['active']],
 	        'pending' => ['คำขอใหม่', 'fa-bell', $bookingCounts['pending']],
-	        'accepted' => ['ตอบรับ/ยืนยันงาน', 'fa-calendar-check', $bookingCounts['accepted']],
+	        'accepted' => ['รับงาน/กำลังทำ', 'fa-calendar-check', $bookingCounts['accepted']],
 	        'completed' => ['เสร็จสิ้นแล้ว', 'fa-circle-check', $bookingCounts['completed']],
 	        'closed' => ['ยกเลิก/ปฏิเสธ', 'fa-ban', $bookingCounts['closed']],
 	        'all' => ['ประวัติทั้งหมด', 'fa-list', $bookingCounts['all']],
@@ -181,23 +198,26 @@ include __DIR__ . '/../includes/header.php';
 	                            <td><?= h($booking['customer_name']) ?></td>
 	                            <td><?= h($booking['category_name']) ?></td>
 	                            <td>
-	                                <?= h(format_be_date($booking['booking_date'])) ?> <?= h(time_slot_label($booking['time_slot'])) ?><br>
+	                                <?= h(booking_range_label($booking)) ?><br>
 	                                <?= h($booking['district_name']) ?>
 	                            </td>
 	                            <td><?= status_badge($booking['status']) ?></td>
 	                            <td>
-	                                <?php if (in_array($booking['status'], ['pending', 'accepted', 'confirmed'], true)): ?>
+	                                <?php if (in_array($booking['status'], ['pending', 'accepted', 'in_progress'], true)): ?>
 	                                    <form method="post" class="grid gap-2">
 	                                        <?= csrf_field() ?>
 	                                        <input type="hidden" name="id" value="<?= (int)$booking['id'] ?>">
 	                                        <select name="status" class="stock-input rounded-xl px-3 py-2">
-	                                            <option value="accepted">ตอบรับ</option>
-	                                            <option value="confirmed">ยืนยันงาน</option>
-	                                            <option value="completed">เสร็จสิ้น</option>
-	                                            <option value="rejected">ปฏิเสธ</option>
-	                                            <option value="cancelled">ยกเลิกโดยลูกค้า</option>
+                                                <?php if ((string)$booking['status'] === 'pending'): ?>
+	                                                <option value="accepted">รับงาน</option>
+	                                                <option value="rejected">ปฏิเสธงาน</option>
+                                                <?php elseif ((string)$booking['status'] === 'accepted'): ?>
+	                                                <option value="in_progress">เริ่มดำเนินงาน</option>
+                                                <?php elseif ((string)$booking['status'] === 'in_progress'): ?>
+	                                                <option value="completed">งานเสร็จสิ้น</option>
+                                                <?php endif; ?>
 	                                        </select>
-	                                        <input name="rejection_reason" placeholder="เหตุผลถ้าปฏิเสธ/ยกเลิก" class="stock-input rounded-xl px-3 py-2">
+	                                        <input name="rejection_reason" placeholder="เหตุผลถ้าปฏิเสธงาน" class="stock-input rounded-xl px-3 py-2">
 	                                        <button data-confirm="ยืนยันเปลี่ยนสถานะคำขอจอง?" class="btn-cta btn-md rounded-xl">
 	                                            <i class="fa-solid fa-floppy-disk mr-1"></i>บันทึก
 	                                        </button>

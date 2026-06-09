@@ -1,6 +1,8 @@
 <?php
 require_once __DIR__ . '/../includes/functions.php';
 requireRole('photographer');
+ensure_booking_range_columns();
+ensure_availability_range_columns();
 
 $user = current_user();
 $profile = photographer_profile_by_user((int)$user['id']);
@@ -15,7 +17,7 @@ $stats = [
     'total' => 0,
     'pending' => 0,
     'accepted' => 0,
-    'confirmed' => 0,
+    'in_progress' => 0,
     'completed' => 0,
     'rejected' => 0,
     'cancelled' => 0,
@@ -46,12 +48,12 @@ foreach ($statusRows as $row) {
     $stats['total'] += $total;
 }
 
-$stats['accepted_group'] = $stats['accepted'] + $stats['confirmed'];
+$stats['accepted_group'] = $stats['accepted'] + $stats['in_progress'];
 $stats['upcoming'] = (int)db_fetch_value('SELECT COUNT(*)
                                           FROM bookings
                                           WHERE photographer_id = ?
-                                            AND booking_date >= CURDATE()
-                                            AND status IN ("pending", "accepted", "confirmed")
+                                            AND COALESCE(end_date, booking_date) >= CURDATE()
+                                            AND status IN ("pending", "accepted", "in_progress")
                                             AND deleted_at IS NULL', [$pid]);
 $stats['this_month'] = (int)db_fetch_value('SELECT COUNT(*)
                                             FROM bookings
@@ -63,7 +65,7 @@ $stats['featured_portfolio'] = (int)db_fetch_value('SELECT COUNT(*) FROM photogr
 $stats['available_slots'] = (int)db_fetch_value('SELECT COUNT(*)
                                                  FROM photographer_availability
                                                  WHERE photographer_id = ?
-                                                   AND available_date >= CURDATE()
+                                                   AND COALESCE(end_date, available_date) >= CURDATE()
                                                    AND status = "available"', [$pid]);
 $stats['services'] = (int)db_fetch_value('SELECT COUNT(*) FROM photographer_services WHERE photographer_id = ? AND is_active = 1', [$pid]);
 $stats['areas'] = (int)db_fetch_value('SELECT COUNT(*) FROM photographer_service_areas WHERE photographer_id = ? AND is_active = 1', [$pid]);
@@ -86,7 +88,7 @@ $thaiMonths = [
 
 $monthlyRows = db_fetch_all('SELECT DATE_FORMAT(created_at, "%Y-%m") AS ym,
                                     CASE
-                                        WHEN status IN ("pending", "accepted", "confirmed") THEN "active"
+                                        WHEN status IN ("pending", "accepted", "in_progress") THEN "active"
                                         WHEN status = "completed" THEN "completed"
                                         WHEN status IN ("rejected", "cancelled") THEN "closed"
                                         ELSE "other"
@@ -159,7 +161,7 @@ for ($i = 11; $i >= 0; $i--) {
 
 $statusChart = [
     ['รอตอบรับ', $stats['pending'], 'fa-hourglass-half', 'from-amber-400 to-orange-500'],
-    ['ตอบรับ/ยืนยันงาน', $stats['accepted_group'], 'fa-calendar-check', 'from-sky-500 to-indigo-500'],
+    ['รับงาน/กำลังทำ', $stats['accepted_group'], 'fa-calendar-check', 'from-sky-500 to-indigo-500'],
     ['เสร็จสิ้น', $stats['completed'], 'fa-circle-check', 'from-emerald-500 to-teal-500'],
     ['ปฏิเสธ/ยกเลิก', $stats['rejected'] + $stats['cancelled'], 'fa-ban', 'from-rose-500 to-red-600'],
 ];
@@ -220,10 +222,10 @@ $upcomingBookings = db_fetch_all('SELECT b.*, u.name AS customer_name, sc.name A
                                   JOIN service_categories sc ON sc.id = b.category_id
                                   JOIN districts d ON d.id = b.district_id
                                   WHERE b.photographer_id = ?
-                                    AND b.booking_date >= CURDATE()
-                                    AND b.status IN ("pending", "accepted", "confirmed")
+                                    AND COALESCE(b.end_date, b.booking_date) >= CURDATE()
+                                    AND b.status IN ("pending", "accepted", "in_progress")
                                     AND b.deleted_at IS NULL
-                                  ORDER BY b.booking_date ASC, b.created_at ASC
+                                  ORDER BY COALESCE(b.start_date, b.booking_date) ASC, b.created_at ASC
                                   LIMIT 5', [$pid]);
 
 $bookings = db_fetch_all('SELECT b.*, u.name AS customer_name, sc.name AS category_name, d.district_name
@@ -232,17 +234,17 @@ $bookings = db_fetch_all('SELECT b.*, u.name AS customer_name, sc.name AS catego
                           JOIN service_categories sc ON sc.id = b.category_id
                           JOIN districts d ON d.id = b.district_id
                           WHERE b.photographer_id = ?
-                            AND b.status IN ("pending", "accepted", "confirmed")
+                            AND b.status IN ("pending", "accepted", "in_progress")
                             AND b.deleted_at IS NULL
-                          ORDER BY FIELD(b.status, "pending", "accepted", "confirmed"), b.booking_date ASC, b.created_at DESC
+                          ORDER BY FIELD(b.status, "pending", "accepted", "in_progress"), COALESCE(b.start_date, b.booking_date) ASC, b.created_at DESC
                           LIMIT 8', [$pid]);
 
 $availability = db_fetch_all('SELECT *
                               FROM photographer_availability
                               WHERE photographer_id = ?
-                                AND available_date >= CURDATE()
+                                AND COALESCE(end_date, available_date) >= CURDATE()
                                 AND status = "available"
-                              ORDER BY available_date, time_slot
+                              ORDER BY COALESCE(start_date, available_date), COALESCE(start_time, "09:00:00")
                               LIMIT 8', [$pid]);
 
 $latestReviews = db_fetch_all('SELECT r.*, u.name AS customer_name
@@ -388,7 +390,7 @@ include __DIR__ . '/../includes/header.php';
         <?php
         $metricCards = [
             ['คำขอใหม่', $stats['pending'], 'fa-hourglass-half', 'text-amber-600', 'รอตอบรับลูกค้า'],
-            ['กำลังดำเนินการ', $stats['accepted_group'], 'fa-calendar-check', 'text-sky-600', 'ตอบรับ/ยืนยันงาน'],
+            ['กำลังดำเนินการ', $stats['accepted_group'], 'fa-calendar-check', 'text-sky-600', 'รับงานแล้ว/กำลังทำ'],
             ['เสร็จสิ้น', $stats['completed'], 'fa-circle-check', 'text-emerald-600', 'งานเสร็จสิ้น'],
 	            ['คะแนนเฉลี่ย', number_format((float)$profile['average_rating'], 1), 'fa-star', 'text-yellow-500', 'จำนวนรีวิว ' . number_format((int)$profile['total_reviews']) . ' รายการ'],
             ['เข้าชมโปรไฟล์', number_format((int)$profile['profile_views']), 'fa-eye', 'text-red-600', 'ยอดเปิดดูทั้งหมด'],
@@ -520,7 +522,7 @@ include __DIR__ . '/../includes/header.php';
                                     <span class="mx-2 text-neutral-300">/</span>
                                     <i class="fa-solid fa-location-dot mr-1 text-red-600"></i><?= h($booking['district_name']) ?>
                                 </p>
-                                <p class="mt-1 text-sm font-black text-neutral-900"><i class="fa-solid fa-clock mr-1 text-red-600"></i><?= h(format_be_date($booking['booking_date'])) ?> · <?= h(time_slot_label($booking['time_slot'])) ?></p>
+                                <p class="mt-1 text-sm font-black text-neutral-900"><i class="fa-solid fa-clock mr-1 text-red-600"></i><?= h(booking_range_label($booking)) ?></p>
                             </div>
                             <?= clean_context_button('/photographer/booking_detail.php', ['id' => (int)$booking['id']], '<i class="fa-solid fa-eye mr-2"></i>จัดการ', 'inline-flex items-center justify-center rounded-full bg-red-600 px-4 py-2 text-sm font-black text-white transition hover:bg-neutral-950') ?>
                         </div>
@@ -662,7 +664,7 @@ include __DIR__ . '/../includes/header.php';
                                     <td class="py-4 font-black text-neutral-950"><?= h($booking['booking_code']) ?></td>
                                     <td class="font-bold"><?= h($booking['customer_name']) ?></td>
                                     <td><?= h($booking['category_name']) ?></td>
-                                    <td><?= h(format_be_date($booking['booking_date'])) ?> · <?= h(time_slot_label($booking['time_slot'])) ?></td>
+                                    <td><?= h(booking_range_label($booking)) ?></td>
                                     <td><?= status_badge($booking['status']) ?></td>
                                     <td><?= clean_context_button('/photographer/booking_detail.php', ['id' => (int)$booking['id']], '<i class="fa-solid fa-eye mr-1"></i>ดู', 'inline-flex items-center rounded-full bg-red-50 px-3 py-1.5 text-xs font-black text-red-700 hover:bg-red-600 hover:text-white') ?></td>
                                 </tr>
@@ -686,8 +688,8 @@ include __DIR__ . '/../includes/header.php';
                 <div class="mt-4 grid gap-2" data-block-paginate="5">
                     <?php foreach ($availability as $slot): ?>
                         <div class="flex items-center justify-between rounded-2xl bg-neutral-50 px-4 py-3 text-sm">
-                            <span class="font-black"><i class="fa-solid fa-calendar mr-2 text-red-600"></i><?= h(format_be_date($slot['available_date'])) ?></span>
-                            <span class="font-bold text-neutral-500"><?= h(time_slot_label($slot['time_slot'])) ?></span>
+                            <span class="font-black"><i class="fa-solid fa-calendar mr-2 text-red-600"></i><?= h(format_booking_date_range($slot['start_date'] ?? $slot['available_date'], $slot['end_date'] ?? $slot['available_date'])) ?></span>
+                            <span class="font-bold text-neutral-500"><?= h(format_booking_time_range($slot['start_time'] ?? '', $slot['end_time'] ?? '')) ?></span>
                         </div>
                     <?php endforeach; ?>
                     <?php if (!$availability): ?>

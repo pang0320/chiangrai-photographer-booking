@@ -20,6 +20,7 @@ DROP TABLE IF EXISTS reports;
 DROP TABLE IF EXISTS contact_messages;
 DROP TABLE IF EXISTS blogs;
 DROP TABLE IF EXISTS faqs;
+DROP TABLE IF EXISTS specialty_requests;
 DROP TABLE IF EXISTS favorite_photographers;
 DROP TABLE IF EXISTS reviews;
 DROP TABLE IF EXISTS booking_status_logs;
@@ -226,13 +227,17 @@ CREATE TABLE photographer_portfolios (
 CREATE TABLE photographer_availability (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   photographer_id INT UNSIGNED NOT NULL,
+  start_date DATE NULL,
+  end_date DATE NULL,
+  start_time TIME NULL,
+  end_time TIME NULL,
   available_date DATE NOT NULL,
   time_slot ENUM('morning','afternoon','evening','full_day') NOT NULL,
   status ENUM('available','unavailable','booked') NOT NULL DEFAULT 'available',
   note VARCHAR(255) NULL,
   created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  UNIQUE KEY uk_availability_slot (photographer_id, available_date, time_slot),
+  KEY idx_availability_range (photographer_id, start_date, end_date, start_time, end_time, status),
   KEY idx_availability_date (available_date, status),
   CONSTRAINT fk_availability_profile FOREIGN KEY (photographer_id) REFERENCES photographer_profiles(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -244,6 +249,10 @@ CREATE TABLE bookings (
   photographer_id INT UNSIGNED NOT NULL,
   category_id INT UNSIGNED NOT NULL,
   district_id INT UNSIGNED NOT NULL,
+  start_date DATE NULL,
+  end_date DATE NULL,
+  start_time TIME NULL,
+  end_time TIME NULL,
   booking_date DATE NOT NULL,
   time_slot ENUM('morning','afternoon','evening','full_day') NOT NULL,
   contact_name VARCHAR(160) NOT NULL,
@@ -251,7 +260,7 @@ CREATE TABLE bookings (
   contact_channel VARCHAR(120) NOT NULL,
   job_detail TEXT NOT NULL,
   note TEXT NULL,
-  status ENUM('pending','accepted','rejected','cancelled','confirmed','completed') NOT NULL DEFAULT 'pending',
+  status ENUM('pending','accepted','rejected','in_progress','completed','cancelled') NOT NULL DEFAULT 'pending',
   rejection_reason TEXT NULL,
   completed_at DATETIME NULL,
   created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
@@ -261,6 +270,7 @@ CREATE TABLE bookings (
   KEY idx_bookings_customer (customer_id, status),
   KEY idx_bookings_photographer (photographer_id, status),
   KEY idx_bookings_date_slot (photographer_id, booking_date, time_slot, status),
+  KEY idx_bookings_range (photographer_id, start_date, end_date, start_time, end_time, status),
   KEY idx_bookings_category (category_id),
   KEY idx_bookings_district (district_id),
   CONSTRAINT fk_bookings_customer FOREIGN KEY (customer_id) REFERENCES users(id),
@@ -393,6 +403,20 @@ CREATE TABLE faqs (
   created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   KEY idx_faq_active (is_active, category, sort_order)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE specialty_requests (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  photographer_id INT UNSIGNED NOT NULL,
+  specialty_name VARCHAR(160) NOT NULL,
+  description TEXT NULL,
+  status ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending',
+  admin_note TEXT NULL,
+  created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  KEY idx_specialty_requests_photographer (photographer_id, status),
+  KEY idx_specialty_requests_status (status, created_at),
+  CONSTRAINT fk_specialty_requests_photographer FOREIGN KEY (photographer_id) REFERENCES photographer_profiles(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE blogs (
@@ -634,8 +658,8 @@ INSERT INTO bookings (id, booking_code, customer_id, photographer_id, category_i
 INSERT INTO booking_status_logs (booking_id, old_status, new_status, changed_by, note) VALUES
 (1, NULL, 'pending', 2, 'สร้างคำขอจอง'),
 (1, 'pending', 'accepted', 3, 'ช่างภาพตอบรับ'),
-(1, 'accepted', 'confirmed', 3, 'ยืนยันรายละเอียด'),
-(1, 'confirmed', 'completed', 3, 'งานเสร็จสิ้น');
+(1, 'accepted', 'in_progress', 3, 'เริ่มดำเนินงาน'),
+(1, 'in_progress', 'completed', 3, 'งานเสร็จสิ้น');
 
 INSERT INTO reviews (id, booking_id, customer_id, photographer_id, rating_overall, rating_quality, rating_communication, rating_punctuality, rating_professional, comment, status) VALUES
 (1, 1, 2, 1, 5, 5, 5, 5, 5, 'ช่างภาพสื่อสารดี ภาพสวย ส่งงานเร็ว ประทับใจมาก', 'visible');
@@ -794,7 +818,7 @@ INSERT INTO bookings (id, booking_code, customer_id, photographer_id, category_i
 (18, 'CRB260418000018', 8, 8, 4, 10, '2026-04-18', 'full_day', 'ชลธิชา เมืองเหนือ', '0811111108', 'LINE: chon', 'ถ่ายภาพโรงแรม', '', 'completed', '2026-04-18 18:00:00'),
 (19, 'CRB260501000019', 9, 9, 3, 8, '2026-05-01', 'morning', 'กิตติพงษ์ แม่สาย', '0811111109', 'โทรศัพท์', 'ถ่ายภาพครอบครัว', '', 'accepted', NULL),
 (20, 'CRB260502000020', 10, 10, 5, 4, '2026-05-02', 'full_day', 'อรทัย พาน', '0811111110', 'LINE: ornthai', 'ถ่ายงานเปิดตัวสินค้า', '', 'pending', NULL),
-(21, 'CRB260503000021', 11, 11, 1, 15, '2026-05-03', 'full_day', 'ธนวัฒน์ เทิง', '0811111112', 'Facebook', 'สอบถามแพ็กเกจพรีเวดดิ้ง', '', 'confirmed', NULL),
+(21, 'CRB260503000021', 11, 11, 1, 15, '2026-05-03', 'full_day', 'ธนวัฒน์ เทิง', '0811111112', 'Facebook', 'สอบถามแพ็กเกจพรีเวดดิ้ง', '', 'accepted', NULL),
 (22, 'CRB260419000022', 9, 12, 5, 13, '2026-04-19', 'afternoon', 'กิตติพงษ์ แม่สาย', '0811111109', 'LINE: kitti', 'ถ่ายงานชุมชนริมโขง', '', 'completed', '2026-04-19 17:00:00'),
 (23, 'CRB260420000023', 10, 13, 2, 16, '2026-04-20', 'morning', 'อรทัย พาน', '0811111110', 'Facebook', 'ถ่ายรับปริญญาครอบครัว', '', 'completed', '2026-04-20 13:00:00');
 

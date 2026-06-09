@@ -1305,6 +1305,155 @@ function time_slot_label(string $slot): string
 }
 
 /**
+ * คืนค่าช่วงเวลาเริ่มต้น/สิ้นสุดของ time_slot เดิม เพื่อให้ระบบเก่าและระบบช่วงเวลาใหม่ทำงานร่วมกันได้
+ *
+ * @param string $slot ช่วงเวลาเดิม เช่น morning, afternoon, evening, full_day
+ * @return array{0:string,1:string} เวลาเริ่มต้นและเวลาสิ้นสุดรูปแบบ HH:MM
+ */
+function slot_time_range(string $slot): array
+{
+    if ($slot === 'morning') {
+        return ['09:00', '12:00'];
+    }
+
+    if ($slot === 'afternoon') {
+        return ['13:00', '17:00'];
+    }
+
+    if ($slot === 'evening') {
+        return ['17:00', '20:00'];
+    }
+
+    return ['09:00', '17:00'];
+}
+
+/**
+ * ตรวจรูปแบบเวลาและคืนค่าเป็น HH:MM
+ *
+ * @param ?string $value เวลา
+ * @return string เวลา HH:MM หรือค่าว่าง
+ */
+function normalize_time_input(?string $value): string
+{
+    $value = trim((string)$value);
+    if ($value === '') {
+        return '';
+    }
+
+    if (preg_match('/^([01]\d|2[0-3]):([0-5]\d)(?::[0-5]\d)?$/', $value, $matches)) {
+        return $matches[1] . ':' . $matches[2];
+    }
+
+    return '';
+}
+
+/**
+ * แสดงเวลาเป็น HH:MM
+ *
+ * @param ?string $value เวลา
+ * @return string ข้อความเวลา
+ */
+function format_time_hm(?string $value): string
+{
+    $time = normalize_time_input($value);
+    if ($time === '') {
+        return '-';
+    }
+
+    return $time;
+}
+
+/**
+ * แสดงช่วงเวลาการจ้าง
+ *
+ * @param ?string $startTime เวลาเริ่มต้น
+ * @param ?string $endTime เวลาสิ้นสุด
+ * @return string ข้อความช่วงเวลา
+ */
+function format_booking_time_range(?string $startTime, ?string $endTime): string
+{
+    $start = format_time_hm($startTime);
+    $end = format_time_hm($endTime);
+
+    if ($start === '-' || $end === '-') {
+        return '-';
+    }
+
+    return $start . '–' . $end . ' น.';
+}
+
+/**
+ * แสดงช่วงวันที่การจ้าง ถ้าวันเดียวจะแสดงวันที่เดียว
+ *
+ * @param ?string $startDate วันที่เริ่มต้น
+ * @param ?string $endDate วันที่สิ้นสุด
+ * @return string ข้อความช่วงวันที่แบบ พ.ศ.
+ */
+function format_booking_date_range(?string $startDate, ?string $endDate): string
+{
+    $start = parse_be_date_to_iso($startDate);
+    $end = parse_be_date_to_iso($endDate);
+
+    if ($start === '' && $end === '') {
+        return '-';
+    }
+
+    if ($end === '' || $start === $end) {
+        return format_be_date($start);
+    }
+
+    if ($start === '') {
+        return format_be_date($end);
+    }
+
+    return format_be_date($start) . '–' . format_be_date($end);
+}
+
+/**
+ * แสดงวันที่และเวลาของการจ้างจากแถว booking
+ *
+ * @param array $booking ข้อมูล booking
+ * @return string ข้อความช่วงวันและเวลา
+ */
+function booking_range_label(array $booking): string
+{
+    $startDate = (string)($booking['start_date'] ?? '');
+    $endDate = (string)($booking['end_date'] ?? '');
+    $startTime = (string)($booking['start_time'] ?? '');
+    $endTime = (string)($booking['end_time'] ?? '');
+
+    if ($startDate === '') {
+        $startDate = (string)($booking['booking_date'] ?? '');
+    }
+
+    if ($endDate === '') {
+        $endDate = $startDate;
+    }
+
+    if ($startTime === '' || $endTime === '') {
+        [$legacyStart, $legacyEnd] = slot_time_range((string)($booking['time_slot'] ?? 'full_day'));
+        if ($startTime === '') {
+            $startTime = $legacyStart;
+        }
+        if ($endTime === '') {
+            $endTime = $legacyEnd;
+        }
+    }
+
+    return format_booking_date_range($startDate, $endDate) . ' · ' . format_booking_time_range($startTime, $endTime);
+}
+
+/**
+ * คืนรายการสถานะที่ถือว่ายังชนเวลาจองอยู่
+ *
+ * @return array รายการสถานะ
+ */
+function booking_active_statuses(): array
+{
+    return ['pending', 'accepted', 'in_progress'];
+}
+
+/**
  * แปลงวันที่รูปแบบ พ.ศ. ให้เป็นรูปแบบ ISO (YYYY-MM-DD)
  * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ แปลงวันที่รูปแบบ พ.ศ. ให้เป็นรูปแบบ ISO (YYYY-MM-DD)
  * @param ?string $value ข้อมูลที่ต้องการประมวลผล
@@ -1574,12 +1723,13 @@ function calendar_date_input(string $name, ?string $value = '', array $dateStatu
 function booking_status_label(string $status): string
 {
     $map = [
-        'pending' => 'รอการตอบรับ',
-        'accepted' => 'ตอบรับแล้ว',
-        'rejected' => 'ปฏิเสธ',
-        'cancelled' => 'ยกเลิกโดยลูกค้า',
-        'confirmed' => 'ยืนยันงาน',
-        'completed' => 'เสร็จสิ้น',
+        'pending' => 'รอช่างภาพพิจารณา',
+        'accepted' => 'ช่างภาพรับงานแล้ว',
+        'rejected' => 'ช่างภาพปฏิเสธงาน',
+        'in_progress' => 'อยู่ระหว่างดำเนินงาน',
+        'cancelled' => 'ยกเลิกโดยระบบหรือแอดมิน',
+        'confirmed' => 'ช่างภาพรับงานแล้ว',
+        'completed' => 'งานเสร็จสิ้น',
         'approved' => 'อนุมัติแล้ว',
         'suspended' => 'ระงับ',
         'visible' => 'แสดง',
@@ -1627,6 +1777,7 @@ function status_badge(string $status): string
         'approved' => 'bg-emerald-100 text-emerald-700',
         'accepted' => 'bg-sky-100 text-sky-700',
         'confirmed' => 'bg-indigo-100 text-indigo-700',
+        'in_progress' => 'bg-violet-100 text-violet-700',
         'completed' => 'bg-emerald-100 text-emerald-700',
         'rejected' => 'bg-rose-100 text-rose-700',
         'cancelled' => 'bg-slate-200 text-slate-700',
@@ -1647,6 +1798,7 @@ function status_badge(string $status): string
         'approved' => 'fa-circle-check',
         'accepted' => 'fa-calendar-check',
         'confirmed' => 'fa-check',
+        'in_progress' => 'fa-person-running',
         'completed' => 'fa-circle-check',
         'rejected' => 'fa-circle-xmark',
         'cancelled' => 'fa-ban',
@@ -1705,7 +1857,8 @@ function booking_status_timeline_icon(string $status): string
     $icons = [
         'pending' => 'fa-hourglass-half',
         'accepted' => 'fa-calendar-check',
-        'confirmed' => 'fa-handshake',
+        'confirmed' => 'fa-calendar-check',
+        'in_progress' => 'fa-person-running',
         'completed' => 'fa-circle-check',
         'rejected' => 'fa-circle-xmark',
         'cancelled' => 'fa-ban',
@@ -1725,7 +1878,8 @@ function booking_status_timeline_tone(string $status): string
     $tones = [
         'pending' => 'timeline-tone-pending',
         'accepted' => 'timeline-tone-accepted',
-        'confirmed' => 'timeline-tone-confirmed',
+        'confirmed' => 'timeline-tone-accepted',
+        'in_progress' => 'timeline-tone-confirmed',
         'completed' => 'timeline-tone-completed',
         'rejected' => 'timeline-tone-rejected',
         'cancelled' => 'timeline-tone-cancelled',
@@ -1794,122 +1948,259 @@ function booking_status_timeline_html(array $logs): string
 }
 
 /**
- * ปรับปรุงข้อมูลวันว่างของช่างภาพตามสถานะการจองที่เปลี่ยนไป
- * ปรับแต่งสถานะวันว่างในปฏิทินของช่างภาพให้ตรงกับสถานะการจองปัจจุบันโดยอัตโนมัติ (เช่น จองแล้วเปลี่ยนเป็นไม่ว่าง หรือยกเลิกแล้วกลับมาว่าง)
- * @param int $bookingId รหัสคำขอจองคิว
+ * เพิ่มคอลัมน์ช่วงวัน/เวลาของ bookings หากฐานข้อมูลเก่ายังไม่มี
+ *
  * @return void ไม่มีการคืนค่า
  */
-function sync_availability_after_booking_status(int $bookingId): void
+function ensure_booking_range_columns(): void
 {
-    $booking = db_fetch_all('SELECT id, photographer_id, booking_date, time_slot, status FROM bookings WHERE id = ? AND deleted_at IS NULL LIMIT 1', [$bookingId]);
-    if (!$booking) {
+    static $checked = false;
+    if ($checked) {
         return;
     }
 
-    $booking = $booking[0];
-    $photographerId = (int)$booking['photographer_id'];
-    $bookingDate = (string)$booking['booking_date'];
-    $timeSlot = (string)$booking['time_slot'];
-    $status = (string)$booking['status'];
-
-    if (in_array($status, ['accepted', 'confirmed'], true)) {
-        $stmt = db()->prepare('INSERT INTO photographer_availability (photographer_id, available_date, time_slot, status, note, created_at, updated_at)
-                               VALUES (?, ?, ?, "booked", "ระบบเปลี่ยนเป็นถูกจองแล้วจากคำขอจอง", NOW(), NOW())
-                               ON DUPLICATE KEY UPDATE status = "booked", note = VALUES(note), updated_at = NOW()');
-        $stmt->execute([$photographerId, $bookingDate, $timeSlot]);
-        return;
+    if (!db_column_exists('bookings', 'start_date')) {
+        db()->exec('ALTER TABLE bookings ADD COLUMN start_date DATE NULL AFTER district_id');
+    }
+    if (!db_column_exists('bookings', 'end_date')) {
+        db()->exec('ALTER TABLE bookings ADD COLUMN end_date DATE NULL AFTER start_date');
+    }
+    if (!db_column_exists('bookings', 'start_time')) {
+        db()->exec('ALTER TABLE bookings ADD COLUMN start_time TIME NULL AFTER end_date');
+    }
+    if (!db_column_exists('bookings', 'end_time')) {
+        db()->exec('ALTER TABLE bookings ADD COLUMN end_time TIME NULL AFTER start_time');
     }
 
-    if (in_array($status, ['rejected', 'cancelled'], true)) {
-        $conflictSql = 'SELECT id FROM bookings
-                        WHERE photographer_id = ?
-                          AND booking_date = ?
-                          AND status IN ("pending","accepted","confirmed")
-                          AND deleted_at IS NULL
-                          AND id <> ?
-                          AND (time_slot = ? OR time_slot = "full_day" OR ? = "full_day")
-                        LIMIT 1';
-        $stmt = db()->prepare($conflictSql);
-        $stmt->execute([$photographerId, $bookingDate, $bookingId, $timeSlot, $timeSlot]);
+    db()->exec('UPDATE bookings
+                SET start_date = COALESCE(start_date, booking_date),
+                    end_date = COALESCE(end_date, booking_date),
+                    start_time = COALESCE(start_time, CASE time_slot WHEN "morning" THEN "09:00:00" WHEN "afternoon" THEN "13:00:00" WHEN "evening" THEN "17:00:00" ELSE "09:00:00" END),
+                    end_time = COALESCE(end_time, CASE time_slot WHEN "morning" THEN "12:00:00" WHEN "afternoon" THEN "17:00:00" WHEN "evening" THEN "20:00:00" ELSE "17:00:00" END)
+                WHERE start_date IS NULL OR end_date IS NULL OR start_time IS NULL OR end_time IS NULL');
 
-        if (!$stmt->fetchColumn()) {
-            $stmt = db()->prepare('UPDATE photographer_availability
-                                   SET status = "available", note = NULL, updated_at = NOW()
-                                   WHERE photographer_id = ?
-                                     AND available_date = ?
-                                     AND time_slot = ?
-                                     AND status = "booked"');
-            $stmt->execute([$photographerId, $bookingDate, $timeSlot]);
-        }
+    db()->exec('UPDATE bookings SET status = "accepted" WHERE status = "confirmed"');
 
-        // Try to merge morning, afternoon, and evening back to full_day if no active bookings exist on that day
-        $activeAnySql = 'SELECT id FROM bookings
-                         WHERE photographer_id = ?
-                           AND booking_date = ?
-                           AND status IN ("pending","accepted","confirmed")
-                           AND deleted_at IS NULL
-                         LIMIT 1';
-        $stmtAny = db()->prepare($activeAnySql);
-        $stmtAny->execute([$photographerId, $bookingDate]);
-        
-        if (!$stmtAny->fetchColumn()) {
-            $slotsStmt = db()->prepare('SELECT time_slot, status FROM photographer_availability WHERE photographer_id = ? AND available_date = ?');
-            $slotsStmt->execute([$photographerId, $bookingDate]);
-            $slots = $slotsStmt->fetchAll(PDO::FETCH_KEY_PAIR);
-            
-            if (
-                isset($slots['morning']) && $slots['morning'] === 'available' &&
-                isset($slots['afternoon']) && $slots['afternoon'] === 'available' &&
-                isset($slots['evening']) && $slots['evening'] === 'available'
-            ) {
-                // Determine if there is any custom note on these slots that we should keep?
-                // For simplicity, we just clear the note or leave it empty, as it's merged.
-                $deleteStmt = db()->prepare('DELETE FROM photographer_availability WHERE photographer_id = ? AND available_date = ? AND time_slot IN ("morning", "afternoon", "evening")');
-                $deleteStmt->execute([$photographerId, $bookingDate]);
-                
-                $insertStmt = db()->prepare('INSERT INTO photographer_availability (photographer_id, available_date, time_slot, status, created_at, updated_at) VALUES (?, ?, "full_day", "available", NOW(), NOW()) ON DUPLICATE KEY UPDATE status="available", updated_at=NOW()');
-                $insertStmt->execute([$photographerId, $bookingDate]);
-            }
-        }
+    try {
+        db()->exec('ALTER TABLE bookings MODIFY status ENUM("pending","accepted","rejected","in_progress","completed","cancelled") NOT NULL DEFAULT "pending"');
+    } catch (Throwable $exception) {
+        logSecurityEvent('booking_status_enum_migration_failed', ['error' => $exception->getMessage()]);
     }
+
+    $checked = true;
 }
 
 /**
- * ตรวจสอบว่าช่วงเวลาที่เลือกสามารถจองได้หรือไม่
- * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ ตรวจสอบว่าช่วงเวลาที่เลือกสามารถจองได้หรือไม่
- * @param int $photographerId รหัสประจำตัวช่างภาพ
- * @param string $date วันที่ (รูปแบบ YYYY-MM-DD)
- * @param string $slot ช่วงเวลาของวัน (เช้า, บ่าย, เย็น, full_day)
- * @param ?int $excludeBookingId รหัสการจองที่ต้องการข้าม (ใช้ตอนแก้ไขการจอง)
- * @return bool ค่าความจริง (Boolean)
+ * เพิ่มคอลัมน์ช่วงวัน/เวลาของ photographer_availability หากฐานข้อมูลเก่ายังไม่มี
+ *
+ * @return void ไม่มีการคืนค่า
  */
-function can_book_slot(int $photographerId, string $date, string $slot, ?int $excludeBookingId = null): bool
+function ensure_availability_range_columns(): void
 {
-    if ($date < date('Y-m-d')) {
+    static $checked = false;
+    if ($checked) {
+        return;
+    }
+
+    if (!db_column_exists('photographer_availability', 'start_date')) {
+        db()->exec('ALTER TABLE photographer_availability ADD COLUMN start_date DATE NULL AFTER photographer_id');
+    }
+    if (!db_column_exists('photographer_availability', 'end_date')) {
+        db()->exec('ALTER TABLE photographer_availability ADD COLUMN end_date DATE NULL AFTER start_date');
+    }
+    if (!db_column_exists('photographer_availability', 'start_time')) {
+        db()->exec('ALTER TABLE photographer_availability ADD COLUMN start_time TIME NULL AFTER end_date');
+    }
+    if (!db_column_exists('photographer_availability', 'end_time')) {
+        db()->exec('ALTER TABLE photographer_availability ADD COLUMN end_time TIME NULL AFTER start_time');
+    }
+
+    db()->exec('UPDATE photographer_availability
+                SET start_date = COALESCE(start_date, available_date),
+                    end_date = COALESCE(end_date, available_date),
+                    start_time = COALESCE(start_time, CASE time_slot WHEN "morning" THEN "09:00:00" WHEN "afternoon" THEN "13:00:00" WHEN "evening" THEN "17:00:00" ELSE "09:00:00" END),
+                    end_time = COALESCE(end_time, CASE time_slot WHEN "morning" THEN "12:00:00" WHEN "afternoon" THEN "17:00:00" WHEN "evening" THEN "20:00:00" ELSE "17:00:00" END)
+                WHERE start_date IS NULL OR end_date IS NULL OR start_time IS NULL OR end_time IS NULL');
+
+    $checked = true;
+}
+
+/**
+ * สร้างตารางคำขอเพิ่มประเภทความเชี่ยวชาญถ้ายังไม่มี
+ *
+ * @return void ไม่มีการคืนค่า
+ */
+function ensure_specialty_requests_table(): void
+{
+    static $checked = false;
+    if ($checked) {
+        return;
+    }
+
+    db()->exec('CREATE TABLE IF NOT EXISTS specialty_requests (
+        id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        photographer_id INT UNSIGNED NOT NULL,
+        specialty_name VARCHAR(160) NOT NULL,
+        description TEXT NULL,
+        status ENUM("pending","approved","rejected") NOT NULL DEFAULT "pending",
+        admin_note TEXT NULL,
+        created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        KEY idx_specialty_requests_photographer (photographer_id, status),
+        KEY idx_specialty_requests_status (status, created_at),
+        CONSTRAINT fk_specialty_requests_photographer FOREIGN KEY (photographer_id) REFERENCES photographer_profiles(id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci');
+
+    $checked = true;
+}
+
+/**
+ * ตรวจสอบว่าช่วงวันที่ที่เลือกถูกครอบด้วยวันว่างของช่างภาพครบทุกวันหรือไม่
+ *
+ * @param int $photographerId รหัสช่างภาพ
+ * @param string $startDate วันที่เริ่มต้น
+ * @param string $endDate วันที่สิ้นสุด
+ * @param string $startTime เวลาเริ่มต้น
+ * @param string $endTime เวลาสิ้นสุด
+ * @return bool ค่าความจริง
+ */
+function photographer_has_availability_range(int $photographerId, string $startDate, string $endDate, string $startTime, string $endTime): bool
+{
+    ensure_availability_range_columns();
+
+    try {
+        $period = new DatePeriod(new DateTime($startDate), new DateInterval('P1D'), (new DateTime($endDate))->modify('+1 day'));
+    } catch (Exception $exception) {
         return false;
     }
 
-    $stmt = db()->prepare('SELECT id FROM photographer_availability WHERE photographer_id = ? AND available_date = ? AND (time_slot = ? OR time_slot = "full_day") AND status = "available" LIMIT 1');
-    $stmt->execute([$photographerId, $date, $slot]);
-    if (!$stmt->fetchColumn()) {
+    $stmt = db()->prepare('SELECT id
+                           FROM photographer_availability
+                           WHERE photographer_id = ?
+                             AND status = "available"
+                             AND COALESCE(start_date, available_date) <= ?
+                             AND COALESCE(end_date, available_date) >= ?
+                             AND COALESCE(start_time, CASE time_slot WHEN "morning" THEN "09:00:00" WHEN "afternoon" THEN "13:00:00" WHEN "evening" THEN "17:00:00" ELSE "09:00:00" END) <= ?
+                             AND COALESCE(end_time, CASE time_slot WHEN "morning" THEN "12:00:00" WHEN "afternoon" THEN "17:00:00" WHEN "evening" THEN "20:00:00" ELSE "17:00:00" END) >= ?
+                           LIMIT 1');
+
+    foreach ($period as $date) {
+        $day = $date->format('Y-m-d');
+        $stmt->execute([$photographerId, $day, $day, $startTime . ':00', $endTime . ':00']);
+        if (!$stmt->fetchColumn()) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+/**
+ * ตรวจสอบว่าช่วงวันที่/เวลาที่เลือกจองได้หรือไม่
+ *
+ * @param int $photographerId รหัสช่างภาพ
+ * @param string $startDate วันที่เริ่มต้น
+ * @param string $endDate วันที่สิ้นสุด
+ * @param string $startTime เวลาเริ่มต้น
+ * @param string $endTime เวลาสิ้นสุด
+ * @param ?int $excludeBookingId รหัส booking ที่ต้องข้าม
+ * @return bool ค่าความจริง
+ */
+function can_book_range(int $photographerId, string $startDate, string $endDate, string $startTime, string $endTime, ?int $excludeBookingId = null): bool
+{
+    ensure_booking_range_columns();
+    ensure_availability_range_columns();
+
+    $startDate = parse_be_date_to_iso($startDate);
+    $endDate = parse_be_date_to_iso($endDate);
+    $startTime = normalize_time_input($startTime);
+    $endTime = normalize_time_input($endTime);
+
+    if ($startDate === '' || $endDate === '' || $startTime === '' || $endTime === '') {
+        return false;
+    }
+
+    if ($startDate < date('Y-m-d')) {
+        return false;
+    }
+
+    if ($endDate < $startDate) {
+        return false;
+    }
+
+    if ($endTime <= $startTime) {
+        return false;
+    }
+
+    if (!photographer_has_availability_range($photographerId, $startDate, $endDate, $startTime, $endTime)) {
         return false;
     }
 
     $sql = 'SELECT id
             FROM bookings
             WHERE photographer_id = ?
-              AND booking_date = ?
-              AND status IN ("pending","accepted","confirmed")
               AND deleted_at IS NULL
-              AND (time_slot = ? OR time_slot = "full_day" OR ? = "full_day")';
-    $params = [$photographerId, $date, $slot, $slot];
+              AND status IN ("pending","accepted","in_progress")
+              AND COALESCE(start_date, booking_date) <= ?
+              AND COALESCE(end_date, booking_date) >= ?
+              AND COALESCE(start_time, CASE time_slot WHEN "morning" THEN "09:00:00" WHEN "afternoon" THEN "13:00:00" WHEN "evening" THEN "17:00:00" ELSE "09:00:00" END) < ?
+              AND COALESCE(end_time, CASE time_slot WHEN "morning" THEN "12:00:00" WHEN "afternoon" THEN "17:00:00" WHEN "evening" THEN "20:00:00" ELSE "17:00:00" END) > ?';
+    $params = [$photographerId, $endDate, $startDate, $endTime . ':00', $startTime . ':00'];
+
     if ($excludeBookingId) {
         $sql .= ' AND id <> ?';
         $params[] = $excludeBookingId;
     }
+
     $stmt = db()->prepare($sql . ' LIMIT 1');
     $stmt->execute($params);
+
     return !$stmt->fetchColumn();
+}
+
+/**
+ * ปรับปรุงข้อมูลวันว่างของช่างภาพตามสถานะการจองที่เปลี่ยนไป
+ *
+ * @param int $bookingId รหัสคำขอจองคิว
+ * @return void ไม่มีการคืนค่า
+ */
+function sync_availability_after_booking_status(int $bookingId): void
+{
+    ensure_booking_range_columns();
+    ensure_availability_range_columns();
+
+    $booking = db_fetch_all('SELECT id, photographer_id, booking_date, time_slot, start_date, end_date, start_time, end_time, status
+                             FROM bookings
+                             WHERE id = ? AND deleted_at IS NULL
+                             LIMIT 1', [$bookingId]);
+    if (!$booking) {
+        return;
+    }
+
+    $booking = $booking[0];
+    $status = (string)$booking['status'];
+
+    if (!in_array($status, ['accepted', 'in_progress', 'completed', 'rejected', 'cancelled'], true)) {
+        return;
+    }
+
+    $note = 'ระบบตรวจสอบการชนเวลาจากคำขอจอง ' . (string)$booking['id'];
+    log_activity('sync_booking_availability_range', 'bookings', (int)$booking['id'], $note);
+}
+
+/**
+ * ตรวจสอบว่าช่วงเวลาที่เลือกสามารถจองได้หรือไม่ โดยแปลง time_slot เดิมเป็นช่วงเวลาใหม่
+ *
+ * @param int $photographerId รหัสประจำตัวช่างภาพ
+ * @param string $date วันที่
+ * @param string $slot ช่วงเวลา
+ * @param ?int $excludeBookingId รหัสการจองที่ต้องการข้าม
+ * @return bool ค่าความจริง
+ */
+function can_book_slot(int $photographerId, string $date, string $slot, ?int $excludeBookingId = null): bool
+{
+    [$startTime, $endTime] = slot_time_range($slot);
+    return can_book_range($photographerId, $date, $date, $startTime, $endTime, $excludeBookingId);
 }
 
 /**
@@ -1936,7 +2227,7 @@ function update_photographer_rating(int $photographerId): void
 function update_photographer_response_stats(int $photographerId): void
 {
     $totalRequests = (int)db_fetch_value('SELECT COUNT(*) FROM bookings WHERE photographer_id = ? AND deleted_at IS NULL', [$photographerId]);
-    $respondedRequests = (int)db_fetch_value('SELECT COUNT(*) FROM bookings WHERE photographer_id = ? AND status IN ("accepted","rejected","confirmed","completed") AND deleted_at IS NULL', [$photographerId]);
+    $respondedRequests = (int)db_fetch_value('SELECT COUNT(*) FROM bookings WHERE photographer_id = ? AND status IN ("accepted","rejected","in_progress","completed") AND deleted_at IS NULL', [$photographerId]);
     $responseRate = 0;
     if ($totalRequests > 0) {
         $responseRate = round(($respondedRequests / $totalRequests) * 100, 2);

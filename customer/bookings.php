@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../includes/functions.php';
 requireRole(['customer', 'photographer']);
+ensure_booking_range_columns();
 
 $user = current_user();
 $isPhotographerHiring = (string)$user['role_name'] === 'photographer';
@@ -16,11 +17,11 @@ $where = ['b.customer_id = ?', 'b.deleted_at IS NULL'];
 $params = [(int)$user['id']];
 
 if ($tab === 'active') {
-    $where[] = 'b.status IN ("pending", "accepted", "confirmed")';
+    $where[] = 'b.status IN ("pending", "accepted", "in_progress")';
 } elseif ($tab === 'pending') {
     $where[] = 'b.status = "pending"';
 } elseif ($tab === 'accepted') {
-    $where[] = 'b.status IN ("accepted", "confirmed")';
+    $where[] = 'b.status IN ("accepted", "in_progress")';
 } elseif ($tab === 'completed') {
     $where[] = 'b.status = "completed"';
 }
@@ -46,9 +47,9 @@ $bookingCounts = [
 
 $countStmt = db()->prepare('SELECT
     COUNT(*) AS total_all,
-    SUM(CASE WHEN status IN ("pending", "accepted", "confirmed") THEN 1 ELSE 0 END) AS total_active,
+    SUM(CASE WHEN status IN ("pending", "accepted", "in_progress") THEN 1 ELSE 0 END) AS total_active,
     SUM(CASE WHEN status = "pending" THEN 1 ELSE 0 END) AS total_pending,
-    SUM(CASE WHEN status IN ("accepted", "confirmed") THEN 1 ELSE 0 END) AS total_accepted,
+    SUM(CASE WHEN status IN ("accepted", "in_progress") THEN 1 ELSE 0 END) AS total_accepted,
     SUM(CASE WHEN status = "completed" THEN 1 ELSE 0 END) AS total_completed
     FROM bookings
     WHERE customer_id = ? AND deleted_at IS NULL');
@@ -93,7 +94,7 @@ include __DIR__ . '/../includes/header.php';
     $tabs = [
         'active' => ['กำลังดำเนินการ', 'fa-hourglass-half', $bookingCounts['active']],
         'pending' => ['รอตอบรับ', 'fa-clock', $bookingCounts['pending']],
-        'accepted' => ['ตอบรับ/ยืนยันงาน', 'fa-calendar-check', $bookingCounts['accepted']],
+        'accepted' => ['รับงาน/กำลังทำ', 'fa-calendar-check', $bookingCounts['accepted']],
         'completed' => ['เสร็จสิ้นแล้ว', 'fa-circle-check', $bookingCounts['completed']],
         'all' => ['ประวัติทั้งหมด', 'fa-list', $bookingCounts['all']],
     ];
@@ -130,7 +131,7 @@ include __DIR__ . '/../includes/header.php';
                             <td class="py-3 font-black"><?= h($booking['booking_code']) ?></td>
                             <td><?= h($booking['display_name']) ?></td>
                             <td><?= h($booking['category_name']) ?></td>
-                            <td><?= h(format_be_date($booking['booking_date'])) ?> <?= h(time_slot_label($booking['time_slot'])) ?></td>
+                            <td><?= h(booking_range_label($booking)) ?></td>
                             <td><?= h($booking['district_name']) ?></td>
                             <td><?= status_badge($booking['status']) ?></td>
                             <td class="whitespace-nowrap">

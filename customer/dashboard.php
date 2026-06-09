@@ -2,10 +2,11 @@
 require_once __DIR__ . '/../includes/functions.php';
 requireRole('customer');
 ensure_service_categories_deleted_at_column();
+ensure_booking_range_columns();
 $user = current_user();
 
 $stats = [];
-foreach (['all' => '1=1', 'active' => 'status IN ("pending","accepted","confirmed")', 'pending' => 'status="pending"', 'accepted' => 'status IN ("accepted","confirmed")', 'completed' => 'status="completed"'] as $key => $where) {
+foreach (['all' => '1=1', 'active' => 'status IN ("pending","accepted","in_progress")', 'pending' => 'status="pending"', 'accepted' => 'status IN ("accepted","in_progress")', 'completed' => 'status="completed"'] as $key => $where) {
     $stmt = db()->prepare("SELECT COUNT(*) FROM bookings WHERE customer_id = ? AND deleted_at IS NULL AND {$where}");
     $stmt->execute([(int)$user['id']]);
     $stats[$key] = (int)$stmt->fetchColumn();
@@ -16,8 +17,8 @@ $stmt = db()->prepare('SELECT b.*, p.display_name, sc.name category_name
                        JOIN photographer_profiles p ON p.id = b.photographer_id
                        JOIN service_categories sc ON sc.id = b.category_id
                        WHERE b.customer_id = ? AND b.deleted_at IS NULL
-                         AND b.status IN ("pending","accepted","confirmed")
-                       ORDER BY FIELD(b.status, "pending", "accepted", "confirmed"), b.created_at DESC
+                         AND b.status IN ("pending","accepted","in_progress")
+                       ORDER BY FIELD(b.status, "pending", "accepted", "in_progress"), b.created_at DESC
                        LIMIT 8');
 $stmt->execute([(int)$user['id']]);
 $bookings = $stmt->fetchAll();
@@ -77,7 +78,7 @@ include __DIR__ . '/../includes/header.php';
             <div class="grid grid-cols-2 gap-3">
                 <?= clean_context_button('/customer/bookings.php', ['tab' => 'active'], '<span class="block text-3xl font-black">' . number_format((int)$stats['active']) . '</span><span class="block text-sm font-bold text-white/68">กำลังดำเนินการ</span>', 'stat-pill w-full rounded-3xl p-4 text-left transition hover:-translate-y-1 hover:bg-white/20', 'contents') ?>
                 <?= clean_context_button('/customer/bookings.php', ['tab' => 'pending'], '<span class="block text-3xl font-black">' . number_format((int)$stats['pending']) . '</span><span class="block text-sm font-bold text-white/68">รอตอบรับ</span>', 'stat-pill w-full rounded-3xl p-4 text-left transition hover:-translate-y-1 hover:bg-white/20', 'contents') ?>
-                <?= clean_context_button('/customer/bookings.php', ['tab' => 'accepted'], '<span class="block text-3xl font-black">' . number_format((int)$stats['accepted']) . '</span><span class="block text-sm font-bold text-white/68">ตอบรับ/ยืนยันแล้ว</span>', 'stat-pill w-full rounded-3xl p-4 text-left transition hover:-translate-y-1 hover:bg-white/20', 'contents') ?>
+                <?= clean_context_button('/customer/bookings.php', ['tab' => 'accepted'], '<span class="block text-3xl font-black">' . number_format((int)$stats['accepted']) . '</span><span class="block text-sm font-bold text-white/68">รับงาน/กำลังทำ</span>', 'stat-pill w-full rounded-3xl p-4 text-left transition hover:-translate-y-1 hover:bg-white/20', 'contents') ?>
                 <?= clean_context_button('/customer/bookings.php', ['tab' => 'completed'], '<span class="block text-3xl font-black">' . number_format((int)$stats['completed']) . '</span><span class="block text-sm font-bold text-white/68">เสร็จสิ้นแล้ว</span>', 'stat-pill w-full rounded-3xl p-4 text-left transition hover:-translate-y-1 hover:bg-white/20', 'contents') ?>
             </div>
         </div>
@@ -102,7 +103,7 @@ include __DIR__ . '/../includes/header.php';
                                 <td class="py-4 font-black"><?= h($b['booking_code']) ?></td>
                                 <td class="font-bold"><?= h($b['display_name']) ?></td>
                                 <td><?= h($b['category_name']) ?></td>
-                                <td><?= h(format_be_date($b['booking_date'])) ?> · <?= h(time_slot_label($b['time_slot'])) ?></td>
+                                <td><?= h(booking_range_label($b)) ?></td>
                                 <td><?= status_badge($b['status']) ?></td>
                                 <td><?= clean_context_button('/customer/booking_detail.php', ['id' => (int)$b['id']], 'ดู', 'font-black text-red-600') ?></td>
                             </tr>
@@ -138,7 +139,7 @@ include __DIR__ . '/../includes/header.php';
                 <p class="section-kicker">ลำดับสถานะการจอง</p>
                 <h2 class="mt-1 text-xl font-black text-neutral-950">สถานะการจอง</h2>
                 <div class="mt-4 grid gap-3">
-                    <?php foreach ([['fa-paper-plane','ส่งคำขอจอง','pending'],['fa-handshake','ช่างภาพตอบรับ','accepted'],['fa-circle-check','ยืนยันงาน','confirmed'],['fa-star','รีวิวหลังงานเสร็จ','completed']] as $step): ?>
+                    <?php foreach ([['fa-paper-plane','ส่งคำขอจอง','pending'],['fa-handshake','ช่างภาพรับงาน','accepted'],['fa-person-running','อยู่ระหว่างดำเนินงาน','in_progress'],['fa-star','รีวิวหลังงานเสร็จ','completed']] as $step): ?>
                         <div class="info-row flex items-center gap-3 rounded-2xl p-3">
                             <div class="grid h-10 w-10 place-items-center rounded-xl bg-neutral-950 text-white"><i class="fa-solid <?= h($step[0]) ?>"></i></div>
                             <div><p class="font-black"><?= h($step[1]) ?></p><p class="text-xs font-bold text-neutral-500"><?= h(booking_status_label($step[2])) ?></p></div>

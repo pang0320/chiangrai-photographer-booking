@@ -52,7 +52,7 @@ if ($me) {
         $activeBookings = 0;
         if ($photographerId > 0) {
             $pendingBookings = (int)db_fetch_value('SELECT COUNT(*) FROM bookings WHERE photographer_id = ? AND status = "pending" AND deleted_at IS NULL', [$photographerId]);
-            $activeBookings = (int)db_fetch_value('SELECT COUNT(*) FROM bookings WHERE photographer_id = ? AND status IN ("pending","accepted","confirmed") AND deleted_at IS NULL', [$photographerId]);
+            $activeBookings = (int)db_fetch_value('SELECT COUNT(*) FROM bookings WHERE photographer_id = ? AND status IN ("pending","accepted","in_progress") AND deleted_at IS NULL', [$photographerId]);
         }
         $navItems = [
             ['/photographer/dashboard.php', 'แดชบอร์ด', 'fa-gauge'],

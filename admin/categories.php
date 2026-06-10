@@ -265,6 +265,79 @@ include __DIR__ . '/../includes/header.php';
     <div class="stock-card mt-6 rounded-[1.75rem] p-5">
         <div class="mb-5 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
             <div>
+                <p class="section-kicker"><i class="fa-solid fa-paper-plane mr-2"></i>คำขอเพิ่มประเภทความเชี่ยวชาญ</p>
+                <h2 class="mt-1 text-2xl font-black text-neutral-950">คำขอจากช่างภาพ</h2>
+                <p class="mt-2 text-sm font-bold leading-7 text-neutral-500">เมื่ออนุมัติ ระบบจะสร้างหมวดหมู่งานและผูกประเภทงานนี้กับโปรไฟล์ช่างภาพทันที</p>
+            </div>
+            <?php if ($pendingSpecialtyRequestCount > 0): ?>
+                <div class="rounded-full bg-amber-50 px-4 py-2 text-sm font-black text-amber-700">
+                    <i class="fa-solid fa-bell mr-1"></i><?= number_format($pendingSpecialtyRequestCount) ?> คำขอกำลังรอพิจารณาอยู่
+                </div>
+            <?php endif; ?>
+        </div>
+
+        <?php if ($specialtyRequests): ?>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm">
+                    <thead class="text-neutral-500">
+                        <tr>
+                            <th class="py-3">ช่างภาพ</th>
+                            <th>ประเภทที่ขอเพิ่ม</th>
+                            <th>รายละเอียด</th>
+                            <th>สถานะ</th>
+                            <th>จัดการ</th>
+                        </tr>
+                    </thead>
+                    <tbody data-block-paginate="5">
+                        <?php foreach ($specialtyRequests as $request): ?>
+                            <tr class="border-t align-top">
+                                <td class="py-3 font-black"><?= h($request['display_name']) ?></td>
+                                <td class="font-black text-neutral-950"><?= h($request['specialty_name']) ?></td>
+                                <td class="max-w-md text-neutral-600"><?= nl2br(h((string)$request['description'])) ?></td>
+                                <td><?= specialty_request_status_badge((string)$request['status']) ?></td>
+                                <td class="min-w-[280px]">
+                                    <?php if ((string)$request['status'] === 'pending'): ?>
+                                        <div class="grid gap-2">
+                                            <form method="post" class="grid gap-2">
+                                                <?= csrf_field() ?>
+                                                <input type="hidden" name="action" value="approve_specialty">
+                                                <input type="hidden" name="request_id" value="<?= (int)$request['id'] ?>">
+                                                <input type="hidden" name="admin_note" value="">
+                                                <button class="btn-success btn-sm" data-confirm="อนุมัติประเภทงานนี้?" type="submit">
+                                                    <i class="fa-solid fa-check"></i>อนุมัติ
+                                                </button>
+                                            </form>
+                                            <form method="post" class="grid gap-2">
+                                                <?= csrf_field() ?>
+                                                <input type="hidden" name="action" value="reject_specialty">
+                                                <input type="hidden" name="request_id" value="<?= (int)$request['id'] ?>">
+                                                <input name="admin_note" placeholder="เหตุผลที่ไม่อนุมัติ" class="stock-input rounded-xl px-3 py-2 text-sm font-semibold">
+                                                <button class="btn-danger btn-sm" data-confirm="ปฏิเสธคำขอนี้?" type="submit">
+                                                    <i class="fa-solid fa-xmark"></i>ปฏิเสธ
+                                                </button>
+                                            </form>
+                                        </div>
+                                    <?php else: ?>
+                                        <p class="text-sm font-bold text-neutral-500"><?= h((string)$request['admin_note']) ?></p>
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php else: ?>
+            <div class="empty-state rounded-[1.5rem] p-8 text-center">
+                <i class="fa-solid fa-inbox text-4xl text-red-600"></i>
+                <h3 class="mt-3 text-xl font-black text-neutral-950">ยังไม่มีคำขอเพิ่มประเภทงาน</h3>
+                <p class="mt-2 text-base font-semibold text-neutral-600">เมื่อช่างภาพส่งคำขอ ระบบจะแสดงในส่วนนี้</p>
+            </div>
+        <?php endif; ?>
+    </div>
+
+    <div class="stock-card mt-6 rounded-[1.75rem] p-5">
+        <div class="mb-5 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+            <div>
                 <p class="section-kicker">
                     <i class="fa-solid fa-pen-to-square mr-2"></i>แก้ไขหมวดหมู่งาน
                 </p>
@@ -378,79 +451,6 @@ include __DIR__ . '/../includes/header.php';
                         <?php endforeach; ?>
                     </tbody>
                 </table>
-            </div>
-        <?php endif; ?>
-    </div>
-
-    <div class="stock-card mt-6 rounded-[1.75rem] p-5">
-        <div class="mb-5 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-            <div>
-                <p class="section-kicker"><i class="fa-solid fa-paper-plane mr-2"></i>คำขอเพิ่มประเภทความเชี่ยวชาญ</p>
-                <h2 class="mt-1 text-2xl font-black text-neutral-950">คำขอจากช่างภาพ</h2>
-                <p class="mt-2 text-sm font-bold leading-7 text-neutral-500">เมื่ออนุมัติ ระบบจะสร้างหมวดหมู่งานและผูกประเภทงานนี้กับโปรไฟล์ช่างภาพทันที</p>
-            </div>
-            <?php if ($pendingSpecialtyRequestCount > 0): ?>
-                <div class="rounded-full bg-amber-50 px-4 py-2 text-sm font-black text-amber-700">
-                    <i class="fa-solid fa-bell mr-1"></i><?= number_format($pendingSpecialtyRequestCount) ?> คำขอกำลังรอพิจารณาอยู่
-                </div>
-            <?php endif; ?>
-        </div>
-
-        <?php if ($specialtyRequests): ?>
-            <div class="overflow-x-auto">
-                <table class="w-full text-left text-sm">
-                    <thead class="text-neutral-500">
-                        <tr>
-                            <th class="py-3">ช่างภาพ</th>
-                            <th>ประเภทที่ขอเพิ่ม</th>
-                            <th>รายละเอียด</th>
-                            <th>สถานะ</th>
-                            <th>จัดการ</th>
-                        </tr>
-                    </thead>
-                    <tbody data-block-paginate="5">
-                        <?php foreach ($specialtyRequests as $request): ?>
-                            <tr class="border-t align-top">
-                                <td class="py-3 font-black"><?= h($request['display_name']) ?></td>
-                                <td class="font-black text-neutral-950"><?= h($request['specialty_name']) ?></td>
-                                <td class="max-w-md text-neutral-600"><?= nl2br(h((string)$request['description'])) ?></td>
-                                <td><?= specialty_request_status_badge((string)$request['status']) ?></td>
-                                <td class="min-w-[280px]">
-                                    <?php if ((string)$request['status'] === 'pending'): ?>
-                                        <div class="grid gap-2">
-                                            <form method="post" class="grid gap-2">
-                                                <?= csrf_field() ?>
-                                                <input type="hidden" name="action" value="approve_specialty">
-                                                <input type="hidden" name="request_id" value="<?= (int)$request['id'] ?>">
-                                                <input type="hidden" name="admin_note" value="">
-                                                <button class="btn-success btn-sm" data-confirm="อนุมัติประเภทงานนี้?" type="submit">
-                                                    <i class="fa-solid fa-check"></i>อนุมัติ
-                                                </button>
-                                            </form>
-                                            <form method="post" class="grid gap-2">
-                                                <?= csrf_field() ?>
-                                                <input type="hidden" name="action" value="reject_specialty">
-                                                <input type="hidden" name="request_id" value="<?= (int)$request['id'] ?>">
-                                                <input name="admin_note" placeholder="เหตุผลที่ไม่อนุมัติ" class="stock-input rounded-xl px-3 py-2 text-sm font-semibold">
-                                                <button class="btn-danger btn-sm" data-confirm="ปฏิเสธคำขอนี้?" type="submit">
-                                                    <i class="fa-solid fa-xmark"></i>ปฏิเสธ
-                                                </button>
-                                            </form>
-                                        </div>
-                                    <?php else: ?>
-                                        <p class="text-sm font-bold text-neutral-500"><?= h((string)$request['admin_note']) ?></p>
-                                    <?php endif; ?>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
-        <?php else: ?>
-            <div class="empty-state rounded-[1.5rem] p-8 text-center">
-                <i class="fa-solid fa-inbox text-4xl text-red-600"></i>
-                <h3 class="mt-3 text-xl font-black text-neutral-950">ยังไม่มีคำขอเพิ่มประเภทงาน</h3>
-                <p class="mt-2 text-base font-semibold text-neutral-600">เมื่อช่างภาพส่งคำขอ ระบบจะแสดงในส่วนนี้</p>
             </div>
         <?php endif; ?>
     </div>

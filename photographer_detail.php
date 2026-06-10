@@ -1,6 +1,8 @@
 <?php
 require_once __DIR__ . '/includes/functions.php';
 ensure_service_categories_deleted_at_column();
+ensure_availability_range_columns();
+ensure_booking_range_columns();
 
 $cleanContext = clean_context_init(['id', 'slug']);
 $id = 0;
@@ -115,24 +117,67 @@ $services = $services->fetchAll();
 $portfolio = db()->prepare('SELECT * FROM photographer_portfolios WHERE photographer_id = ? AND deleted_at IS NULL ORDER BY is_featured DESC, sort_order ASC, id DESC');
 $portfolio->execute([$id]);
 $portfolio = $portfolio->fetchAll();
-$availability = db()->prepare('SELECT pa.*
+$availability = db()->prepare('SELECT pa.*,
+                                      COALESCE(pa.start_date, pa.available_date) AS range_start_date,
+                                      COALESCE(pa.end_date, pa.available_date) AS range_end_date,
+                                      COALESCE(pa.start_time, CASE pa.time_slot WHEN "morning" THEN "09:00:00" WHEN "afternoon" THEN "13:00:00" WHEN "evening" THEN "17:00:00" ELSE "09:00:00" END) AS range_start_time,
+                                      COALESCE(pa.end_time, CASE pa.time_slot WHEN "morning" THEN "12:00:00" WHEN "afternoon" THEN "17:00:00" WHEN "evening" THEN "20:00:00" ELSE "17:00:00" END) AS range_end_time
                                FROM photographer_availability pa
                                WHERE pa.photographer_id = ?
-                                 AND pa.available_date >= CURDATE()
+                                 AND COALESCE(pa.end_date, pa.available_date) >= CURDATE()
                                  AND pa.status = "available"
-                                 AND NOT EXISTS (
-                                    SELECT 1
-                                    FROM bookings b
-                                    WHERE b.photographer_id = pa.photographer_id
-                                      AND b.booking_date = pa.available_date
-                                      AND b.status IN ("pending","accepted","confirmed")
-                                      AND b.deleted_at IS NULL
-                                      AND (b.time_slot = pa.time_slot OR b.time_slot = "full_day" OR pa.time_slot = "full_day")
-                                 )
-                               ORDER BY pa.available_date, pa.time_slot
-                               LIMIT 12');
+                               ORDER BY COALESCE(pa.start_date, pa.available_date), COALESCE(pa.start_time, "09:00:00")
+                               LIMIT 80');
 $availability->execute([$id]);
-$availability = $availability->fetchAll();
+$availabilityRows = $availability->fetchAll();
+$availability = [];
+$availabilityConflictStmt = db()->prepare('SELECT id
+                                           FROM bookings
+                                           WHERE photographer_id = ?
+                                             AND deleted_at IS NULL
+                                             AND status IN ("pending","accepted","in_progress")
+                                             AND COALESCE(start_date, booking_date) <= ?
+                                             AND COALESCE(end_date, booking_date) >= ?
+                                             AND COALESCE(start_time, CASE time_slot WHEN "morning" THEN "09:00:00" WHEN "afternoon" THEN "13:00:00" WHEN "evening" THEN "17:00:00" ELSE "09:00:00" END) < ?
+                                             AND COALESCE(end_time, CASE time_slot WHEN "morning" THEN "12:00:00" WHEN "afternoon" THEN "17:00:00" WHEN "evening" THEN "20:00:00" ELSE "17:00:00" END) > ?
+                                           LIMIT 1');
+foreach ($availabilityRows as $row) {
+    try {
+        $period = new DatePeriod(new DateTime((string)$row['range_start_date']), new DateInterval('P1D'), (new DateTime((string)$row['range_end_date']))->modify('+1 day'));
+    } catch (Exception $exception) {
+        continue;
+    }
+
+    foreach ($period as $date) {
+        $day = $date->format('Y-m-d');
+        if ($day < date('Y-m-d')) {
+            continue;
+        }
+
+        $startTime = normalize_time_input((string)$row['range_start_time']);
+        $endTime = normalize_time_input((string)$row['range_end_time']);
+        if ($startTime === '' || $endTime === '') {
+            continue;
+        }
+
+        $availabilityConflictStmt->execute([$id, $day, $day, $endTime . ':00', $startTime . ':00']);
+        if ($availabilityConflictStmt->fetchColumn()) {
+            continue;
+        }
+
+        $item = $row;
+        $item['available_date'] = $day;
+        $item['range_start_date'] = $day;
+        $item['range_end_date'] = $day;
+        $item['range_start_time'] = $startTime;
+        $item['range_end_time'] = $endTime;
+        $availability[] = $item;
+
+        if (count($availability) >= 24) {
+            break 2;
+        }
+    }
+}
 $articles = db()->prepare('SELECT a.*,
                            (SELECT GROUP_CONCAT(t.name ORDER BY t.name SEPARATOR ", ")
                             FROM article_tags atg
@@ -399,14 +444,17 @@ include __DIR__ . '/includes/header.php';
                     <?php foreach ($availability as $a): ?>
                         <?php
                         $availabilityCard = '<p class="font-black text-neutral-950"><i class="fa-solid fa-calendar-day mr-2 text-red-600"></i>' . h(format_be_date($a['available_date'])) . '</p>'
-                            . '<p class="mt-2 text-sm font-bold text-neutral-600"><i class="fa-solid fa-clock mr-1 text-red-600"></i>' . h(time_slot_label($a['time_slot'])) . '</p>'
+                            . '<p class="mt-2 text-sm font-bold text-neutral-600"><i class="fa-solid fa-clock mr-1 text-red-600"></i>' . h(format_booking_time_range($a['range_start_time'], $a['range_end_time'])) . '</p>'
                             . '<p class="mt-4 inline-flex items-center rounded-full bg-red-600 px-4 py-2 text-sm font-black text-white shadow-lg shadow-red-600/20"><i class="fa-solid fa-calendar-check mr-2"></i>เลือกวันนี้และจอง</p>';
                         if ($canSendBookingRequest) {
                             echo clean_context_button(
                                 '/customer/create_booking.php',
                                 [
                                     'photographer_id' => (int)$profile['id'],
-                                    'booking_date' => (string)$a['available_date'],
+                                    'start_date' => (string)$a['available_date'],
+                                    'end_date' => (string)$a['available_date'],
+                                    'start_time' => format_time_hm((string)$a['range_start_time']),
+                                    'end_time' => format_time_hm((string)$a['range_end_time']),
                                     'time_slot' => (string)$a['time_slot'],
                                 ],
                                 $availabilityCard,
@@ -416,7 +464,7 @@ include __DIR__ . '/includes/header.php';
                         } else {
                             echo '<div class="' . h($availabilityStaticCardClass) . '">'
                                 . '<p class="font-black text-neutral-950"><i class="fa-solid fa-calendar-day mr-2 text-red-600"></i>' . h(format_be_date($a['available_date'])) . '</p>'
-                                . '<p class="mt-2 text-sm font-bold text-neutral-600"><i class="fa-solid fa-clock mr-1 text-red-600"></i>' . h(time_slot_label($a['time_slot'])) . '</p>'
+                                . '<p class="mt-2 text-sm font-bold text-neutral-600"><i class="fa-solid fa-clock mr-1 text-red-600"></i>' . h(format_booking_time_range($a['range_start_time'], $a['range_end_time'])) . '</p>'
                                 . '<p class="mt-4 inline-flex items-center rounded-full bg-neutral-100 px-4 py-2 text-sm font-black text-neutral-600"><i class="fa-solid fa-user-check mr-2"></i>วันว่างในโปรไฟล์ของคุณ</p>'
                                 . '</div>';
                         }

@@ -67,6 +67,26 @@ $categoriesStmt = db()->prepare('SELECT sc.*
 $categoriesStmt->execute([$photographerId]);
 $categories = $categoriesStmt->fetchAll();
 
+if (!$categories) {
+    $categoriesStmt = db()->prepare('SELECT DISTINCT sc.*
+                                     FROM photographer_services ps
+                                     JOIN service_categories sc ON sc.id = ps.category_id
+                                     WHERE ps.photographer_id = ?
+                                       AND sc.is_active = 1
+                                       AND sc.deleted_at IS NULL
+                                     ORDER BY sc.sort_order, sc.name');
+    $categoriesStmt->execute([$photographerId]);
+    $categories = $categoriesStmt->fetchAll();
+}
+
+if (!$categories) {
+    $categories = db_fetch_all('SELECT *
+                                FROM service_categories
+                                WHERE is_active = 1
+                                  AND deleted_at IS NULL
+                                ORDER BY sort_order, name');
+}
+
 $districtsStmt = db()->prepare('SELECT d.*
                                 FROM photographer_service_areas psa
                                 JOIN districts d ON d.id = psa.district_id
@@ -115,6 +135,49 @@ function booking_field_error_html(string $field, array $errors): string
     }
 
     return '<p class="mt-2 text-sm font-black text-red-600"><i class="fa-solid fa-circle-exclamation mr-1"></i>' . h($errors[$field]) . '</p>';
+}
+
+function booking_time_picker_input(string $name, string $value, array $errors = []): string
+{
+    $value = normalize_time_input($value);
+    if ($value === '') {
+        if ($name === 'end_time') {
+            $value = '17:00';
+        } else {
+            $value = '09:00';
+        }
+    }
+
+    $id = 'booking_time_picker_' . bin2hex(random_bytes(4));
+    $options = [];
+
+    for ($hour = 6; $hour <= 22; $hour++) {
+        foreach ([0, 30] as $minute) {
+            if ($hour === 22 && $minute === 30) {
+                continue;
+            }
+
+            $options[] = sprintf('%02d:%02d', $hour, $minute);
+        }
+    }
+
+    $buttonClass = 'stock-input flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left font-semibold' . booking_field_error_class($name, $errors);
+    $html = '<div class="relative" data-booking-time-picker data-target="' . h($id) . '">';
+    $html .= '<input type="hidden" id="' . h($id) . '" name="' . h($name) . '" value="' . h($value) . '" required>';
+    $html .= '<button type="button" class="' . h($buttonClass) . '" data-booking-time-picker-trigger>';
+    $html .= '<span><i class="fa-solid fa-clock mr-2 text-red-600"></i><span data-booking-time-picker-label>' . h($value) . '</span> น.</span>';
+    $html .= '<i class="fa-solid fa-chevron-down text-neutral-400"></i>';
+    $html .= '</button>';
+    $html .= '<div class="time-picker-popover hidden absolute left-0 top-[calc(100%+.65rem)] z-[280] max-h-72 w-full overflow-y-auto rounded-[1.25rem] border border-neutral-200 bg-white p-2 shadow-2xl" data-booking-time-picker-popover>';
+
+    foreach ($options as $option) {
+        $activeClass = $option === $value ? ' bg-neutral-950 text-white' : ' bg-neutral-50 text-neutral-800 hover:bg-red-50 hover:text-red-700';
+        $html .= '<button type="button" data-time-value="' . h($option) . '" class="mb-1 flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-black transition' . h($activeClass) . '"><i class="fa-solid fa-clock"></i>' . h($option) . ' น.</button>';
+    }
+
+    $html .= '</div></div>';
+
+    return $html;
 }
 
 $bookingFormOld = [
@@ -264,6 +327,7 @@ if (is_post()) {
         $bookingId = (int)db()->lastInsertId();
 
         add_booking_status_log($bookingId, null, 'pending', (int)$user['id'], 'สร้างคำขอจอง');
+        split_availability_after_booking_request($photographerId, $startDate, $endDate, $startTime, $endTime);
         notify_user((int)$profile['photographer_user_id'], 'มีคำขอจองใหม่', $code . ' · ' . booking_range_label([
             'start_date' => $startDate,
             'end_date' => $endDate,
@@ -379,27 +443,32 @@ include __DIR__ . '/../includes/header.php';
                         <?= booking_field_error_html('category_id', $bookingFormErrors) ?>
                     </label>
 
-                    <label class="block<?= h(booking_field_wrap_class('start_date', $bookingFormErrors)) ?>">
-                        <span class="text-sm font-black text-neutral-700"><i class="fa-solid fa-calendar-day mr-2 text-red-600"></i>วันที่เริ่มต้น <?= required_mark() ?></span>
-                        <?= be_date_input('start_date', $bookingFormOld['start_date'], 'stock-input mt-2 w-full rounded-2xl px-4 py-3 font-semibold' . booking_field_error_class('start_date', $bookingFormErrors), true, 'วว/ดด/พ.ศ.') ?>
+                    <div class="block sm:col-span-2<?= h(booking_field_wrap_class('start_date', $bookingFormErrors) ?: booking_field_wrap_class('end_date', $bookingFormErrors)) ?>">
+                        <span class="text-sm font-black text-neutral-700"><i class="fa-solid fa-calendar-days mr-2 text-red-600"></i>ช่วงวันที่ต้องการจ้าง <?= required_mark() ?></span>
+                        <div class="mt-2">
+                            <?= calendar_date_range_input('start_date', 'end_date', $bookingFormOld['start_date'], $bookingFormOld['end_date'], 'เลือกช่วงวันที่ต้องการจ้าง', true) ?>
+                        </div>
+                        <p class="mt-2 text-sm font-bold leading-6 text-neutral-500">
+                            <i class="fa-solid fa-circle-info mr-1 text-red-500"></i>
+                            เลือกวันแรกเป็นวันที่เริ่มต้น แล้วเลือกอีกวันเป็นวันที่สิ้นสุด ถ้าจ้างวันเดียวให้เลือกวันเดียวกัน 2 ครั้ง
+                        </p>
                         <?= booking_field_error_html('start_date', $bookingFormErrors) ?>
-                    </label>
-
-                    <label class="block<?= h(booking_field_wrap_class('end_date', $bookingFormErrors)) ?>">
-                        <span class="text-sm font-black text-neutral-700"><i class="fa-solid fa-calendar-check mr-2 text-red-600"></i>วันที่สิ้นสุด <?= required_mark() ?></span>
-                        <?= be_date_input('end_date', $bookingFormOld['end_date'], 'stock-input mt-2 w-full rounded-2xl px-4 py-3 font-semibold' . booking_field_error_class('end_date', $bookingFormErrors), true, 'วว/ดด/พ.ศ.') ?>
                         <?= booking_field_error_html('end_date', $bookingFormErrors) ?>
-                    </label>
+                    </div>
 
                     <label class="block<?= h(booking_field_wrap_class('start_time', $bookingFormErrors)) ?>">
                         <span class="text-sm font-black text-neutral-700"><i class="fa-solid fa-clock mr-2 text-red-600"></i>เวลาเริ่มต้น <?= required_mark() ?></span>
-                        <input type="time" name="start_time" value="<?= h($bookingFormOld['start_time']) ?>" required class="stock-input mt-2 w-full rounded-2xl px-4 py-3 font-semibold<?= h(booking_field_error_class('start_time', $bookingFormErrors)) ?>">
+                        <div class="mt-2">
+                            <?= booking_time_picker_input('start_time', $bookingFormOld['start_time'], $bookingFormErrors) ?>
+                        </div>
                         <?= booking_field_error_html('start_time', $bookingFormErrors) ?>
                     </label>
 
                     <label class="block<?= h(booking_field_wrap_class('end_time', $bookingFormErrors)) ?>">
                         <span class="text-sm font-black text-neutral-700"><i class="fa-solid fa-clock mr-2 text-red-600"></i>เวลาสิ้นสุด <?= required_mark() ?></span>
-                        <input type="time" name="end_time" value="<?= h($bookingFormOld['end_time']) ?>" required class="stock-input mt-2 w-full rounded-2xl px-4 py-3 font-semibold<?= h(booking_field_error_class('end_time', $bookingFormErrors)) ?>">
+                        <div class="mt-2">
+                            <?= booking_time_picker_input('end_time', $bookingFormOld['end_time'], $bookingFormErrors) ?>
+                        </div>
                         <?= booking_field_error_html('end_time', $bookingFormErrors) ?>
                     </label>
                 </div>
@@ -463,6 +532,16 @@ include __DIR__ . '/../includes/header.php';
                                 <?php if (!empty($row['note'])): ?>
                                     <p class="mt-1 text-xs font-bold leading-5 text-emerald-700"><?= h($row['note']) ?></p>
                                 <?php endif; ?>
+                                <button type="button"
+                                        class="mt-3 inline-flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-xs font-black text-white shadow-lg shadow-emerald-200 transition hover:-translate-y-0.5 hover:bg-emerald-700"
+                                        data-use-availability
+                                        data-start-date="<?= h((string)$row['start_date']) ?>"
+                                        data-end-date="<?= h((string)$row['end_date']) ?>"
+                                        data-start-time="<?= h(format_time_hm((string)$row['start_time'])) ?>"
+                                        data-end-time="<?= h(format_time_hm((string)$row['end_time'])) ?>"
+                                        data-date-label="<?= h(format_booking_date_range($row['start_date'], $row['end_date'])) ?>">
+                                    <i class="fa-solid fa-check"></i>เลือกช่วงนี้
+                                </button>
                             </div>
                         <?php endforeach; ?>
                     <?php else: ?>
@@ -489,6 +568,114 @@ include __DIR__ . '/../includes/header.php';
         </aside>
     </div>
 </section>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    function setBookingTimePickerValue(name, value) {
+        var hidden = document.querySelector('input[type="hidden"][name="' + name + '"]');
+        if (!hidden) {
+            return;
+        }
+
+        hidden.value = value || '';
+        hidden.dispatchEvent(new Event('change', { bubbles: true }));
+
+        var picker = hidden.closest('[data-booking-time-picker]');
+        if (!picker) {
+            return;
+        }
+
+        var label = picker.querySelector('[data-booking-time-picker-label]');
+        var popover = picker.querySelector('[data-booking-time-picker-popover]');
+        if (label) {
+            label.textContent = hidden.value;
+        }
+
+        if (popover) {
+            popover.querySelectorAll('[data-time-value]').forEach(function (item) {
+                item.classList.remove('bg-neutral-950', 'text-white');
+                item.classList.add('bg-neutral-50', 'text-neutral-800');
+                if (item.dataset.timeValue === hidden.value) {
+                    item.classList.add('bg-neutral-950', 'text-white');
+                    item.classList.remove('bg-neutral-50', 'text-neutral-800');
+                }
+            });
+        }
+    }
+
+    document.querySelectorAll('[data-booking-time-picker]').forEach(function (picker) {
+        var hidden = document.getElementById(picker.dataset.target || '');
+        var trigger = picker.querySelector('[data-booking-time-picker-trigger]');
+        var popover = picker.querySelector('[data-booking-time-picker-popover]');
+        var label = picker.querySelector('[data-booking-time-picker-label]');
+
+        if (!hidden || !trigger || !popover || !label) {
+            return;
+        }
+
+        trigger.addEventListener('click', function (event) {
+            event.stopPropagation();
+            document.querySelectorAll('[data-booking-time-picker-popover]').forEach(function (item) {
+                if (item !== popover) {
+                    item.classList.add('hidden');
+                }
+            });
+            popover.classList.toggle('hidden');
+        });
+
+        popover.addEventListener('click', function (event) {
+            event.stopPropagation();
+        });
+
+        popover.querySelectorAll('[data-time-value]').forEach(function (button) {
+            button.addEventListener('click', function () {
+                hidden.value = button.dataset.timeValue || '';
+                label.textContent = hidden.value;
+                popover.querySelectorAll('[data-time-value]').forEach(function (item) {
+                    item.classList.remove('bg-neutral-950', 'text-white');
+                    item.classList.add('bg-neutral-50', 'text-neutral-800');
+                });
+                button.classList.add('bg-neutral-950', 'text-white');
+                button.classList.remove('bg-neutral-50', 'text-neutral-800');
+                popover.classList.add('hidden');
+                hidden.dispatchEvent(new Event('change', { bubbles: true }));
+            });
+        });
+    });
+
+    document.querySelectorAll('[data-use-availability]').forEach(function (button) {
+        button.addEventListener('click', function () {
+            var calendar = document.querySelector('[data-booking-form] [data-calendar-range]');
+            if (calendar) {
+                calendar.dispatchEvent(new CustomEvent('calendarRangeSet', {
+                    detail: {
+                        start: button.dataset.startDate || '',
+                        end: button.dataset.endDate || button.dataset.startDate || ''
+                    }
+                }));
+            }
+
+            setBookingTimePickerValue('start_time', button.dataset.startTime || '09:00');
+            setBookingTimePickerValue('end_time', button.dataset.endTime || '17:00');
+
+            var rangeBlock = calendar ? calendar.closest('.block') : null;
+            if (rangeBlock) {
+                rangeBlock.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                rangeBlock.classList.add('ring-4', 'ring-emerald-100');
+                setTimeout(function () {
+                    rangeBlock.classList.remove('ring-4', 'ring-emerald-100');
+                }, 1400);
+            }
+        });
+    });
+
+    document.addEventListener('click', function () {
+        document.querySelectorAll('[data-booking-time-picker-popover]').forEach(function (popover) {
+            popover.classList.add('hidden');
+        });
+    });
+});
+</script>
 
 <?php if ($bookingFormErrors): ?>
 <script>

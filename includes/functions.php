@@ -945,6 +945,15 @@ function notification_target_url(array $notification, array $user): string
         }
     }
 
+    if ($type === 'specialty_request') {
+        if ($role === 'admin') {
+            return '/admin/categories.php';
+        }
+        if ($role === 'photographer') {
+            return '/photographer/services.php';
+        }
+    }
+
     if ($type === 'account') {
         if ($role === 'customer') {
             return '/customer/profile.php';
@@ -993,6 +1002,7 @@ function unread_notifications_count(int $userId): int
         $roleStmt = db()->prepare('SELECT r.name FROM users u JOIN roles r ON r.id = u.role_id WHERE u.id = ? LIMIT 1');
         $roleStmt->execute([$userId]);
         if ($roleStmt->fetchColumn() === 'admin') {
+            ensure_specialty_requests_table();
             db()->exec("INSERT INTO notifications (user_id, title, message, type, related_id, is_read, created_at)
                         SELECT u.id, 'ข้อความติดต่อใหม่', CONCAT('จาก: ', c.name, ' เรื่อง: ', c.subject), 'contact', c.id, 0, c.created_at
                         FROM contact_messages c
@@ -1004,6 +1014,26 @@ function unread_notifications_count(int $userId): int
                           AND u.deleted_at IS NULL
                           AND NOT EXISTS (
                             SELECT 1 FROM notifications n WHERE n.type = 'contact' AND n.related_id = c.id AND n.user_id = u.id
+                          )");
+
+            db()->exec("INSERT INTO notifications (user_id, title, message, type, related_id, is_read, created_at)
+                        SELECT u.id,
+                               'มีคำขอเพิ่มประเภทงานใหม่',
+                               CONCAT('ช่างภาพ ', p.display_name, ' ขอเพิ่มประเภทงาน: ', sr.specialty_name),
+                               'specialty_request',
+                               sr.id,
+                               0,
+                               sr.created_at
+                        FROM specialty_requests sr
+                        JOIN photographer_profiles p ON p.id = sr.photographer_id
+                        CROSS JOIN users u
+                        JOIN roles r ON r.id = u.role_id
+                        WHERE sr.status = 'pending'
+                          AND r.name = 'admin'
+                          AND u.status = 'active'
+                          AND u.deleted_at IS NULL
+                          AND NOT EXISTS (
+                            SELECT 1 FROM notifications n WHERE n.type = 'specialty_request' AND n.related_id = sr.id AND n.user_id = u.id
                           )");
         }
 
@@ -1715,6 +1745,57 @@ function calendar_date_input(string $name, ?string $value = '', array $dateStatu
 }
 
 /**
+ * สร้าง HTML สำหรับเลือกช่วงวันที่จากปฏิทินเดียว
+ *
+ * @param string $startName ชื่อฟิลด์วันที่เริ่มต้น
+ * @param string $endName ชื่อฟิลด์วันที่สิ้นสุด
+ * @param ?string $startValue วันที่เริ่มต้น
+ * @param ?string $endValue วันที่สิ้นสุด
+ * @param string $label ป้ายกำกับ
+ * @param bool $required บังคับกรอกหรือไม่
+ * @return string HTML
+ */
+function calendar_date_range_input(string $startName, string $endName, ?string $startValue = '', ?string $endValue = '', string $label = 'ช่วงวันที่', bool $required = false): string
+{
+    $startIso = parse_be_date_to_iso($startValue);
+    $endIso = parse_be_date_to_iso($endValue);
+
+    if ($startIso !== '' && $endIso === '') {
+        $endIso = $startIso;
+    }
+
+    if ($endIso !== '' && $startIso === '') {
+        $startIso = $endIso;
+    }
+
+    $startId = 'calendar_range_start_' . bin2hex(random_bytes(4));
+    $endId = 'calendar_range_end_' . bin2hex(random_bytes(4));
+    $requiredAttribute = $required ? ' required' : '';
+    $displayLabel = 'เลือกวันที่เริ่มต้นและสิ้นสุด';
+
+    if ($startIso !== '' && $endIso !== '') {
+        $displayLabel = format_booking_date_range($startIso, $endIso);
+    }
+
+    return '<div class="calendar-date calendar-date-range" data-calendar-range data-start-target="' . h($startId) . '" data-end-target="' . h($endId) . '">'
+        . '<input type="hidden" id="' . h($startId) . '" name="' . h($startName) . '" value="' . h($startIso) . '"' . $requiredAttribute . '>'
+        . '<input type="hidden" id="' . h($endId) . '" name="' . h($endName) . '" value="' . h($endIso) . '"' . $requiredAttribute . '>'
+        . '<button type="button" class="calendar-date-trigger" data-calendar-range-trigger>'
+        . '<span><i class="fa-solid fa-calendar-days"></i><span><b>' . h($label) . '</b><small data-calendar-range-selected>' . h($displayLabel) . '</small></span></span><i class="fa-solid fa-chevron-down"></i>'
+        . '</button>'
+        . '<div class="calendar-date-popover" data-calendar-range-popover>'
+        . '<div class="calendar-date-header">'
+        . '<div><p class="calendar-date-label">' . h($label) . '</p><p class="calendar-date-selected" data-calendar-range-selected-popover>' . h($displayLabel) . '</p></div>'
+        . '<div class="calendar-date-controls"><button type="button" data-calendar-range-prev aria-label="เดือนก่อนหน้า"><i class="fa-solid fa-chevron-left"></i></button><button type="button" data-calendar-range-next aria-label="เดือนถัดไป"><i class="fa-solid fa-chevron-right"></i></button></div>'
+        . '</div>'
+        . '<div class="calendar-date-month" data-calendar-range-month></div>'
+        . '<div class="calendar-date-weekdays"><span>อา</span><span>จ</span><span>อ</span><span>พ</span><span>พฤ</span><span>ศ</span><span>ส</span></div>'
+        . '<div class="calendar-date-grid" data-calendar-range-grid></div>'
+        . '<div class="calendar-range-help"><i class="fa-solid fa-circle-info"></i>คลิกวันแรกเป็นวันที่เริ่มต้น แล้วคลิกอีกวันเป็นวันที่สิ้นสุด</div>'
+        . '</div></div>';
+}
+
+/**
  * แปลงสถานะต่างๆ ในระบบเป็นข้อความภาษาไทย
  * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ แปลงสถานะต่างๆ ในระบบเป็นข้อความภาษาไทย
  * @param string $status ชื่อสถานะระบบ
@@ -1723,11 +1804,11 @@ function calendar_date_input(string $name, ?string $value = '', array $dateStatu
 function booking_status_label(string $status): string
 {
     $map = [
-        'pending' => 'รอช่างภาพพิจารณา',
+        'pending' => 'รอช่างภาพตอบรับ',
         'accepted' => 'ช่างภาพรับงานแล้ว',
         'rejected' => 'ช่างภาพปฏิเสธงาน',
         'in_progress' => 'อยู่ระหว่างดำเนินงาน',
-        'cancelled' => 'ยกเลิกโดยระบบหรือแอดมิน',
+        'cancelled' => 'ยกเลิก',
         'confirmed' => 'ช่างภาพรับงานแล้ว',
         'completed' => 'งานเสร็จสิ้น',
         'approved' => 'อนุมัติแล้ว',
@@ -1915,6 +1996,13 @@ function booking_status_timeline_html(array $logs): string
         $newStatusText = booking_status_label($newStatus);
         $changedByName = !empty($log['name']) ? (string)$log['name'] : 'ระบบ';
         $note = trim((string)($log['note'] ?? ''));
+        $statusBadgeHtml = status_badge($newStatus);
+
+        if ($newStatus === 'cancelled' && $note === 'ยกเลิกโดยผู้จ้าง') {
+            $newStatusText = 'ยกเลิกโดยผู้จ้าง';
+            $statusBadgeHtml = '<span class="inline-flex items-center gap-1.5 rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-700"><i class="fa-solid fa-ban"></i>ยกเลิกโดยผู้จ้าง</span>';
+        }
+
         $stepNumber = $index + 1;
         $isLatest = $stepNumber === $total;
         $tone = booking_status_timeline_tone($newStatus);
@@ -1928,7 +2016,7 @@ function booking_status_timeline_html(array $logs): string
         $html .= '<p class="booking-timeline-kicker">ขั้นตอนที่ ' . (int)$stepNumber . ($isLatest ? ' · ล่าสุด' : '') . '</p>';
         $html .= '<h3>' . h($newStatusText) . '</h3>';
         $html .= '</div>';
-        $html .= status_badge($newStatus);
+        $html .= $statusBadgeHtml;
         $html .= '</div>';
         $html .= '<div class="booking-timeline-flow">';
         $html .= '<span>' . h($oldStatusText) . '</span><i class="fa-solid fa-arrow-right"></i><strong>' . h($newStatusText) . '</strong>';
@@ -2184,6 +2272,21 @@ function sync_availability_after_booking_status(int $bookingId): void
         return;
     }
 
+    if (in_array($status, ['rejected', 'cancelled'], true)) {
+        $startDate = (string)($booking['start_date'] ?? $booking['booking_date']);
+        $endDate = (string)($booking['end_date'] ?? $startDate);
+        $startTime = normalize_time_input((string)($booking['start_time'] ?? ''));
+        $endTime = normalize_time_input((string)($booking['end_time'] ?? ''));
+
+        if ($startTime === '' || $endTime === '') {
+            [$startTime, $endTime] = slot_time_range((string)($booking['time_slot'] ?? 'full_day'));
+        }
+
+        if (!photographer_has_availability_range((int)$booking['photographer_id'], $startDate, $endDate, $startTime, $endTime)) {
+            create_photographer_availability_range((int)$booking['photographer_id'], $startDate, $endDate, $startTime, $endTime, 'ระบบคืนวันว่างจากคำขอจองที่ถูกยกเลิกหรือปฏิเสธ');
+        }
+    }
+
     $note = 'ระบบตรวจสอบการชนเวลาจากคำขอจอง ' . (string)$booking['id'];
     log_activity('sync_booking_availability_range', 'bookings', (int)$booking['id'], $note);
 }
@@ -2201,6 +2304,121 @@ function can_book_slot(int $photographerId, string $date, string $slot, ?int $ex
 {
     [$startTime, $endTime] = slot_time_range($slot);
     return can_book_range($photographerId, $date, $date, $startTime, $endTime, $excludeBookingId);
+}
+
+/**
+ * เพิ่มวันว่างแบบช่วงเวลาโดยใช้ข้อมูลที่ตรวจแล้ว
+ *
+ * @param int $photographerId รหัสช่างภาพ
+ * @param string $startDate วันที่เริ่มต้น
+ * @param string $endDate วันที่สิ้นสุด
+ * @param string $startTime เวลาเริ่มต้น
+ * @param string $endTime เวลาสิ้นสุด
+ * @param string $note หมายเหตุ
+ * @return void ไม่มีการคืนค่า
+ */
+function create_photographer_availability_range(int $photographerId, string $startDate, string $endDate, string $startTime, string $endTime, string $note = ''): void
+{
+    $startDate = parse_be_date_to_iso($startDate);
+    $endDate = parse_be_date_to_iso($endDate);
+    $startTime = normalize_time_input($startTime);
+    $endTime = normalize_time_input($endTime);
+
+    if ($photographerId <= 0 || $startDate === '' || $endDate === '' || $startTime === '' || $endTime === '' || $endDate < $startDate || $endTime <= $startTime) {
+        return;
+    }
+
+    $legacySlot = 'full_day';
+    foreach (['morning', 'afternoon', 'evening', 'full_day'] as $slotName) {
+        [$slotStart, $slotEnd] = slot_time_range($slotName);
+        if ($slotStart === $startTime && $slotEnd === $endTime) {
+            $legacySlot = $slotName;
+            break;
+        }
+    }
+
+    $stmt = db()->prepare('INSERT INTO photographer_availability
+        (photographer_id, available_date, time_slot, start_date, end_date, start_time, end_time, status, note, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, "available", ?, NOW(), NOW())');
+    $stmt->execute([$photographerId, $startDate, $legacySlot, $startDate, $endDate, $startTime . ':00', $endTime . ':00', $note]);
+}
+
+/**
+ * แยกช่วงวันว่างที่เหลือหลังมีคำขอจอง เพื่อให้ช่วงเวลาที่ไม่ได้ถูกจองยังเปิดรับงานต่อได้
+ *
+ * @param int $photographerId รหัสช่างภาพ
+ * @param string $bookingStartDate วันที่เริ่มจอง
+ * @param string $bookingEndDate วันที่สิ้นสุดจอง
+ * @param string $bookingStartTime เวลาเริ่มจอง
+ * @param string $bookingEndTime เวลาสิ้นสุดจอง
+ * @return void ไม่มีการคืนค่า
+ */
+function split_availability_after_booking_request(int $photographerId, string $bookingStartDate, string $bookingEndDate, string $bookingStartTime, string $bookingEndTime): void
+{
+    ensure_availability_range_columns();
+
+    $bookingStartDate = parse_be_date_to_iso($bookingStartDate);
+    $bookingEndDate = parse_be_date_to_iso($bookingEndDate);
+    $bookingStartTime = normalize_time_input($bookingStartTime);
+    $bookingEndTime = normalize_time_input($bookingEndTime);
+
+    if ($bookingStartDate === '' || $bookingEndDate === '' || $bookingStartTime === '' || $bookingEndTime === '') {
+        return;
+    }
+
+    $rows = db_fetch_all('SELECT *,
+                                 COALESCE(start_date, available_date) AS range_start_date,
+                                 COALESCE(end_date, available_date) AS range_end_date,
+                                 COALESCE(start_time, CASE time_slot WHEN "morning" THEN "09:00:00" WHEN "afternoon" THEN "13:00:00" WHEN "evening" THEN "17:00:00" ELSE "09:00:00" END) AS range_start_time,
+                                 COALESCE(end_time, CASE time_slot WHEN "morning" THEN "12:00:00" WHEN "afternoon" THEN "17:00:00" WHEN "evening" THEN "20:00:00" ELSE "17:00:00" END) AS range_end_time
+                          FROM photographer_availability
+                          WHERE photographer_id = ?
+                            AND status = "available"
+                            AND COALESCE(start_date, available_date) <= ?
+                            AND COALESCE(end_date, available_date) >= ?
+                            AND COALESCE(start_time, CASE time_slot WHEN "morning" THEN "09:00:00" WHEN "afternoon" THEN "13:00:00" WHEN "evening" THEN "17:00:00" ELSE "09:00:00" END) < ?
+                            AND COALESCE(end_time, CASE time_slot WHEN "morning" THEN "12:00:00" WHEN "afternoon" THEN "17:00:00" WHEN "evening" THEN "20:00:00" ELSE "17:00:00" END) > ?', [
+        $photographerId,
+        $bookingEndDate,
+        $bookingStartDate,
+        $bookingEndTime . ':00',
+        $bookingStartTime . ':00',
+    ]);
+
+    foreach ($rows as $row) {
+        $rowStartDate = (string)$row['range_start_date'];
+        $rowEndDate = (string)$row['range_end_date'];
+        $rowStartTime = normalize_time_input((string)$row['range_start_time']);
+        $rowEndTime = normalize_time_input((string)$row['range_end_time']);
+        $overlapStartDate = max($rowStartDate, $bookingStartDate);
+        $overlapEndDate = min($rowEndDate, $bookingEndDate);
+        $note = trim((string)($row['note'] ?? ''));
+
+        if ($overlapStartDate > $overlapEndDate || $rowStartTime === '' || $rowEndTime === '') {
+            continue;
+        }
+
+        $deleteStmt = db()->prepare('DELETE FROM photographer_availability WHERE id = ? AND photographer_id = ?');
+        $deleteStmt->execute([(int)$row['id'], $photographerId]);
+
+        $beforeDate = (new DateTime($overlapStartDate))->modify('-1 day')->format('Y-m-d');
+        if ($rowStartDate <= $beforeDate) {
+            create_photographer_availability_range($photographerId, $rowStartDate, $beforeDate, $rowStartTime, $rowEndTime, $note);
+        }
+
+        $afterDate = (new DateTime($overlapEndDate))->modify('+1 day')->format('Y-m-d');
+        if ($afterDate <= $rowEndDate) {
+            create_photographer_availability_range($photographerId, $afterDate, $rowEndDate, $rowStartTime, $rowEndTime, $note);
+        }
+
+        if ($rowStartTime < $bookingStartTime) {
+            create_photographer_availability_range($photographerId, $overlapStartDate, $overlapEndDate, $rowStartTime, $bookingStartTime, $note);
+        }
+
+        if ($bookingEndTime < $rowEndTime) {
+            create_photographer_availability_range($photographerId, $overlapStartDate, $overlapEndDate, $bookingEndTime, $rowEndTime, $note);
+        }
+    }
 }
 
 /**
@@ -2476,37 +2694,52 @@ function footer_public_data(): array
  * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ คืนค่ากลุ่มของ Tag บทความที่กำหนดไว้ล่วงหน้า
  * @return array ชุดข้อมูล (Array)
  */
-function predefined_article_tag_groups(): array
+function predefined_article_tag_groups(?int $photographerId = null): array
 {
-    return [
-        'ประเภทงาน' => [
+    ensure_service_categories_deleted_at_column();
+
+    $categoryRows = db_fetch_all('SELECT name
+                                  FROM service_categories
+                                  WHERE is_active = 1
+                                    AND deleted_at IS NULL
+                                  ORDER BY sort_order, name');
+    $categoryNames = array_values(array_unique(array_filter(array_map(static function ($row) {
+        return trim((string)($row['name'] ?? ''));
+    }, $categoryRows))));
+
+    if (!$categoryNames) {
+        $categoryNames = [
             'งานแต่งงาน',
             'รับปริญญา',
             'ครอบครัว',
             'สินค้าและร้านค้า',
             'อีเวนต์',
             'โปรไฟล์ส่วนตัว',
-        ],
-        'สถานที่' => [
-            'เมืองเชียงราย',
-            'เวียงชัย',
-            'เชียงของ',
-            'เทิง',
-            'พาน',
-            'ป่าแดด',
-            'แม่จัน',
-            'เชียงแสน',
-            'แม่สาย',
-            'แม่สรวย',
-            'เวียงป่าเป้า',
-            'พญาเม็งราย',
-            'เวียงแก่น',
-            'ขุนตาล',
-            'แม่ฟ้าหลวง',
-            'แม่ลาว',
-            'เวียงเชียงรุ้ง',
-            'ดอยหลวง',
-        ],
+        ];
+    }
+
+    if ($photographerId && $photographerId > 0) {
+        $districtRows = db_fetch_all('SELECT d.district_name
+                                      FROM photographer_service_areas psa
+                                      JOIN districts d ON d.id = psa.district_id
+                                      WHERE psa.photographer_id = ?
+                                        AND psa.is_active = 1
+                                        AND d.is_active = 1
+                                      ORDER BY psa.is_primary DESC, d.district_name', [$photographerId]);
+    } else {
+        $districtRows = db_fetch_all('SELECT district_name
+                                      FROM districts
+                                      WHERE is_active = 1
+                                      ORDER BY district_name');
+    }
+
+    $districtNames = array_values(array_unique(array_filter(array_map(static function ($row) {
+        return trim((string)($row['district_name'] ?? ''));
+    }, $districtRows))));
+
+    return [
+        'ประเภทงานถ่ายภาพ' => $categoryNames,
+        'พื้นที่รับงาน' => $districtNames,
         'สไตล์ภาพ' => [
             'แคนดิด',
             'มินิมอล',
@@ -2520,20 +2753,6 @@ function predefined_article_tag_groups(): array
             'สตูดิโอ',
             'ภาพขาวดำ',
             'ภาพเล่าเรื่อง',
-        ],
-        'สถานที่เชียงราย' => [
-            'เชียงราย',
-            'แม่สาย',
-            'เชียงแสน',
-            'แม่จัน',
-            'แม่ฟ้าหลวง',
-        'เทิง',
-            'ภูชี้ฟ้า',
-            'ดอยตุง',
-            'วัดร่องขุ่น',
-            'ไร่ชา',
-            'คาเฟ่',
-            'สวนดอกไม้',
         ],
         'คำแนะนำลูกค้า' => [
             'เตรียมตัวก่อนถ่าย',
@@ -2626,10 +2845,10 @@ function ensure_photographer_articles_excerpt_column(): void
  * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ คืนค่ารายชื่อ Tag ทั้งหมดที่กำหนดไว้ล่วงหน้า
  * @return array ชุดข้อมูล (Array)
  */
-function predefined_article_tag_names(): array
+function predefined_article_tag_names(?int $photographerId = null): array
 {
     $names = [];
-    foreach (predefined_article_tag_groups() as $groupTags) {
+    foreach (predefined_article_tag_groups($photographerId) as $groupTags) {
         foreach ($groupTags as $name) {
             $names[] = $name;
         }
@@ -2643,12 +2862,12 @@ function predefined_article_tag_names(): array
  * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ ตรวจสอบและสร้าง Tag เริ่มต้นหากยังไม่มีในฐานข้อมูล
  * @return array ชุดข้อมูล (Array)
  */
-function ensure_predefined_article_tags(): array
+function ensure_predefined_article_tags(?int $photographerId = null): array
 {
     ensure_tags_status_column();
 
     $tagRows = [];
-    foreach (predefined_article_tag_names() as $tagName) {
+    foreach (predefined_article_tag_names($photographerId) as $tagName) {
         $slug = slugify($tagName);
         $existingId = db_fetch_value('SELECT id FROM tags WHERE name = ? OR slug = ? LIMIT 1', [$tagName, $slug]);
         if ($existingId) {
@@ -2669,11 +2888,11 @@ function ensure_predefined_article_tags(): array
  * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ จัดรูปแบบกลุ่มของ Tag สำหรับใช้ในการเลือก
  * @return array ชุดข้อมูล (Array)
  */
-function article_tag_options(): array
+function article_tag_options(?int $photographerId = null): array
 {
     ensure_tags_status_column();
 
-    $tagIdsByName = ensure_predefined_article_tags();
+    $tagIdsByName = ensure_predefined_article_tags($photographerId);
     $activeRows = db_fetch_all('SELECT id FROM tags WHERE is_active = 1');
     $activeIds = [];
     foreach ($activeRows as $row) {
@@ -2681,7 +2900,7 @@ function article_tag_options(): array
     }
     $groups = [];
 
-    foreach (predefined_article_tag_groups() as $groupName => $tagNames) {
+    foreach (predefined_article_tag_groups($photographerId) as $groupName => $tagNames) {
         $groups[$groupName] = [];
         foreach ($tagNames as $tagName) {
             if (!isset($tagIdsByName[$tagName])) {
@@ -2695,6 +2914,10 @@ function article_tag_options(): array
                 'name' => $tagName,
             ];
         }
+
+        if (!$groups[$groupName]) {
+            unset($groups[$groupName]);
+        }
     }
 
     return $groups;
@@ -2705,10 +2928,10 @@ function article_tag_options(): array
  * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ คืนค่า ID ของ Tag ทั้งหมดที่อนุญาตให้ใช้งาน
  * @return array ชุดข้อมูล (Array)
  */
-function allowed_article_tag_ids(): array
+function allowed_article_tag_ids(?int $photographerId = null): array
 {
     $ids = [];
-    foreach (article_tag_options() as $tags) {
+    foreach (article_tag_options($photographerId) as $tags) {
         foreach ($tags as $tag) {
             $ids[] = (int)$tag['id'];
         }
@@ -2722,14 +2945,14 @@ function allowed_article_tag_ids(): array
  * ใช้สำหรับอำนวยความสะดวกในการทำงานเกี่ยวกับ  ID ของ Tag ที่ถูกเลือกมาจากฟอร์ม POST
  * @return array ชุดข้อมูล (Array)
  */
-function selected_article_tag_ids_from_post(): array
+function selected_article_tag_ids_from_post(?int $photographerId = null): array
 {
     $rawIds = $_POST['tag_ids'] ?? [];
     if (!is_array($rawIds)) {
         $rawIds = [];
     }
 
-    $allowed = array_flip(allowed_article_tag_ids());
+    $allowed = array_flip(allowed_article_tag_ids($photographerId));
     $selected = [];
 
     foreach ($rawIds as $rawId) {
@@ -2783,7 +3006,7 @@ function selected_article_tag_ids(string $relationTable, string $recordColumn, i
  * @param array $tagIds รายการรหัส Tag ที่ส่งมาอัปเดต
  * @return void ไม่มีการคืนค่า
  */
-function sync_article_tag_relations(string $relationTable, string $recordColumn, int $recordId, array $tagIds): void
+function sync_article_tag_relations(string $relationTable, string $recordColumn, int $recordId, array $tagIds, ?int $photographerId = null): void
 {
     $allowedTables = [
         'article_tags' => 'article_id',
@@ -2794,7 +3017,7 @@ function sync_article_tag_relations(string $relationTable, string $recordColumn,
         return;
     }
 
-    $allowed = array_flip(allowed_article_tag_ids());
+    $allowed = array_flip(allowed_article_tag_ids($photographerId));
     $cleanTagIds = [];
     foreach ($tagIds as $tagId) {
         $tagId = (int)$tagId;
@@ -2827,12 +3050,12 @@ function sync_article_tag_relations(string $relationTable, string $recordColumn,
  * @param string $inputName ชื่อช่องข้อมูล Input Name
  * @return string ข้อความ
  */
-function article_tag_selector_html(array $selectedIds = [], string $inputName = 'tag_ids'): string
+function article_tag_selector_html(array $selectedIds = [], string $inputName = 'tag_ids', ?int $photographerId = null): string
 {
     $selectedLookup = array_flip(array_map('intval', $selectedIds));
     $html = '<div class="grid gap-4">';
 
-    foreach (article_tag_options() as $groupName => $tags) {
+    foreach (article_tag_options($photographerId) as $groupName => $tags) {
         $html .= '<div class="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">';
         $html .= '<div class="mb-3 text-sm font-black text-neutral-800"><i class="fa-solid fa-tags mr-2 text-red-600"></i>' . h($groupName) . '</div>';
         $html .= '<div class="flex flex-wrap gap-2">';

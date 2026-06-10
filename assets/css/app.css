@@ -979,6 +979,31 @@ body {
     box-shadow: 0 12px 26px rgba(16, 16, 20, .18);
 }
 
+.calendar-day-in-range {
+    border-color: rgba(226, 27, 45, .22);
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.calendar-day-range-edge {
+    border-color: #101014;
+    background: #101014;
+    color: #fff;
+}
+
+.calendar-range-help {
+    display: flex;
+    align-items: center;
+    gap: .45rem;
+    margin-top: .8rem;
+    border-radius: 1rem;
+    background: #fff1f2;
+    padding: .75rem .9rem;
+    color: #be123c;
+    font-size: .78rem;
+    font-weight: 900;
+}
+
 .calendar-date-legend {
     display: flex;
     flex-wrap: wrap;

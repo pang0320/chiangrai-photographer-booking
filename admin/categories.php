@@ -4,6 +4,27 @@ requireRole('admin');
 ensure_service_categories_deleted_at_column();
 ensure_specialty_requests_table();
 
+function specialty_request_status_badge(string $status): string
+{
+    $labels = [
+        'pending' => 'กำลังรอพิจารณาอยู่',
+        'approved' => 'อนุมัติแล้ว',
+        'rejected' => 'ไม่อนุมัติ',
+    ];
+    $classes = [
+        'pending' => 'bg-amber-100 text-amber-700',
+        'approved' => 'bg-emerald-100 text-emerald-700',
+        'rejected' => 'bg-red-100 text-red-700',
+    ];
+    $icons = [
+        'pending' => 'fa-hourglass-half',
+        'approved' => 'fa-circle-check',
+        'rejected' => 'fa-circle-xmark',
+    ];
+
+    return '<span class="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ' . h($classes[$status] ?? 'bg-slate-100 text-slate-700') . '"><i class="fa-solid ' . h($icons[$status] ?? 'fa-circle-info') . '"></i>' . h($labels[$status] ?? $status) . '</span>';
+}
+
 if (is_post()) {
     verify_csrf();
 
@@ -138,6 +159,7 @@ $specialtyRequests = db_fetch_all('SELECT sr.*, p.display_name
                                    JOIN photographer_profiles p ON p.id = sr.photographer_id
                                    ORDER BY FIELD(sr.status, "pending", "approved", "rejected"), sr.created_at DESC
                                    LIMIT 10');
+$pendingSpecialtyRequestCount = (int)db_fetch_value('SELECT COUNT(*) FROM specialty_requests WHERE status = "pending"');
 $activeCount = 0;
 $inactiveCount = 0;
 
@@ -367,6 +389,11 @@ include __DIR__ . '/../includes/header.php';
                 <h2 class="mt-1 text-2xl font-black text-neutral-950">คำขอจากช่างภาพ</h2>
                 <p class="mt-2 text-sm font-bold leading-7 text-neutral-500">เมื่ออนุมัติ ระบบจะสร้างหมวดหมู่งานและผูกประเภทงานนี้กับโปรไฟล์ช่างภาพทันที</p>
             </div>
+            <?php if ($pendingSpecialtyRequestCount > 0): ?>
+                <div class="rounded-full bg-amber-50 px-4 py-2 text-sm font-black text-amber-700">
+                    <i class="fa-solid fa-bell mr-1"></i><?= number_format($pendingSpecialtyRequestCount) ?> คำขอกำลังรอพิจารณาอยู่
+                </div>
+            <?php endif; ?>
         </div>
 
         <?php if ($specialtyRequests): ?>
@@ -387,7 +414,7 @@ include __DIR__ . '/../includes/header.php';
                                 <td class="py-3 font-black"><?= h($request['display_name']) ?></td>
                                 <td class="font-black text-neutral-950"><?= h($request['specialty_name']) ?></td>
                                 <td class="max-w-md text-neutral-600"><?= nl2br(h((string)$request['description'])) ?></td>
-                                <td><?= status_badge((string)$request['status']) ?></td>
+                                <td><?= specialty_request_status_badge((string)$request['status']) ?></td>
                                 <td class="min-w-[280px]">
                                     <?php if ((string)$request['status'] === 'pending'): ?>
                                         <div class="grid gap-2">
@@ -395,7 +422,7 @@ include __DIR__ . '/../includes/header.php';
                                                 <?= csrf_field() ?>
                                                 <input type="hidden" name="action" value="approve_specialty">
                                                 <input type="hidden" name="request_id" value="<?= (int)$request['id'] ?>">
-                                                <input name="admin_note" placeholder="หมายเหตุถึงช่างภาพ (ถ้ามี)" class="stock-input rounded-xl px-3 py-2 text-sm font-semibold">
+                                                <input type="hidden" name="admin_note" value="">
                                                 <button class="btn-success btn-sm" data-confirm="อนุมัติประเภทงานนี้?" type="submit">
                                                     <i class="fa-solid fa-check"></i>อนุมัติ
                                                 </button>

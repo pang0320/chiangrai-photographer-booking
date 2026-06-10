@@ -65,6 +65,39 @@ function availability_legacy_slot(string $startTime, string $endTime): string
     return 'full_day';
 }
 
+function availability_time_picker_input(string $name, string $value): string
+{
+    $value = normalize_time_input($value);
+    if ($value === '') {
+        $value = '09:00';
+    }
+
+    $id = 'time_picker_' . bin2hex(random_bytes(4));
+    $options = [];
+    for ($hour = 6; $hour <= 22; $hour++) {
+        foreach ([0, 30] as $minute) {
+            if ($hour === 22 && $minute === 30) {
+                continue;
+            }
+            $options[] = sprintf('%02d:%02d', $hour, $minute);
+        }
+    }
+
+    $html = '<div class="relative" data-time-picker data-target="' . h($id) . '">';
+    $html .= '<input type="hidden" id="' . h($id) . '" name="' . h($name) . '" value="' . h($value) . '">';
+    $html .= '<button type="button" class="stock-input flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left font-semibold" data-time-picker-trigger>';
+    $html .= '<span><i class="fa-solid fa-clock mr-2 text-red-600"></i><span data-time-picker-label>' . h($value) . '</span></span><i class="fa-solid fa-chevron-down text-neutral-400"></i>';
+    $html .= '</button>';
+    $html .= '<div class="time-picker-popover hidden absolute left-0 top-[calc(100%+.65rem)] z-[280] max-h-72 w-full overflow-y-auto rounded-[1.25rem] border border-neutral-200 bg-white p-2 shadow-2xl" data-time-picker-popover>';
+    foreach ($options as $option) {
+        $activeClass = $option === $value ? ' bg-neutral-950 text-white' : ' bg-neutral-50 text-neutral-800 hover:bg-red-50 hover:text-red-700';
+        $html .= '<button type="button" data-time-value="' . h($option) . '" class="mb-1 flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-black transition' . h($activeClass) . '"><i class="fa-solid fa-clock"></i>' . h($option) . ' น.</button>';
+    }
+    $html .= '</div></div>';
+
+    return $html;
+}
+
 function validate_availability_range_payload(array $statuses): array
 {
     $startDate = parse_be_date_to_iso((string)($_POST['start_date'] ?? ''));
@@ -125,6 +158,67 @@ function availability_range_exists(int $photographerId, string $startDate, strin
     return (bool)$stmt->fetchColumn();
 }
 
+function create_daily_availability_rows(int $photographerId, string $startDate, string $endDate, string $startTime, string $endTime, string $status, string $note): int
+{
+    $created = 0;
+    $legacySlot = availability_legacy_slot($startTime, $endTime);
+    $stmt = db()->prepare('INSERT INTO photographer_availability
+        (photographer_id, available_date, time_slot, start_date, end_date, start_time, end_time, status, note, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())');
+
+    try {
+        $period = new DatePeriod(new DateTime($startDate), new DateInterval('P1D'), (new DateTime($endDate))->modify('+1 day'));
+    } catch (Exception $exception) {
+        return 0;
+    }
+
+    foreach ($period as $date) {
+        $day = $date->format('Y-m-d');
+        if ($status === 'available' && availability_range_exists($photographerId, $day, $day, $startTime, $endTime)) {
+            continue;
+        }
+
+        $stmt->execute([$photographerId, $day, $legacySlot, $day, $day, $startTime . ':00', $endTime . ':00', $status, $note]);
+        $created++;
+    }
+
+    return $created;
+}
+
+function normalize_existing_availability_ranges_to_days(int $photographerId): void
+{
+    $rows = db_fetch_all('SELECT *,
+                                 COALESCE(start_date, available_date) AS range_start_date,
+                                 COALESCE(end_date, available_date) AS range_end_date,
+                                 COALESCE(start_time, CASE time_slot WHEN "morning" THEN "09:00:00" WHEN "afternoon" THEN "13:00:00" WHEN "evening" THEN "17:00:00" ELSE "09:00:00" END) AS range_start_time,
+                                 COALESCE(end_time, CASE time_slot WHEN "morning" THEN "12:00:00" WHEN "afternoon" THEN "17:00:00" WHEN "evening" THEN "20:00:00" ELSE "17:00:00" END) AS range_end_time
+                          FROM photographer_availability
+                          WHERE photographer_id = ?
+                            AND COALESCE(end_date, available_date) >= CURDATE()
+                            AND COALESCE(start_date, available_date) <> COALESCE(end_date, available_date)', [$photographerId]);
+
+    foreach ($rows as $row) {
+        if (photographer_availability_has_active_booking($row)) {
+            continue;
+        }
+
+        $startDate = (string)$row['range_start_date'];
+        $endDate = (string)$row['range_end_date'];
+        $startTime = normalize_time_input((string)$row['range_start_time']);
+        $endTime = normalize_time_input((string)$row['range_end_time']);
+        $status = (string)$row['status'];
+        $note = trim((string)($row['note'] ?? ''));
+
+        if ($startDate === '' || $endDate === '' || $startTime === '' || $endTime === '') {
+            continue;
+        }
+
+        $deleteStmt = db()->prepare('DELETE FROM photographer_availability WHERE id = ? AND photographer_id = ?');
+        $deleteStmt->execute([(int)$row['id'], $photographerId]);
+        create_daily_availability_rows($photographerId, $startDate, $endDate, $startTime, $endTime, $status, $note);
+    }
+}
+
 if (is_post()) {
     verify_csrf();
 
@@ -160,11 +254,17 @@ if (is_post()) {
                 redirect('/photographer/availability.php');
             }
 
-            $legacySlot = availability_legacy_slot($startTime, $endTime);
-            $stmt = db()->prepare('UPDATE photographer_availability
-                                   SET available_date = ?, time_slot = ?, start_date = ?, end_date = ?, start_time = ?, end_time = ?, status = ?, note = ?, updated_at = NOW()
-                                   WHERE id = ? AND photographer_id = ?');
-            $stmt->execute([$startDate, $legacySlot, $startDate, $endDate, $startTime . ':00', $endTime . ':00', $status, $note, $id, $pid]);
+            if ($startDate === $endDate) {
+                $legacySlot = availability_legacy_slot($startTime, $endTime);
+                $stmt = db()->prepare('UPDATE photographer_availability
+                                       SET available_date = ?, time_slot = ?, start_date = ?, end_date = ?, start_time = ?, end_time = ?, status = ?, note = ?, updated_at = NOW()
+                                       WHERE id = ? AND photographer_id = ?');
+                $stmt->execute([$startDate, $legacySlot, $startDate, $endDate, $startTime . ':00', $endTime . ':00', $status, $note, $id, $pid]);
+            } else {
+                $stmt = db()->prepare('DELETE FROM photographer_availability WHERE id = ? AND photographer_id = ?');
+                $stmt->execute([$id, $pid]);
+                create_daily_availability_rows($pid, $startDate, $endDate, $startTime, $endTime, $status, $note);
+            }
             flash('success', 'แก้ไขช่วงวันว่างแล้ว');
         }
     } else {
@@ -175,17 +275,15 @@ if (is_post()) {
             redirect('/photographer/availability.php');
         }
 
-        $legacySlot = availability_legacy_slot($startTime, $endTime);
-        $stmt = db()->prepare('INSERT INTO photographer_availability
-            (photographer_id, available_date, time_slot, start_date, end_date, start_time, end_time, status, note, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())');
-        $stmt->execute([$pid, $startDate, $legacySlot, $startDate, $endDate, $startTime . ':00', $endTime . ':00', $status, $note]);
-        flash('success', 'บันทึกช่วงวันว่างแล้ว');
+        $created = create_daily_availability_rows($pid, $startDate, $endDate, $startTime, $endTime, $status, $note);
+        flash('success', 'บันทึกวันว่างแบบแยกรายวันแล้ว ' . number_format($created) . ' รายการ');
     }
 
     log_activity('manage_availability', 'photographer_availability', $pid);
     redirect('/photographer/availability.php');
 }
+
+normalize_existing_availability_ranges_to_days($pid);
 
 $stmt = db()->prepare('SELECT *,
                               COALESCE(start_date, available_date) AS range_start_date,
@@ -216,36 +314,23 @@ include __DIR__ . '/../includes/header.php';
         <div class="rounded-[1.35rem] bg-red-50 p-4 text-sm font-bold leading-7 text-red-700"><i class="fa-solid fa-shield-halved mr-2"></i>ระบบกันจองซ้อนจากสถานะ pending, accepted, in_progress</div>
     </div>
 
-    <form method="post" class="stock-card mt-6 grid items-end gap-4 rounded-[1.5rem] p-5 md:grid-cols-2 xl:grid-cols-[1fr_1fr_.8fr_.8fr_.8fr_1.2fr_auto]">
+    <form method="post" class="stock-card mt-6 grid items-end gap-4 rounded-[1.5rem] p-5 md:grid-cols-2 xl:grid-cols-[1.6fr_.8fr_.8fr_1.2fr_auto]">
         <?= csrf_field() ?>
         <input type="hidden" name="action" value="create">
 
-        <label class="grid gap-2 text-sm font-black text-neutral-700">
-            <span><i class="fa-solid fa-calendar-day mr-2 text-red-600"></i>วันที่เริ่มต้น <?= required_mark() ?></span>
-            <?= be_date_input('start_date', '', 'stock-input rounded-2xl px-4 py-3 font-semibold', true, 'วว/ดด/พ.ศ.') ?>
-        </label>
-
-        <label class="grid gap-2 text-sm font-black text-neutral-700">
-            <span><i class="fa-solid fa-calendar-check mr-2 text-red-600"></i>วันที่สิ้นสุด <?= required_mark() ?></span>
-            <?= be_date_input('end_date', '', 'stock-input rounded-2xl px-4 py-3 font-semibold', true, 'วว/ดด/พ.ศ.') ?>
-        </label>
+        <div class="grid gap-2 text-sm font-black text-neutral-700">
+            <span><i class="fa-solid fa-calendar-days mr-2 text-red-600"></i>ช่วงวันที่รับงาน <?= required_mark() ?></span>
+            <?= calendar_date_range_input('start_date', 'end_date', '', '', 'เลือกช่วงวันที่รับงาน', true) ?>
+        </div>
 
         <label class="grid gap-2 text-sm font-black text-neutral-700">
             <span><i class="fa-solid fa-clock mr-2 text-red-600"></i>เวลาเริ่มต้น</span>
-            <input type="time" name="start_time" value="09:00" class="stock-input rounded-2xl px-4 py-3 font-semibold">
+            <?= availability_time_picker_input('start_time', '09:00') ?>
         </label>
 
         <label class="grid gap-2 text-sm font-black text-neutral-700">
             <span><i class="fa-solid fa-clock mr-2 text-red-600"></i>เวลาสิ้นสุด</span>
-            <input type="time" name="end_time" value="17:00" class="stock-input rounded-2xl px-4 py-3 font-semibold">
-        </label>
-
-        <label class="grid gap-2 text-sm font-black text-neutral-700">
-            <span><i class="fa-solid fa-toggle-on mr-2 text-red-600"></i>สถานะ</span>
-            <select name="status" class="stock-input rounded-2xl px-4 py-3 font-semibold">
-                <option value="available">ว่าง</option>
-                <option value="unavailable">ไม่ว่าง</option>
-            </select>
+            <?= availability_time_picker_input('end_time', '17:00') ?>
         </label>
 
         <label class="grid gap-2 text-sm font-black text-neutral-700">
@@ -293,33 +378,25 @@ include __DIR__ . '/../includes/header.php';
                                             <input type="hidden" name="action" value="update">
                                             <input type="hidden" name="id" value="<?= (int)$item['id'] ?>">
 
-                                            <div class="grid gap-3 sm:grid-cols-2">
+                                            <input type="hidden" name="status" value="<?= h((string)$item['status']) ?>">
+
+                                            <div class="grid gap-3">
                                                 <label class="grid gap-1 text-xs font-black text-neutral-700">
-                                                    <span><i class="fa-solid fa-calendar-day mr-1 text-red-600"></i>วันที่เริ่มต้น <?= required_mark() ?></span>
-                                                    <input name="start_date" required value="<?= h(format_be_date($item['range_start_date'])) ?>" placeholder="เช่น 05/05/2569" class="stock-input rounded-xl px-3 py-2 text-sm font-semibold">
-                                                </label>
-                                                <label class="grid gap-1 text-xs font-black text-neutral-700">
-                                                    <span><i class="fa-solid fa-calendar-check mr-1 text-red-600"></i>วันที่สิ้นสุด <?= required_mark() ?></span>
-                                                    <input name="end_date" required value="<?= h(format_be_date($item['range_end_date'])) ?>" placeholder="เช่น 07/05/2569" class="stock-input rounded-xl px-3 py-2 text-sm font-semibold">
-                                                </label>
-                                                <label class="grid gap-1 text-xs font-black text-neutral-700">
-                                                    <span><i class="fa-solid fa-clock mr-1 text-red-600"></i>เวลาเริ่มต้น</span>
-                                                    <input type="time" name="start_time" value="<?= h(format_time_hm($item['range_start_time'])) ?>" class="stock-input rounded-xl px-3 py-2 text-sm font-semibold">
-                                                </label>
-                                                <label class="grid gap-1 text-xs font-black text-neutral-700">
-                                                    <span><i class="fa-solid fa-clock mr-1 text-red-600"></i>เวลาสิ้นสุด</span>
-                                                    <input type="time" name="end_time" value="<?= h(format_time_hm($item['range_end_time'])) ?>" class="stock-input rounded-xl px-3 py-2 text-sm font-semibold">
+                                                    <span><i class="fa-solid fa-calendar-days mr-1 text-red-600"></i>ช่วงวันที่ <?= required_mark() ?></span>
+                                                    <?= calendar_date_range_input('start_date', 'end_date', (string)$item['range_start_date'], (string)$item['range_end_date'], 'แก้ไขช่วงวันที่', true) ?>
                                                 </label>
                                             </div>
 
-                                            <label class="grid gap-1 text-xs font-black text-neutral-700">
-                                                <span><i class="fa-solid fa-toggle-on mr-1 text-red-600"></i>สถานะ</span>
-                                                <select name="status" class="stock-input rounded-xl px-3 py-2 text-sm font-semibold">
-                                                    <?php foreach ($statuses as $status): ?>
-                                                        <option value="<?= h($status) ?>" <?php if ((string)$item['status'] === (string)$status): ?>selected<?php endif; ?>><?= h(booking_status_label($status)) ?></option>
-                                                    <?php endforeach; ?>
-                                                </select>
-                                            </label>
+                                            <div class="grid gap-3 sm:grid-cols-2">
+                                                <label class="grid gap-1 text-xs font-black text-neutral-700">
+                                                    <span><i class="fa-solid fa-clock mr-1 text-red-600"></i>เวลาเริ่มต้น</span>
+                                                    <?= availability_time_picker_input('start_time', format_time_hm($item['range_start_time'])) ?>
+                                                </label>
+                                                <label class="grid gap-1 text-xs font-black text-neutral-700">
+                                                    <span><i class="fa-solid fa-clock mr-1 text-red-600"></i>เวลาสิ้นสุด</span>
+                                                    <?= availability_time_picker_input('end_time', format_time_hm($item['range_end_time'])) ?>
+                                                </label>
+                                            </div>
 
                                             <label class="grid gap-1 text-xs font-black text-neutral-700">
                                                 <span><i class="fa-solid fa-note-sticky mr-1 text-red-600"></i>หมายเหตุ</span>
@@ -370,5 +447,55 @@ include __DIR__ . '/../includes/header.php';
         <?php endif; ?>
     </div>
 </section>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('[data-time-picker]').forEach(function (picker) {
+        var hidden = document.getElementById(picker.dataset.target || '');
+        var trigger = picker.querySelector('[data-time-picker-trigger]');
+        var popover = picker.querySelector('[data-time-picker-popover]');
+        var label = picker.querySelector('[data-time-picker-label]');
+
+        if (!hidden || !trigger || !popover || !label) {
+            return;
+        }
+
+        trigger.addEventListener('click', function (event) {
+            event.stopPropagation();
+            document.querySelectorAll('[data-time-picker-popover]').forEach(function (item) {
+                if (item !== popover) {
+                    item.classList.add('hidden');
+                }
+            });
+            popover.classList.toggle('hidden');
+        });
+
+        popover.addEventListener('click', function (event) {
+            event.stopPropagation();
+        });
+
+        popover.querySelectorAll('[data-time-value]').forEach(function (button) {
+            button.addEventListener('click', function () {
+                hidden.value = button.dataset.timeValue || '';
+                label.textContent = hidden.value;
+                popover.querySelectorAll('[data-time-value]').forEach(function (item) {
+                    item.classList.remove('bg-neutral-950', 'text-white');
+                    item.classList.add('bg-neutral-50', 'text-neutral-800');
+                });
+                button.classList.add('bg-neutral-950', 'text-white');
+                button.classList.remove('bg-neutral-50', 'text-neutral-800');
+                popover.classList.add('hidden');
+                hidden.dispatchEvent(new Event('change', { bubbles: true }));
+            });
+        });
+    });
+
+    document.addEventListener('click', function () {
+        document.querySelectorAll('[data-time-picker-popover]').forEach(function (popover) {
+            popover.classList.add('hidden');
+        });
+    });
+});
+</script>
 
 <?php include __DIR__ . '/../includes/footer.php'; ?>

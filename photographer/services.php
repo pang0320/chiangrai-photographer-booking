@@ -25,6 +25,13 @@ if (is_post()) {
         $stmt = db()->prepare('INSERT INTO specialty_requests (photographer_id, specialty_name, description, status, created_at, updated_at)
                                VALUES (?, ?, ?, "pending", NOW(), NOW())');
         $stmt->execute([$pid, $specialtyName, $description]);
+        $requestId = (int)db()->lastInsertId();
+        notify_admins(
+            'มีคำขอเพิ่มประเภทงานใหม่',
+            'ช่างภาพ ' . (string)$profile['display_name'] . ' ขอเพิ่มประเภทงาน: ' . $specialtyName,
+            'specialty_request',
+            $requestId
+        );
         flash('success', 'ส่งคำขอเพิ่มประเภทความเชี่ยวชาญแล้ว รอผู้ดูแลระบบอนุมัติ');
     } elseif ($action === 'delete') {
         $id = (int)($_POST['id'] ?? 0);

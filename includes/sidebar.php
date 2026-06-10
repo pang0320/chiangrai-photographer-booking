@@ -23,11 +23,13 @@ if ($me) {
         $roleTitle = 'ผู้ดูแลระบบ';
         $roleIcon = 'fa-user-shield';
         $unreadContactMessages = (int)db_fetch_value('SELECT COUNT(*) FROM contact_messages WHERE status = "unread"');
+        ensure_specialty_requests_table();
+        $pendingSpecialtyRequests = (int)db_fetch_value('SELECT COUNT(*) FROM specialty_requests WHERE status = "pending"');
         $navItems = [
             ['/admin/dashboard.php', 'แดชบอร์ด', 'fa-gauge'],
             ['/admin/users.php', 'สมาชิก', 'fa-users'],
             ['/admin/photographers.php', 'ช่างภาพ', 'fa-camera'],
-            ['/admin/categories.php', 'หมวดหมู่งาน', 'fa-layer-group'],
+            ['/admin/categories.php', 'หมวดหมู่งาน', 'fa-layer-group', $pendingSpecialtyRequests],
             ['/admin/districts.php', 'อำเภอ', 'fa-map'],
             ['/admin/bookings.php', 'คำขอจอง', 'fa-calendar-check'],
             ['/admin/reviews.php', 'รีวิว', 'fa-star'],

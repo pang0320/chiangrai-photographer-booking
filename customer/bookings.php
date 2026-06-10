@@ -127,13 +127,19 @@ include __DIR__ . '/../includes/header.php';
                 </thead>
                 <tbody data-block-paginate="5">
                     <?php foreach ($bookings as $booking): ?>
+                        <?php
+                        $bookingStatusHtml = status_badge((string)$booking['status']);
+                        if ((string)$booking['status'] === 'cancelled' && (string)($booking['rejection_reason'] ?? '') === 'ยกเลิกโดยผู้จ้าง') {
+                            $bookingStatusHtml = '<span class="inline-flex items-center gap-1.5 rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-700"><i class="fa-solid fa-ban"></i>ยกเลิกโดยผู้จ้าง</span>';
+                        }
+                        ?>
                         <tr class="border-t">
                             <td class="py-3 font-black"><?= h($booking['booking_code']) ?></td>
                             <td><?= h($booking['display_name']) ?></td>
                             <td><?= h($booking['category_name']) ?></td>
                             <td><?= h(booking_range_label($booking)) ?></td>
                             <td><?= h($booking['district_name']) ?></td>
-                            <td><?= status_badge($booking['status']) ?></td>
+                            <td><?= $bookingStatusHtml ?></td>
                             <td class="whitespace-nowrap">
                                 <?= clean_context_button('/customer/booking_detail.php', ['id' => (int)$booking['id']], '<i class="fa-solid fa-eye mr-1"></i>รายละเอียด', 'btn-primary btn-sm') ?>
 

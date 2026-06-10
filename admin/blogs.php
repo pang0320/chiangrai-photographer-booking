@@ -146,7 +146,13 @@ if ($editId > 0) {
         $editTagIds = selected_article_tag_ids('blog_tags', 'blog_id', $editId);
     }
 }
-$tagSelectorHtml = article_tag_selector_html($editTagIds);
+$tagSelectorHtml = article_tag_selector_html($editTagIds, 'tag_ids', null);
+$allowedBlogTagNames = [];
+foreach (article_tag_options(null) as $allowedTagGroup) {
+    foreach ($allowedTagGroup as $allowedTag) {
+        $allowedBlogTagNames[(string)$allowedTag['name']] = true;
+    }
+}
 $editStatus = '';
 if ($editBlog) {
     $editStatus = (string)$editBlog['status'];
@@ -170,7 +176,11 @@ if ($statusFilter !== '') {
 }
 
 $items = db_fetch_all('SELECT b.*, u.name AS admin_name,
-                       (SELECT GROUP_CONCAT(t.name ORDER BY t.name SEPARATOR ", ") FROM blog_tags bt JOIN tags t ON t.id = bt.tag_id WHERE bt.blog_id = b.id) AS tags
+                       (SELECT GROUP_CONCAT(t.name ORDER BY t.name SEPARATOR ", ")
+                        FROM blog_tags bt
+                        JOIN tags t ON t.id = bt.tag_id
+                        WHERE bt.blog_id = b.id
+                          AND t.is_active = 1) AS tags
                        FROM blogs b
                        JOIN users u ON u.id = b.admin_id
                        WHERE ' . implode(' AND ', $where) . '
@@ -246,7 +256,7 @@ include __DIR__ . '/../includes/header.php';
         <div class="article-tags-panel stock-card grid gap-3 rounded-[1.75rem] border-red-100 bg-red-50/45 p-6">
             <div>
                 <label class="block text-sm font-black text-neutral-700"><i class="fa-solid fa-tags mr-2 text-red-600"></i>แท็กบทความ</label>
-                <p class="mt-1 text-xs font-bold leading-6 text-neutral-500">ส่วนนี้แยกออกจากช่องพิมพ์เนื้อหาแล้ว เลือกจากแท็กที่ระบบกำหนดไว้เพื่อให้ค้นหาและจัดกลุ่มบทความได้ตรงกัน</p>
+                <p class="mt-1 text-xs font-bold leading-6 text-neutral-500">ประเภทงานดึงจากหมวดหมู่งานในฐานข้อมูล และพื้นที่ดึงจากอำเภอในระบบเท่านั้น ไม่ใช้กลุ่มสถานที่เชียงรายหรือแลนด์มาร์กแยกต่างหาก</p>
             </div>
             <?= $tagSelectorHtml ?>
         </div>
@@ -310,7 +320,17 @@ include __DIR__ . '/../includes/header.php';
                         </td>
                         <td><?= h($item['admin_name']) ?></td>
                         <td><span class="rounded-full bg-neutral-950 px-3 py-1 text-xs font-black text-white"><i class="fa-solid fa-user-shield mr-1"></i>จากระบบ</span></td>
-                        <td><?= h($item['tags']) ?></td>
+                        <?php
+                        $blogTagNames = [];
+                        if (!empty($item['tags'])) {
+                            foreach (array_filter(array_map('trim', explode(',', (string)$item['tags']))) as $rawTagName) {
+                                if (isset($allowedBlogTagNames[$rawTagName])) {
+                                    $blogTagNames[] = $rawTagName;
+                                }
+                            }
+                        }
+                        ?>
+                        <td><?= h($blogTagNames ? implode(', ', $blogTagNames) : '-') ?></td>
                         <td><?= status_badge($item['status']) ?></td>
                         <td><?= h(format_be_datetime($blogDate)) ?></td>
                         <td>

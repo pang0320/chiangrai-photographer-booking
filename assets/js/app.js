@@ -119,6 +119,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   initBlockPagination();
   initCalendarDateInputs();
+  initCalendarDateRangeInputs();
   initClickableCards();
 
   if (window.jQuery && jQuery.fn.DataTable) {
@@ -431,15 +432,221 @@ function initCalendarDateInputs() {
   });
 }
 
+/**
+ * เริ่มการทำงานของอินพุตช่วงวันที่แบบปฏิทินเดียว
+ */
+function initCalendarDateRangeInputs() {
+  const thaiMonths = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+
+  document.querySelectorAll('[data-calendar-range]').forEach(function (calendar) {
+    const startHidden = document.getElementById(calendar.dataset.startTarget || '');
+    const endHidden = document.getElementById(calendar.dataset.endTarget || '');
+    const grid = calendar.querySelector('[data-calendar-range-grid]');
+    const monthLabel = calendar.querySelector('[data-calendar-range-month]');
+    const selectedLabel = calendar.querySelector('[data-calendar-range-selected]');
+    const selectedPopoverLabel = calendar.querySelector('[data-calendar-range-selected-popover]');
+    const trigger = calendar.querySelector('[data-calendar-range-trigger]');
+    const popover = calendar.querySelector('[data-calendar-range-popover]');
+    const prevButton = calendar.querySelector('[data-calendar-range-prev]');
+    const nextButton = calendar.querySelector('[data-calendar-range-next]');
+    const today = new Date();
+    const minMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    let current;
+    let rangeStart = parseBeDateToIso(startHidden ? startHidden.value : '');
+    let rangeEnd = parseBeDateToIso(endHidden ? endHidden.value : '');
+
+    if (!startHidden || !endHidden || !grid || !monthLabel) return;
+
+    if (rangeStart) {
+      const parts = rangeStart.split('-').map(function (part) { return parseInt(part, 10); });
+      current = new Date(parts[0], parts[1] - 1, 1);
+      if (current < minMonth) {
+        current = new Date(minMonth.getFullYear(), minMonth.getMonth(), 1);
+      }
+    } else {
+      current = new Date(today.getFullYear(), today.getMonth(), 1);
+    }
+
+    function rangeText() {
+      if (rangeStart && rangeEnd) {
+        if (rangeStart === rangeEnd) {
+          return formatIsoToBeDate(rangeStart);
+        }
+        return formatIsoToBeDate(rangeStart) + '–' + formatIsoToBeDate(rangeEnd);
+      }
+      if (rangeStart) {
+        return 'เริ่ม ' + formatIsoToBeDate(rangeStart) + ' · เลือกวันสิ้นสุด';
+      }
+      return 'เลือกวันที่เริ่มต้นและสิ้นสุด';
+    }
+
+    function syncLabels() {
+      startHidden.value = rangeStart || '';
+      endHidden.value = rangeEnd || '';
+      if (selectedLabel) {
+        selectedLabel.textContent = rangeText();
+      }
+      if (selectedPopoverLabel) {
+        selectedPopoverLabel.textContent = rangeText();
+      }
+      startHidden.dispatchEvent(new Event('change', { bubbles: true }));
+      endHidden.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    function renderCalendar() {
+      const year = current.getFullYear();
+      const month = current.getMonth();
+      const firstDay = new Date(year, month, 1).getDay();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const todayIso = buildIsoDate(today.getFullYear(), today.getMonth() + 1, today.getDate());
+
+      monthLabel.textContent = thaiMonths[month] + ' ' + (year + 543);
+      grid.innerHTML = '';
+
+      if (prevButton) {
+        const isMinMonth = current.getFullYear() === minMonth.getFullYear() && current.getMonth() === minMonth.getMonth();
+        prevButton.disabled = isMinMonth;
+        prevButton.classList.toggle('calendar-nav-disabled', isMinMonth);
+        prevButton.setAttribute('aria-disabled', isMinMonth ? 'true' : 'false');
+      }
+
+      for (let blank = 0; blank < firstDay; blank++) {
+        const spacer = document.createElement('span');
+        spacer.className = 'calendar-day calendar-day-empty';
+        grid.appendChild(spacer);
+      }
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const iso = buildIsoDate(year, month + 1, day);
+        const isPast = iso < todayIso;
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = String(day);
+        button.className = 'calendar-day calendar-day-available';
+        button.dataset.date = iso;
+        button.disabled = isPast;
+
+        if (isPast) {
+          button.className += ' calendar-day-past calendar-day-disabled';
+        }
+
+        if (rangeStart && iso === rangeStart) {
+          button.className += ' calendar-day-selected calendar-day-range-edge';
+        }
+        if (rangeEnd && iso === rangeEnd) {
+          button.className += ' calendar-day-selected calendar-day-range-edge';
+        }
+        if (rangeStart && rangeEnd && iso > rangeStart && iso < rangeEnd) {
+          button.className += ' calendar-day-in-range';
+        }
+
+        button.addEventListener('click', function () {
+          if (isPast) return;
+
+          if (!rangeStart || (rangeStart && rangeEnd)) {
+            rangeStart = iso;
+            rangeEnd = '';
+          } else if (iso < rangeStart) {
+            rangeEnd = rangeStart;
+            rangeStart = iso;
+          } else {
+            rangeEnd = iso;
+          }
+
+          syncLabels();
+          renderCalendar();
+
+          if (rangeStart && rangeEnd) {
+            setTimeout(function () {
+              closeCalendar();
+            }, 180);
+          }
+        });
+
+        grid.appendChild(button);
+      }
+    }
+
+    function openCalendar() {
+      document.querySelectorAll('[data-calendar-date].calendar-date-open, [data-calendar-range].calendar-date-open').forEach(function (item) {
+        if (item !== calendar) {
+          item.classList.remove('calendar-date-open');
+        }
+      });
+      calendar.classList.add('calendar-date-open');
+    }
+
+    function closeCalendar() {
+      calendar.classList.remove('calendar-date-open');
+    }
+
+    calendar.addEventListener('calendarRangeSet', function (event) {
+      const detail = event.detail || {};
+      const nextStart = parseBeDateToIso(detail.start || '');
+      const nextEnd = parseBeDateToIso(detail.end || detail.start || '');
+
+      rangeStart = nextStart;
+      rangeEnd = nextEnd;
+
+      if (rangeStart) {
+        const parts = rangeStart.split('-').map(function (part) { return parseInt(part, 10); });
+        current = new Date(parts[0], parts[1] - 1, 1);
+        if (current < minMonth) {
+          current = new Date(minMonth.getFullYear(), minMonth.getMonth(), 1);
+        }
+      }
+
+      syncLabels();
+      renderCalendar();
+    });
+
+    if (prevButton) {
+      prevButton.addEventListener('click', function () {
+        const previousMonth = new Date(current.getFullYear(), current.getMonth() - 1, 1);
+        if (previousMonth < minMonth) {
+          return;
+        }
+        current = previousMonth;
+        renderCalendar();
+      });
+    }
+
+    if (nextButton) {
+      nextButton.addEventListener('click', function () {
+        current = new Date(current.getFullYear(), current.getMonth() + 1, 1);
+        renderCalendar();
+      });
+    }
+
+    if (trigger && popover) {
+      trigger.addEventListener('click', function (event) {
+        event.stopPropagation();
+        if (calendar.classList.contains('calendar-date-open')) {
+          closeCalendar();
+        } else {
+          openCalendar();
+        }
+      });
+
+      popover.addEventListener('click', function (event) {
+        event.stopPropagation();
+      });
+    }
+
+    syncLabels();
+    renderCalendar();
+  });
+}
+
 document.addEventListener('click', function () {
-  document.querySelectorAll('[data-calendar-date].calendar-date-open').forEach(function (calendar) {
+  document.querySelectorAll('[data-calendar-date].calendar-date-open, [data-calendar-range].calendar-date-open').forEach(function (calendar) {
     calendar.classList.remove('calendar-date-open');
   });
 });
 
 document.addEventListener('keydown', function (event) {
   if (event.key !== 'Escape') return;
-  document.querySelectorAll('[data-calendar-date].calendar-date-open').forEach(function (calendar) {
+  document.querySelectorAll('[data-calendar-date].calendar-date-open, [data-calendar-range].calendar-date-open').forEach(function (calendar) {
     calendar.classList.remove('calendar-date-open');
   });
 });

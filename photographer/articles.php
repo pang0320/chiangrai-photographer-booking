@@ -93,7 +93,7 @@ if (is_post()) {
         }
 
         $plainContent = trim(strip_tags($content));
-        $tagIds = selected_article_tag_ids_from_post();
+        $tagIds = selected_article_tag_ids_from_post($pid);
 
         if (!in_array($status, ['draft', 'published', 'hidden'], true)) {
             $status = 'draft';
@@ -123,7 +123,7 @@ if (is_post()) {
                                        updated_at = NOW()
                                    WHERE id = ? AND photographer_id = ?');
             $stmt->execute([$title, $slug, $cover, $excerpt, $content, $status, $status, $articleId, $pid]);
-            sync_article_tag_relations('article_tags', 'article_id', $articleId, $tagIds);
+            sync_article_tag_relations('article_tags', 'article_id', $articleId, $tagIds, $pid);
             log_activity('manage_articles', 'photographer_articles', $articleId);
             flash('success', 'แก้ไขบทความแล้ว');
         } else {
@@ -131,7 +131,7 @@ if (is_post()) {
                                    VALUES (?, ?, ?, ?, ?, ?, ?, IF(? = "published", NOW(), NULL), NOW(), NOW())');
             $stmt->execute([$pid, $title, unique_slug('photographer_articles', $title), $cover, $excerpt, $content, $status, $status]);
             $articleId = (int)db()->lastInsertId();
-            sync_article_tag_relations('article_tags', 'article_id', $articleId, $tagIds);
+            sync_article_tag_relations('article_tags', 'article_id', $articleId, $tagIds, $pid);
             log_activity('manage_articles', 'photographer_articles', $articleId);
             flash('success', 'บันทึกบทความแล้ว');
         }
@@ -149,7 +149,7 @@ if ($editId > 0) {
     $editArticle = $stmt->fetch();
 }
 $editTagIds = $editArticle ? selected_article_tag_ids('article_tags', 'article_id', (int)$editArticle['id']) : [];
-$tagSelectorHtml = article_tag_selector_html($editTagIds);
+$tagSelectorHtml = article_tag_selector_html($editTagIds, 'tag_ids', $pid);
 $editStatus = '';
 if ($editArticle) {
     $editStatus = (string)$editArticle['status'];
@@ -175,6 +175,13 @@ $stmt = db()->prepare('SELECT a.*,
                        ORDER BY ' . $orderSql);
 $stmt->execute([$pid]);
 $items = $stmt->fetchAll();
+
+$allowedArticleTagNames = [];
+foreach (article_tag_options($pid) as $allowedTagGroup) {
+    foreach ($allowedTagGroup as $allowedTag) {
+        $allowedArticleTagNames[(string)$allowedTag['name']] = true;
+    }
+}
 
 $articleStatusCounts = [
     'all' => count($items),
@@ -268,7 +275,7 @@ include __DIR__ . '/../includes/header.php';
         <div class="article-tags-panel stock-card grid gap-3 rounded-[1.75rem] border-red-100 bg-red-50/45 p-6">
             <div>
                 <label class="block text-sm font-black text-neutral-700"><i class="fa-solid fa-tags mr-2 text-red-600"></i>แท็กบทความ</label>
-                <p class="mt-1 text-xs font-bold leading-6 text-neutral-500">ส่วนนี้แยกออกจากช่องพิมพ์เนื้อหาแล้ว เลือกจากแท็กที่ระบบกำหนดไว้เพื่อให้ค้นหาและจัดกลุ่มบทความได้ตรงกัน</p>
+                <p class="mt-1 text-xs font-bold leading-6 text-neutral-500">ประเภทงานดึงจากหมวดหมู่งานในฐานข้อมูล และพื้นที่รับงานดึงจากอำเภอที่โปรไฟล์ของคุณเปิดรับงานไว้เท่านั้น</p>
             </div>
             <?= $tagSelectorHtml ?>
         </div>
@@ -346,9 +353,19 @@ include __DIR__ . '/../includes/header.php';
                         <span class="mx-2 text-neutral-300">/</span>
                         แก้ไขล่าสุด: <?= h(format_be_datetime($item['updated_at'])) ?>
                     </p>
-                    <?php if (!empty($item['tags'])): ?>
+                    <?php
+                    $itemTagNames = [];
+                    if (!empty($item['tags'])) {
+                        foreach (array_filter(array_map('trim', explode(',', (string)$item['tags']))) as $rawTagName) {
+                            if (isset($allowedArticleTagNames[$rawTagName])) {
+                                $itemTagNames[] = $rawTagName;
+                            }
+                        }
+                    }
+                    ?>
+                    <?php if ($itemTagNames): ?>
                         <div class="mt-2 flex flex-wrap gap-1.5">
-                            <?php foreach (array_slice(array_filter(array_map('trim', explode(',', (string)$item['tags']))), 0, 6) as $tagName): ?>
+                            <?php foreach (array_slice($itemTagNames, 0, 6) as $tagName): ?>
                                 <span class="rounded-full bg-red-50 px-2.5 py-1 text-xs font-black text-red-700"><i class="fa-solid fa-tag mr-1"></i><?= h($tagName) ?></span>
                             <?php endforeach; ?>
                         </div>

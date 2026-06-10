@@ -233,7 +233,7 @@ include __DIR__ . '/../includes/header.php';
                                     <p class="font-black text-neutral-950"><?= h($request['specialty_name']) ?></p>
                                     <p class="text-sm font-bold text-neutral-500"><?= h(format_be_datetime($request['created_at'])) ?></p>
                                 </div>
-                                <?= status_badge((string)$request['status']) ?>
+                                <?= str_replace('ช่างภาพปฏิเสธงาน', 'ไม่อนุมัติ', status_badge((string)$request['status'])) ?>
                             </div>
                         <?php endforeach; ?>
                     </div>

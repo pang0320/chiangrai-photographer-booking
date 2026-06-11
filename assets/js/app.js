@@ -190,6 +190,27 @@ document.addEventListener('DOMContentLoaded', function () {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     });
   }
+
+  document.querySelectorAll('input[type="file"]').forEach(function (input) {
+    input.addEventListener('change', function () {
+      const maxSizeBytes = 5 * 1024 * 1024;
+      if (this.files && this.files.length > 0) {
+        for (let i = 0; i < this.files.length; i++) {
+          if (this.files[i].size > maxSizeBytes) {
+            Swal.fire({
+              icon: 'error',
+              title: 'ขนาดไฟล์เกินกำหนด',
+              text: 'ไฟล์ ' + this.files[i].name + ' มีขนาดใหญ่กว่า 5MB กรุณาเลือกไฟล์ที่มีขนาดไม่เกิน 5MB',
+              confirmButtonText: 'เข้าใจแล้ว',
+              confirmButtonColor: '#e21b2d'
+            });
+            this.value = '';
+            break;
+          }
+        }
+      }
+    });
+  });
 });
 
 /**

@@ -467,7 +467,40 @@ document.addEventListener('DOMContentLoaded', function () {
                     item.classList.add('hidden');
                 }
             });
+            document.querySelectorAll('[data-time-picker]').forEach(function (p) {
+                if (p !== picker) {
+                    var els = [p, p.closest('label'), p.closest('.block'), p.closest('td'), p.closest('tr'), p.closest('.grid'), p.closest('.stock-card')];
+                    els.forEach(function(el) {
+                        if (el) {
+                            el.style.zIndex = '';
+                            if (el.tagName === 'LABEL' || el.classList.contains('block') || el.classList.contains('grid') || el.classList.contains('stock-card') || el.tagName === 'TD' || el.tagName === 'TR') {
+                                el.style.position = '';
+                            }
+                        }
+                    });
+                }
+            });
             popover.classList.toggle('hidden');
+            var els = [picker, picker.closest('label'), picker.closest('.block'), picker.closest('td'), picker.closest('tr'), picker.closest('.grid'), picker.closest('.stock-card')];
+            if (!popover.classList.contains('hidden')) {
+                els.forEach(function(el) {
+                    if (el) {
+                        if (el.tagName === 'LABEL' || el.classList.contains('block') || el.classList.contains('grid') || el.classList.contains('stock-card') || el.tagName === 'TD' || el.tagName === 'TR') {
+                            el.style.position = 'relative';
+                        }
+                        el.style.zIndex = '50';
+                    }
+                });
+            } else {
+                els.forEach(function(el) {
+                    if (el) {
+                        el.style.zIndex = '';
+                        if (el.tagName === 'LABEL' || el.classList.contains('block') || el.classList.contains('grid') || el.classList.contains('stock-card') || el.tagName === 'TD' || el.tagName === 'TR') {
+                            el.style.position = '';
+                        }
+                    }
+                });
+            }
         });
 
         popover.addEventListener('click', function (event) {
@@ -485,6 +518,15 @@ document.addEventListener('DOMContentLoaded', function () {
                 button.classList.add('bg-neutral-950', 'text-white');
                 button.classList.remove('bg-neutral-50', 'text-neutral-800');
                 popover.classList.add('hidden');
+                var els = [picker, picker.closest('label'), picker.closest('.block'), picker.closest('td'), picker.closest('tr'), picker.closest('.grid'), picker.closest('.stock-card')];
+                els.forEach(function(el) {
+                    if (el) {
+                        el.style.zIndex = '';
+                        if (el.tagName === 'LABEL' || el.classList.contains('block') || el.classList.contains('grid') || el.classList.contains('stock-card') || el.tagName === 'TD' || el.tagName === 'TR') {
+                            el.style.position = '';
+                        }
+                    }
+                });
                 hidden.dispatchEvent(new Event('change', { bubbles: true }));
             });
         });
@@ -493,6 +535,17 @@ document.addEventListener('DOMContentLoaded', function () {
     document.addEventListener('click', function () {
         document.querySelectorAll('[data-time-picker-popover]').forEach(function (popover) {
             popover.classList.add('hidden');
+        });
+        document.querySelectorAll('[data-time-picker]').forEach(function (p) {
+            var els = [p, p.closest('label'), p.closest('.block'), p.closest('td'), p.closest('tr'), p.closest('.grid'), p.closest('.stock-card')];
+            els.forEach(function(el) {
+                if (el) {
+                    el.style.zIndex = '';
+                    if (el.tagName === 'LABEL' || el.classList.contains('block') || el.classList.contains('grid') || el.classList.contains('stock-card') || el.tagName === 'TD' || el.tagName === 'TR') {
+                        el.style.position = '';
+                    }
+                }
+            });
         });
     });
 });

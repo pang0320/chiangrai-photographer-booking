@@ -192,20 +192,105 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   document.querySelectorAll('input[type="file"]').forEach(function (input) {
-    input.addEventListener('change', function () {
+    input.addEventListener('change', async function () {
       const maxSizeBytes = 5 * 1024 * 1024;
       if (this.files && this.files.length > 0) {
+        let overSizedFile = null;
         for (let i = 0; i < this.files.length; i++) {
           if (this.files[i].size > maxSizeBytes) {
+            overSizedFile = this.files[i];
+            break;
+          }
+        }
+
+        if (overSizedFile) {
+          const isImage = overSizedFile.type.startsWith('image/');
+          
+          if (isImage) {
+            const result = await Swal.fire({
+              icon: 'warning',
+              title: 'ขนาดไฟล์เกินกำหนด',
+              text: `ไฟล์ ${overSizedFile.name} มีขนาดใหญ่กว่า 5MB คุณต้องการลดขนาดไฟล์ภาพให้ไม่เกิน 5MB หรือไม่?`,
+              showCancelButton: true,
+              confirmButtonText: 'ลดขนาดไฟล์ภาพ',
+              cancelButtonText: 'ยกเลิก',
+              confirmButtonColor: '#0d6efd',
+              cancelButtonColor: '#6c757d',
+              reverseButtons: true
+            });
+
+            if (result.isConfirmed) {
+              Swal.fire({
+                title: 'กำลังลดขนาดไฟล์...',
+                allowOutsideClick: false,
+                didOpen: () => {
+                  Swal.showLoading();
+                }
+              });
+
+              try {
+                const dt = new DataTransfer();
+                let success = true;
+                
+                for (let i = 0; i < this.files.length; i++) {
+                  let currentFile = this.files[i];
+                  if (currentFile.size > maxSizeBytes && currentFile.type.startsWith('image/')) {
+                    const compressedFile = await compressImageFile(currentFile, 5);
+                    if (compressedFile && compressedFile.size <= maxSizeBytes) {
+                       dt.items.add(compressedFile);
+                    } else {
+                       success = false;
+                       break;
+                    }
+                  } else if (currentFile.size <= maxSizeBytes) {
+                    dt.items.add(currentFile);
+                  } else {
+                    success = false;
+                    break;
+                  }
+                }
+
+                if (success) {
+                  this.files = dt.files;
+                  Swal.fire({
+                    icon: 'success',
+                    title: 'สำเร็จ',
+                    text: 'ลดขนาดไฟล์ภาพเรียบร้อยแล้ว',
+                    timer: 1500,
+                    showConfirmButton: false
+                  });
+                } else {
+                  this.value = '';
+                  Swal.fire({
+                    icon: 'error',
+                    title: 'ข้อผิดพลาด',
+                    text: 'ไม่สามารถลดขนาดไฟล์ให้ต่ำกว่า 5MB ได้ กรุณาเลือกไฟล์อื่น',
+                    confirmButtonText: 'เข้าใจแล้ว',
+                    confirmButtonColor: '#e21b2d'
+                  });
+                }
+              } catch (e) {
+                this.value = '';
+                Swal.fire({
+                  icon: 'error',
+                  title: 'ข้อผิดพลาด',
+                  text: 'เกิดข้อผิดพลาดในการลดขนาดไฟล์',
+                  confirmButtonText: 'เข้าใจแล้ว',
+                  confirmButtonColor: '#e21b2d'
+                });
+              }
+            } else {
+              this.value = '';
+            }
+          } else {
             Swal.fire({
               icon: 'error',
               title: 'ขนาดไฟล์เกินกำหนด',
-              text: 'ไฟล์ ' + this.files[i].name + ' มีขนาดใหญ่กว่า 5MB กรุณาเลือกไฟล์ที่มีขนาดไม่เกิน 5MB',
+              text: 'ไฟล์ ' + overSizedFile.name + ' มีขนาดใหญ่กว่า 5MB กรุณาเลือกไฟล์ที่มีขนาดไม่เกิน 5MB',
               confirmButtonText: 'เข้าใจแล้ว',
               confirmButtonColor: '#e21b2d'
             });
             this.value = '';
-            break;
           }
         }
       }
@@ -906,4 +991,100 @@ function isValidDate(year, month, day) {
  */
 function buildIsoDate(year, month, day) {
   return String(year).padStart(4, '0') + '-' + String(month).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+}
+
+/**
+ * บีบอัดรูปภาพให้มีขนาดไม่เกิน maxSizeMB
+ * @param {File} file ไฟล์รูปภาพต้นฉบับ
+ * @param {number} maxSizeMB ขนาดไฟล์สูงสุดที่ต้องการ (MB)
+ * @returns {Promise<File|null>} ไฟล์รูปภาพที่ถูกบีบอัดแล้ว หรือ null ถ้ามีข้อผิดพลาด
+ */
+function compressImageFile(file, maxSizeMB) {
+  return new Promise((resolve) => {
+    const maxSizeBytes = maxSizeMB * 1024 * 1024;
+    if (file.size <= maxSizeBytes) {
+      resolve(file);
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = function (event) {
+      const img = new Image();
+      img.src = event.target.result;
+      img.onload = function () {
+        let width = img.width;
+        let height = img.height;
+        let quality = 0.8;
+        
+        let mimeType = file.type;
+        if (mimeType !== 'image/jpeg' && mimeType !== 'image/webp' && mimeType !== 'image/png') {
+          mimeType = 'image/jpeg';
+        }
+        
+        if (mimeType === 'image/png') {
+          mimeType = 'image/webp';
+        }
+
+        if (width > 1920 || height > 1920) {
+          const ratio = Math.min(1920 / width, 1920 / height);
+          width = width * ratio;
+          height = height * ratio;
+        }
+
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+
+        const doCompress = () => {
+          canvas.width = width;
+          canvas.height = height;
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          
+          if (mimeType === 'image/jpeg') {
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+          }
+
+          ctx.drawImage(img, 0, 0, width, height);
+
+          canvas.toBlob(
+            (blob) => {
+              if (!blob) {
+                resolve(null);
+                return;
+              }
+              
+              let newName = file.name;
+              if (mimeType === 'image/webp' && !newName.toLowerCase().endsWith('.webp')) {
+                  newName = newName.replace(/\.[^/.]+$/, ".webp");
+              } else if (mimeType === 'image/jpeg' && !newName.toLowerCase().endsWith('.jpg') && !newName.toLowerCase().endsWith('.jpeg')) {
+                  newName = newName.replace(/\.[^/.]+$/, ".jpg");
+              }
+
+              if (blob.size > maxSizeBytes) {
+                if (quality > 0.6) {
+                  quality -= 0.1;
+                } else {
+                  width = width * 0.9;
+                  height = height * 0.9;
+                }
+                if (width < 300 || height < 300) {
+                   resolve(new File([blob], newName, { type: mimeType, lastModified: Date.now() }));
+                   return;
+                }
+                doCompress();
+              } else {
+                resolve(new File([blob], newName, { type: mimeType, lastModified: Date.now() }));
+              }
+            },
+            mimeType,
+            quality
+          );
+        };
+        doCompress();
+      };
+      img.onerror = () => resolve(null);
+    };
+    reader.onerror = () => resolve(null);
+  });
 }

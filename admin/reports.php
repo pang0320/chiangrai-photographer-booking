@@ -21,14 +21,14 @@ $topPhotographers = db_fetch_all('SELECT display_name, average_rating, total_rev
                                   LIMIT 10');
 $avgReview = db_fetch_value('SELECT AVG(rating_overall) FROM reviews WHERE status = "visible" AND deleted_at IS NULL');
 
-$pageTitle = 'รายงาน';
+$pageTitle = 'รายงานสรุป';
 include __DIR__ . '/../includes/header.php';
 ?>
 
 <section class="px-4 py-8 sm:px-6 lg:px-8">
     <div>
         <p class="text-sm font-black uppercase tracking-[0.22em] text-red-600">ผู้ดูแลระบบ</p>
-        <h1 class="mt-1 text-3xl font-black text-neutral-950">รายงาน</h1>
+        <h1 class="mt-1 text-3xl font-black text-neutral-950">รายงานสรุป</h1>
     </div>
 
     <div class="mt-6 grid gap-4 sm:grid-cols-4">

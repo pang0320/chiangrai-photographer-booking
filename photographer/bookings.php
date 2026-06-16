@@ -26,9 +26,9 @@ if (is_post()) {
         if ($currentStatus === 'pending') {
             $allowedNextStatuses = ['accepted', 'rejected'];
         } elseif ($currentStatus === 'accepted') {
-            $allowedNextStatuses = ['in_progress'];
+            $allowedNextStatuses = ['in_progress', 'rejected'];
         } elseif ($currentStatus === 'in_progress') {
-            $allowedNextStatuses = ['completed'];
+            $allowedNextStatuses = ['completed', 'rejected'];
         }
 
         if (!in_array($newStatus, $allowedNextStatuses, true)) {
@@ -213,8 +213,10 @@ include __DIR__ . '/../includes/header.php';
 	                                                <option value="rejected">ปฏิเสธงาน</option>
                                                 <?php elseif ((string)$booking['status'] === 'accepted'): ?>
 	                                                <option value="in_progress">เริ่มดำเนินงาน</option>
+	                                                <option value="rejected">ยกเลิก/ปฏิเสธงาน</option>
                                                 <?php elseif ((string)$booking['status'] === 'in_progress'): ?>
 	                                                <option value="completed">งานเสร็จสิ้น</option>
+	                                                <option value="rejected">ยกเลิก/ปฏิเสธงาน</option>
                                                 <?php endif; ?>
 	                                        </select>
 	                                        <input name="rejection_reason" placeholder="เหตุผลถ้าปฏิเสธงาน" class="stock-input rounded-xl px-3 py-2">
